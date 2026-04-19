@@ -7,7 +7,35 @@ const moods = [
   { id: "sensivel", label: "Estou sensivel", hint: "humano, bonito, melancolico" }
 ];
 
-const movies = [
+const genreIds = {
+  "Comedia": 35,
+  "Drama": 18,
+  "Ficcao cientifica": 878,
+  "Suspense": 53,
+  "Romance": 10749,
+  "Crime": 80
+};
+
+const tmdbGenres = {
+  28: "Acao",
+  35: "Comedia",
+  80: "Crime",
+  18: "Drama",
+  878: "Ficcao cientifica",
+  53: "Suspense",
+  10749: "Romance"
+};
+
+const countryCodes = {
+  "Brasil": "BR",
+  "Estados Unidos": "US",
+  "Coreia do Sul": "KR",
+  "Japao": "JP",
+  "Franca": "FR",
+  "Reino Unido": "GB"
+};
+
+const curatedMovies = [
   {
     title: "Punch-Drunk Love",
     year: 2002,
@@ -607,6 +635,8 @@ let activeMode = "mood";
 let profileLoaded = false;
 let rerollOffset = 0;
 let roulettePick = "";
+let useTmdb = false;
+let tmdbMovies = [];
 const profileData = {
   watched: new Set(),
   highRated: new Set(),
@@ -637,10 +667,18 @@ const els = {
   syncStatus: document.querySelector("#sync-status"),
   profileFiles: document.querySelector("#profile-files"),
   profileStats: document.querySelector("#profile-stats"),
+  tmdbToken: document.querySelector("#tmdb-token"),
+  loadTmdb: document.querySelector("#load-tmdb"),
+  useTmdb: document.querySelector("#use-tmdb"),
+  tmdbStatus: document.querySelector("#tmdb-status"),
   reroll: document.querySelector("#reroll"),
   spin: document.querySelector("#spin"),
   rouletteWheel: document.querySelector("#roulette-wheel")
 };
+
+els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
+els.useTmdb.checked = localStorage.getItem("cinepick_use_tmdb") === "true";
+useTmdb = els.useTmdb.checked;
 
 function durationBucket(minutes) {
   if (minutes <= 100) return "curto";
@@ -688,6 +726,14 @@ function wasWatched(movie) {
   return movie.seen || profileData.watched.has(movieKey(movie.title, movie.year));
 }
 
+function activeCatalog() {
+  return useTmdb && tmdbMovies.length ? tmdbMovies : curatedMovies;
+}
+
+function movieDuration(movie) {
+  return Number(movie.duration) || 0;
+}
+
 function scoreMovie(movie) {
   let score = 0;
   const query = normalize(els.director.value);
@@ -697,7 +743,7 @@ function scoreMovie(movie) {
   if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
   if (profileLoaded) score += profileAffinity(movie);
   if (els.genre.value === movie.genre) score += 15;
-  if (els.duration.value === durationBucket(movie.duration)) score += 10;
+  if (movieDuration(movie) && els.duration.value === durationBucket(movieDuration(movie))) score += 10;
   if (els.decade.value === movie.decade) score += 10;
   if (els.country.value === movie.country) score += 10;
   if (query && `${movie.director} ${movie.tags.join(" ")}`.toLowerCase().includes(query)) score += 24;
@@ -708,11 +754,11 @@ function scoreMovie(movie) {
 }
 
 function filteredMovies() {
-  return movies
+  return activeCatalog()
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .filter((movie) => {
       if (els.genre.value !== "qualquer" && movie.genre !== els.genre.value) return false;
-      if (els.duration.value !== "qualquer" && durationBucket(movie.duration) !== els.duration.value) return false;
+      if (els.duration.value !== "qualquer" && movieDuration(movie) && durationBucket(movieDuration(movie)) !== els.duration.value) return false;
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
       if (ratingAverage(movie) < Number(els.rating.value)) return false;
@@ -725,7 +771,7 @@ function filteredMovies() {
 function reasonFor(movie) {
   if (activeMode === "roulette") {
     const parts = [
-      `${movie.duration} min`,
+      movie.duration ? `${movie.duration} min` : "duracao a confirmar",
       `${movie.director}`,
       `media critica ${ratingAverage(movie)}`,
       `${movie.country}`
@@ -741,7 +787,7 @@ function reasonFor(movie) {
   const mood = moods.find((item) => item.id === activeMood);
   const parts = [
     `Combina com "${mood.label.toLowerCase()}"`,
-    `${movie.duration} min`,
+    movie.duration ? `${movie.duration} min` : "duracao a confirmar",
     `${movie.director}`,
     `media critica ${ratingAverage(movie)}`
   ];
@@ -775,6 +821,175 @@ function selectRouletteMovie(list) {
   }
 
   roulettePick = weighted[0].movie.title;
+}
+
+function tmdbHeaders() {
+  const token = els.tmdbToken.value.trim();
+  if (!token) return null;
+  return {
+    Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+    "Content-Type": "application/json;charset=utf-8"
+  };
+}
+
+function tmdbParams() {
+  const params = new URLSearchParams({
+    include_adult: "false",
+    include_video: "false",
+    language: "pt-BR",
+    sort_by: activeMode === "roulette" ? "popularity.desc" : "vote_count.desc",
+    "vote_count.gte": "80",
+    "vote_average.gte": String(Math.max(0, Number(els.rating.value) / 10)),
+    page: "1"
+  });
+
+  if (els.genre.value !== "qualquer" && genreIds[els.genre.value]) {
+    params.set("with_genres", String(genreIds[els.genre.value]));
+  }
+
+  if (els.country.value !== "qualquer" && countryCodes[els.country.value]) {
+    params.set("with_origin_country", countryCodes[els.country.value]);
+  }
+
+  if (els.decade.value !== "qualquer") {
+    const start = Number(els.decade.value);
+    params.set("primary_release_date.gte", `${start}-01-01`);
+    params.set("primary_release_date.lte", `${start + 9}-12-31`);
+  }
+
+  if (els.duration.value === "curto") params.set("with_runtime.lte", "100");
+  if (els.duration.value === "medio") {
+    params.set("with_runtime.gte", "100");
+    params.set("with_runtime.lte", "130");
+  }
+  if (els.duration.value === "longo") params.set("with_runtime.gte", "130");
+
+  return params;
+}
+
+async function tmdbFetch(path, params = new URLSearchParams()) {
+  const headers = tmdbHeaders();
+  if (!headers) throw new Error("Token TMDb ausente.");
+  const url = new URL(`https://api.themoviedb.org/3${path}`);
+  params.forEach((value, key) => url.searchParams.set(key, value));
+  const response = await fetch(url, { headers });
+  if (!response.ok) throw new Error(`TMDb respondeu ${response.status}.`);
+  return response.json();
+}
+
+async function directorIdForQuery(query) {
+  if (!query) return "";
+  const result = await tmdbFetch("/search/person", new URLSearchParams({ query, language: "pt-BR" }));
+  const person = (result.results || []).find((item) =>
+    (item.known_for_department === "Directing" || normalize(item.name).includes(query)) && item.id
+  );
+  return person ? String(person.id) : "";
+}
+
+function countryNameFromCode(code) {
+  return Object.entries(countryCodes).find(([, value]) => value === code)?.[0] || code || "Internacional";
+}
+
+function mapTmdbMovie(movie, details) {
+  const releaseYear = Number((movie.release_date || "").slice(0, 4)) || 0;
+  const director = (details.credits?.crew || []).find((person) => person.job === "Director")?.name || "Direcao nao informada";
+  const genre = movie.genre_ids.map((id) => tmdbGenres[id]).find(Boolean) || details.genres?.[0]?.name || "Drama";
+  const country = countryNameFromCode(details.origin_country?.[0] || movie.original_language?.toUpperCase());
+  const vote = Math.round((movie.vote_average || 0) * 10);
+
+  return {
+    title: movie.title || movie.original_title,
+    year: releaseYear || "----",
+    decade: releaseYear ? String(Math.floor(releaseYear / 10) * 10) : "qualquer",
+    genre,
+    duration: details.runtime || 0,
+    country,
+    director,
+    imdb: vote,
+    rt: Math.min(100, Math.round((movie.popularity || 0) / 2) + 50),
+    tmdbVotes: movie.vote_count || 0,
+    vibes: inferVibes(genre, movie.overview || ""),
+    tags: [genre, director, country].filter(Boolean),
+    seen: false,
+    favoriteSignal: false,
+    posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "",
+    backdropUrl: movie.backdrop_path ? `https://image.tmdb.org/t/p/w780${movie.backdrop_path}` : "",
+    colors: colorPairForMovie(movie.id || vote),
+    source: "tmdb"
+  };
+}
+
+function colorPairForMovie(seed) {
+  const palette = [
+    ["#3f7d9b", "#d85f56"],
+    ["#c77d34", "#47745b"],
+    ["#2d3e39", "#d2c08a"],
+    ["#613c5d", "#b48a61"],
+    ["#59656d", "#b0a48d"],
+    ["#7d3f33", "#d6b36a"]
+  ];
+  return palette[Math.abs(Number(seed) || 0) % palette.length];
+}
+
+function inferVibes(genre, overview) {
+  const text = normalize(`${genre} ${overview}`);
+  const vibes = new Set();
+  if (text.includes("comedia") || text.includes("familia")) vibes.add("leve");
+  if (text.includes("romance") || text.includes("drama")) vibes.add("sensivel");
+  if (text.includes("crime") || text.includes("suspense") || text.includes("thriller")) vibes.add("intenso");
+  if (text.includes("ficcao") || text.includes("science") || text.includes("misterio")) vibes.add("complexo");
+  if (text.includes("familia") || text.includes("amizade")) vibes.add("comfort");
+  return [...(vibes.size ? vibes : new Set(["comfort"]))];
+}
+
+async function loadTmdbCatalog() {
+  const token = els.tmdbToken.value.trim();
+  if (!token) {
+    els.tmdbStatus.textContent = "Cole um token de leitura do TMDb para buscar catalogo real.";
+    return;
+  }
+
+  localStorage.setItem("cinepick_tmdb_token", token);
+  els.tmdbStatus.textContent = "Buscando filmes no TMDb...";
+  els.loadTmdb.disabled = true;
+
+  try {
+    const params = tmdbParams();
+    const query = normalize(els.director.value);
+    if (query) {
+      const directorId = await directorIdForQuery(query);
+      if (directorId) params.set("with_crew", directorId);
+    }
+
+    const pages = await Promise.all([1, 2, 3].map((page) => {
+      const nextParams = new URLSearchParams(params);
+      nextParams.set("page", String(page));
+      return tmdbFetch("/discover/movie", nextParams);
+    }));
+    const baseResults = pages.flatMap((page) => page.results || []).filter((movie) => movie.poster_path);
+    const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, 42);
+    const detailed = await Promise.all(uniqueResults.map(async (movie) => {
+      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits", language: "pt-BR" }));
+      return mapTmdbMovie(movie, details);
+    }));
+
+    tmdbMovies = detailed;
+    useTmdb = true;
+    els.useTmdb.checked = true;
+    localStorage.setItem("cinepick_use_tmdb", "true");
+    roulettePick = "";
+    if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
+    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do TMDb com capas oficiais.`;
+    render();
+  } catch (error) {
+    useTmdb = false;
+    els.useTmdb.checked = false;
+    localStorage.setItem("cinepick_use_tmdb", "false");
+    els.tmdbStatus.textContent = `${error.message} Mantive a curadoria local ativa.`;
+    render();
+  } finally {
+    els.loadTmdb.disabled = false;
+  }
 }
 
 function setMode(mode) {
@@ -912,7 +1127,8 @@ function renderHero(movie) {
   }
 
   els.hero.innerHTML = `
-    <div class="poster" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+    <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+      ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
       <span class="poster-badge">${movie.genre}</span>
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
@@ -929,8 +1145,8 @@ function renderHero(movie) {
         <span class="pill">${movie.tags.slice(0, 2).join(" + ")}</span>
       </div>
       <div class="score-row">
-        <div class="score"><strong>${movie.imdb}</strong><span>IMDb x10</span></div>
-        <div class="score"><strong>${movie.rt}%</strong><span>Rotten Tomatoes</span></div>
+        <div class="score"><strong>${movie.imdb}</strong><span>${movie.source === "tmdb" ? "TMDb x10" : "IMDb x10"}</span></div>
+        <div class="score"><strong>${movie.source === "tmdb" ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${movie.source === "tmdb" ? "votos" : "Rotten Tomatoes"}</span></div>
         <div class="score"><strong>${Math.max(movie.score, 0)}</strong><span>${activeMode === "roulette" ? "peso" : "encaixe"}</span></div>
       </div>
       <div class="rec-actions">
@@ -951,12 +1167,13 @@ function renderShortlist(list) {
   els.matchCount.textContent = `${list.length} opcoes`;
   els.shortlist.innerHTML = list.slice(1, 5).map((movie) => `
     <article class="mini-card">
-      <div class="mini-poster" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+      <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
         <span>${movie.year}</span>
         <strong>${movie.title}</strong>
       </div>
       <h3>${movie.title}</h3>
-      <p>${movie.genre} | ${movie.duration} min<br>${movie.director}</p>
+      <p>${movie.genre} | ${movie.duration ? `${movie.duration} min` : "duracao n/d"}<br>${movie.director}</p>
     </article>
   `).join("");
   renderMoreOptions(list);
@@ -967,7 +1184,8 @@ function renderMoreOptions(list) {
   els.moreCount.textContent = extra.length ? `${extra.length} filmes` : "sem extras";
   els.moreGrid.innerHTML = extra.map((movie) => `
     <article class="more-card">
-      <div class="more-poster" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+      <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="">` : ""}
         <span>${movie.year}</span>
       </div>
       <div>
@@ -1033,6 +1251,23 @@ els.profileFiles.addEventListener("change", (event) => {
   importProfileFiles(event.target.files);
 });
 
+els.loadTmdb.addEventListener("click", () => {
+  loadTmdbCatalog();
+});
+
+els.useTmdb.addEventListener("change", () => {
+  useTmdb = els.useTmdb.checked;
+  localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
+
+  if (useTmdb && !tmdbMovies.length) {
+    els.tmdbStatus.textContent = "Clique em Carregar para buscar filmes reais do TMDb.";
+  }
+
+  roulettePick = "";
+  if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
+  render();
+});
+
 els.reroll.addEventListener("click", () => {
   if (activeMode === "roulette") {
     els.rouletteWheel.classList.remove("is-spinning");
@@ -1058,7 +1293,7 @@ els.spin.addEventListener("click", () => {
 els.hero.addEventListener("click", (event) => {
   const seenButton = event.target.closest("[data-seen]");
   if (!seenButton) return;
-  const movie = movies.find((item) => item.title === seenButton.dataset.seen);
+  const movie = activeCatalog().find((item) => item.title === seenButton.dataset.seen);
   if (movie) movie.seen = true;
   if (movie) profileData.watched.add(movieKey(movie.title, movie.year));
   profileLoaded = true;
