@@ -5,7 +5,7 @@ module.exports = async function handler(request, response) {
   const year = request.query.y;
 
   if (!key) {
-    response.status(500).json({ error: "OMDB_API_KEY is not configured." });
+    response.status(200).json({ Response: "False", Error: "OMDB_API_KEY is not configured." });
     return;
   }
 
