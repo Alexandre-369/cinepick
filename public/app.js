@@ -53,6 +53,7 @@ const countryCodes = {
   "Dinamarca": "DK",
   "Espanha": "ES",
   "Estados Unidos": "US",
+  "Hong Kong": "HK",
   "India": "IN",
   "Ira": "IR",
   "Irlanda": "IE",
@@ -62,16 +63,23 @@ const countryCodes = {
   "Franca": "FR",
   "Mexico": "MX",
   "Noruega": "NO",
+  "Paises Baixos": "NL",
+  "Polonia": "PL",
+  "Portugal": "PT",
+  "Russia": "RU",
   "Suecia": "SE",
+  "Tailandia": "TH",
+  "Taiwan": "TW",
+  "Turquia": "TR",
   "Reino Unido": "GB"
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 2,
-  pages: 8,
-  limit: 140,
-  batchSize: 10,
-  omdbEnrichLimit: 36,
+  cacheVersion: 3,
+  pages: 10,
+  limit: 180,
+  batchSize: 12,
+  omdbEnrichLimit: 24,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
 
@@ -93,9 +101,33 @@ const displayNames = {
   Ira: "Irã",
   Italia: "Itália",
   Mexico: "México",
+  "Paises Baixos": "Países Baixos",
+  Polonia: "Polônia",
+  Russia: "Rússia",
   Suecia: "Suécia",
+  Tailandia: "Tailândia",
+  acao: "ação",
+  adolescencia: "adolescência",
+  acusacao: "acusação",
+  comedia: "comédia",
+  doenca: "doença",
+  familia: "família",
+  ficcao: "ficção",
+  "ficcao cientifica": "ficção científica",
+  imigracao: "imigração",
+  injustica: "injustiça",
+  investigacao: "investigação",
+  mae: "mãe",
+  "mae e filha": "mãe e filha",
+  memoria: "memória",
   Misterio: "Mistério",
+  misterio: "mistério",
   Musica: "Música",
+  musica: "música",
+  perseguicao: "perseguição",
+  pressao: "pressão",
+  solidao: "solidão",
+  tensao: "tensão",
   nostalgia: "nostalgia",
   comfort: "comfort",
   leve: "leve",
@@ -107,15 +139,15 @@ const displayNames = {
 const moodProfiles = {
   leve: {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Musica"],
-    avoidGenres: ["Crime", "Terror", "Suspense", "Guerra"],
-    hardAvoidGenres: ["Crime", "Terror"],
+    avoidGenres: ["Crime", "Terror", "Suspense", "Guerra", "Misterio"],
+    hardAvoidGenres: ["Crime", "Terror", "Guerra"],
     requiredPositive: true,
     longMoviePenalty: 145
   },
   comfort: {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Drama", "Musica"],
-    avoidGenres: ["Terror", "Guerra", "Crime", "Suspense", "Acao"],
-    hardAvoidGenres: ["Terror", "Crime"],
+    avoidGenres: ["Terror", "Guerra", "Crime", "Suspense", "Acao", "Misterio", "Ficcao cientifica"],
+    hardAvoidGenres: ["Terror", "Crime", "Guerra"],
     requiredPositive: true,
     longMoviePenalty: 155
   },
@@ -132,7 +164,7 @@ const moodProfiles = {
   intenso: {
     preferredGenres: ["Suspense", "Crime", "Terror", "Misterio", "Acao", "Guerra"],
     avoidGenres: ["Familia", "Animacao", "Comedia", "Romance", "Musica"],
-    hardAvoidGenres: ["Familia", "Animacao"],
+    hardAvoidGenres: ["Familia", "Animacao", "Musica"],
     requiredPositive: true
   },
   sensivel: {
@@ -826,6 +858,7 @@ let activeMood = "comfort";
 let activeMode = "mood";
 let profileLoaded = false;
 let rerollOffset = 0;
+let shuffleSalt = Math.floor(Math.random() * 100000);
 let roulettePick = "";
 let useTmdb = false;
 let tmdbMovies = [];
@@ -898,7 +931,10 @@ function durationMatches(filter, minutes) {
 }
 
 function displayText(value) {
-  return displayNames[value] || value;
+  const text = String(value || "");
+  if (displayNames[text]) return displayNames[text];
+  const normalizedMatch = Object.keys(displayNames).find((key) => normalize(key) === normalize(text));
+  return normalizedMatch ? displayNames[normalizedMatch] : text;
 }
 
 function ratingAverage(movie) {
@@ -945,7 +981,7 @@ function hashString(value) {
 }
 
 function shuffleNoise(movie) {
-  const key = `${sessionSeed}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
+  const key = `${sessionSeed}|${shuffleSalt}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
   return (hashString(key) % 1000) / 1000;
 }
 
@@ -978,6 +1014,7 @@ function moodScore(movie) {
   const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
   let score = 0;
 
+  if (moodMismatch(movie)) score -= 120;
   if (hasVibe) score += 44;
   score += Math.min(preferredMatches, 3) * 22;
   score += Math.min(keywordMatches, 3) * 8;
@@ -988,9 +1025,35 @@ function moodScore(movie) {
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "nostalgia" && Number(movie.year) && Number(movie.year) >= 2020) score -= 10;
+  if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
+  if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 16;
   if (activeMood === "leve" && ratingAverage(movie) < 62) score -= 8;
 
   return score;
+}
+
+function moodMismatch(movie) {
+  if (activeMode !== "mood") return false;
+
+  const profile = moodProfiles[activeMood] || {};
+  const genres = movieGenres(movie);
+  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
+  const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
+  const hasVibe = (movie.vibes || []).includes(activeMood);
+
+  if (activeMood === "leve") {
+    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+  }
+
+  if (activeMood === "comfort") {
+    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+  }
+
+  if (activeMood === "intenso") {
+    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+  }
+
+  return false;
 }
 
 function applyPosterCache() {
@@ -1099,7 +1162,7 @@ function scoreMovie(movie) {
   score += moodScore(movie);
   if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
   if (profileLoaded) score += profileAffinity(movie);
-  if (els.genre.value === movie.genre) score += 15;
+  if (movieGenres(movie).includes(els.genre.value)) score += 15;
   if (movieDuration(movie) && durationMatches(els.duration.value, movieDuration(movie)) && els.duration.value !== "qualquer") score += 10;
   if (els.decade.value === movie.decade) score += 10;
   if (els.country.value === movie.country) score += 10;
@@ -1107,14 +1170,15 @@ function scoreMovie(movie) {
   if (ratingAverage(movie) >= minRating) score += 12;
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
 
-  return score + shuffleNoise(movie) * 18;
+  return score + shuffleNoise(movie) * 30;
 }
 
 function filteredMovies() {
   return activeCatalog()
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .filter((movie) => {
-      if (els.genre.value !== "qualquer" && movie.genre !== els.genre.value) return false;
+      if (activeMode === "mood" && moodMismatch(movie)) return false;
+      if (els.genre.value !== "qualquer" && !movieGenres(movie).includes(els.genre.value)) return false;
       if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
@@ -1128,12 +1192,12 @@ function filteredMovies() {
 
 function reasonFor(movie) {
   if (activeMode === "roulette") {
-    return "A roleta ignorou o humor e puxou uma opcao forte dentro dos seus filtros. E pronto: agora e apertar play, nao abrir mais quinze abas.";
+    return "A roleta ignorou o humor e puxou uma opção forte dentro dos seus filtros. E pronto: agora é apertar play, não abrir mais quinze abas.";
   }
 
   const mood = moods.find((item) => item.id === activeMood);
-  const profileText = profileLoaded && profileAffinity(movie) > 10 ? " Tambem conversa com sinais do seu perfil." : "";
-  return `A sugestao prioriza o clima "${mood.label.toLowerCase()}" sem transformar a noite em pesquisa.${profileText}`;
+  const profileText = profileLoaded && profileAffinity(movie) > 10 ? " Também conversa com sinais do seu perfil." : "";
+  return `A sugestão prioriza o clima "${mood.label.toLowerCase()}" sem transformar a noite em pesquisa.${profileText}`;
 }
 
 function selectRouletteMovie(list) {
@@ -1200,6 +1264,7 @@ function tmdbParams() {
     params.set("primary_release_date.lte", `${start + 9}-12-31`);
   }
 
+  if (els.duration.value === "ate90") params.set("with_runtime.lte", "90");
   if (els.duration.value === "curto") params.set("with_runtime.lte", "100");
   if (els.duration.value === "medio") {
     params.set("with_runtime.gte", "100");
@@ -1306,7 +1371,7 @@ function tagsForMovie(movie, details, genre, director, country) {
 
 function mapTmdbMovie(movie, details) {
   const releaseYear = Number((movie.release_date || "").slice(0, 4)) || 0;
-  const director = (details.credits?.crew || []).find((person) => person.job === "Director")?.name || "Direcao nao informada";
+  const director = (details.credits?.crew || []).find((person) => person.job === "Director")?.name || "Direção não informada";
   const genres = genreNamesFromDetails(movie, details);
   const genre = genres[0] || "Drama";
   const country = countryNameFromCode(details.origin_country?.[0] || movie.original_language?.toUpperCase());
@@ -1354,11 +1419,13 @@ function inferVibes(genres, overview, year = 0) {
   const genreList = Array.isArray(genres) ? genres : [genres];
   const text = normalize(`${genreList.join(" ")} ${overview}`);
   const vibes = new Set();
-  if (text.includes("comedia") || text.includes("familia") || text.includes("animacao") || text.includes("aventura")) vibes.add("leve");
+  const hasGentleGenre = text.includes("comedia") || text.includes("familia") || text.includes("animacao") || text.includes("romance") || text.includes("musica");
+  const hasHeavyGenre = text.includes("crime") || text.includes("suspense") || text.includes("thriller") || text.includes("terror") || text.includes("guerra");
+  if (hasGentleGenre || (text.includes("aventura") && !hasHeavyGenre)) vibes.add("leve");
   if (text.includes("romance") || text.includes("drama") || text.includes("familia")) vibes.add("sensivel");
-  if (text.includes("crime") || text.includes("suspense") || text.includes("thriller") || text.includes("terror") || text.includes("misterio")) vibes.add("intenso");
+  if (hasHeavyGenre || text.includes("misterio")) vibes.add("intenso");
   if (text.includes("ficcao") || text.includes("science") || text.includes("misterio") || text.includes("memoria") || text.includes("tempo")) vibes.add("complexo");
-  if (text.includes("familia") || text.includes("amizade") || text.includes("animacao")) vibes.add("comfort");
+  if (text.includes("familia") || text.includes("amizade") || text.includes("animacao") || text.includes("romance")) vibes.add("comfort");
   if (Number(year) && Number(year) < 2005) vibes.add("nostalgia");
   return [...(vibes.size ? vibes : new Set(["comfort"]))];
 }
@@ -1372,7 +1439,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
   }
 
   tmdbLoadInProgress = true;
-  els.tmdbStatus.textContent = auto ? "Carregando catalogo expandido automaticamente..." : "Buscando catalogo expandido no TMDb...";
+  els.tmdbStatus.textContent = auto ? "Carregando catálogo expandido automaticamente..." : "Buscando catálogo expandido no TMDb...";
   els.loadTmdb.disabled = true;
 
   try {
@@ -1503,7 +1570,7 @@ async function hydrateCuratedPosters() {
     }
 
     updateProviderFilter();
-    els.tmdbStatus.textContent = `${found} capas oficiais adicionadas a curadoria local.`;
+    els.tmdbStatus.textContent = `${found} capas oficiais adicionadas à curadoria local.`;
     render();
   } catch (error) {
     els.tmdbStatus.textContent = `${error.message} Configure TMDB_READ_TOKEN na Vercel ou cole um token no campo acima.`;
@@ -1515,6 +1582,7 @@ async function hydrateCuratedPosters() {
 function setMode(mode) {
   activeMode = mode;
   rerollOffset = 0;
+  shuffleSalt = Math.floor(Math.random() * 100000);
   els.modeTabs.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.mode === mode);
   });
@@ -1640,7 +1708,7 @@ function renderHero(movie) {
       <div class="rec-copy">
         <span class="kicker">Sem resultado perfeito</span>
         <h2>Ajuste um filtro.</h2>
-        <p class="reason">A combinacao atual ficou exigente demais. Reduza a nota minima ou abra genero, decada ou duracao.</p>
+        <p class="reason">A combinação atual ficou exigente demais. Reduza a nota mínima ou abra gênero, década ou duração.</p>
       </div>
     `;
     return;
@@ -1650,9 +1718,15 @@ function renderHero(movie) {
   const hasTmdb = movie.source && movie.source.includes("tmdb");
   const providers = (movie.providers || []).slice(0, 3);
   const providerPills = providers.map((provider) => `<span class="pill provider-pill">${displayText(provider)}</span>`).join("");
+  const blockedTagKeys = [
+    ...movieGenres(movie),
+    movie.country,
+    movie.director,
+    ...providers
+  ].map(normalize);
   const displayTags = uniqueNormalized([...(movie.tags || []), ...(movie.vibes || [])])
-    .filter((tag) => ![movie.genre, movie.country, movie.director, ...providers].map(normalize).includes(normalize(tag)))
-    .slice(0, 4);
+    .filter((tag) => !blockedTagKeys.includes(normalize(tag)))
+    .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
 
   els.hero.innerHTML = `
@@ -1668,10 +1742,10 @@ function renderHero(movie) {
       <h2>${movie.title}</h2>
       <p class="reason">${reasonFor(movie)}</p>
       <div class="fact-grid">
-        <div class="fact-item"><span>Direcao</span><strong>${movie.director}</strong></div>
-        <div class="fact-item"><span>Duracao</span><strong>${formatRuntime(movie.duration)}</strong></div>
+        <div class="fact-item"><span>Direção</span><strong>${movie.director}</strong></div>
+        <div class="fact-item"><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
         <div class="fact-item"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
-        <div class="fact-item"><span>Periodo</span><strong>${movie.decade}s</strong></div>
+        <div class="fact-item"><span>Período</span><strong>${movie.decade}s</strong></div>
       </div>
       ${providers.length ? `
         <div class="watch-strip">
@@ -1694,11 +1768,11 @@ function renderHero(movie) {
       <div class="rec-actions">
         <button type="button" data-next>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          Proximo
+          Próximo
         </button>
         <button type="button" data-seen="${movie.title}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
-          Ja vi
+          Já vi
         </button>
       </div>
     </div>
@@ -1706,7 +1780,7 @@ function renderHero(movie) {
 }
 
 function renderShortlist(list) {
-  els.matchCount.textContent = `${list.length} opcoes`;
+  els.matchCount.textContent = `${list.length} opções`;
   els.shortlist.innerHTML = list.slice(1, 5).map((movie) => {
     const providerLine = movie.providers?.length ? `<br>${movie.providers.slice(0, 2).join(" / ")}` : "";
     return `
@@ -1770,6 +1844,7 @@ els.moods.addEventListener("click", (event) => {
   if (!button) return;
   activeMood = button.dataset.mood;
   rerollOffset = 0;
+  shuffleSalt = Math.floor(Math.random() * 100000);
   render();
 });
 
@@ -1777,6 +1852,7 @@ document.querySelectorAll("select, input").forEach((input) => {
   input.addEventListener("input", () => {
     if (input === els.rating) els.ratingValue.textContent = els.rating.value;
     rerollOffset = 0;
+    shuffleSalt = Math.floor(Math.random() * 100000);
     if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
     render();
   });
@@ -1791,7 +1867,7 @@ els.syncDemo.addEventListener("click", () => {
   ["Christopher Nolan", "Charlie Kaufman", "Guel Arraes"].forEach((name) => profileData.favoriteDirectors.add(normalize(name)));
   ["complexo", "nostalgia", "Brasil", "drama sensivel"].forEach((tag) => profileData.favoriteTags.add(normalize(tag)));
   renderProfileStats();
-  els.syncStatus.textContent = "Perfil simulado: 2 filmes vistos, gosto por Kaufman, Nolan, classicos brasileiros e drama sensivel.";
+  els.syncStatus.textContent = "Perfil simulado: 2 filmes vistos, gosto por Kaufman, Nolan, clássicos brasileiros e drama sensível.";
   render();
 });
 
@@ -1831,7 +1907,8 @@ els.reroll.addEventListener("click", () => {
     return;
   }
 
-  rerollOffset += 1 + Math.floor(Math.random() * 7);
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  rerollOffset += 1 + Math.floor(Math.random() * Math.max(8, filteredMovies().length));
   render();
 });
 
@@ -1856,7 +1933,7 @@ els.hero.addEventListener("click", (event) => {
   if (movie) profileData.watched.add(movieKey(movie.title, movie.year));
   profileLoaded = true;
   renderProfileStats();
-  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A proxima sugestao evita repetir.`;
+  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
   render();
 });
 
