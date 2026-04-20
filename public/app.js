@@ -35,6 +35,14 @@ const countryCodes = {
   "Reino Unido": "GB"
 };
 
+const tmdbCatalogConfig = {
+  pages: 8,
+  limit: 140,
+  batchSize: 10,
+  omdbEnrichLimit: 36,
+  cacheMaxAge: 1000 * 60 * 60 * 8
+};
+
 const curatedMovies = [
   {
     title: "Punch-Drunk Love",
@@ -722,6 +730,7 @@ let rerollOffset = 0;
 let roulettePick = "";
 let useTmdb = false;
 let tmdbMovies = [];
+let tmdbLoadInProgress = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const posterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const profileData = {
@@ -741,6 +750,7 @@ const els = {
   duration: document.querySelector("#duration"),
   decade: document.querySelector("#decade"),
   country: document.querySelector("#country"),
+  provider: document.querySelector("#provider"),
   director: document.querySelector("#director"),
   rating: document.querySelector("#rating"),
   ratingValue: document.querySelector("#rating-value"),
@@ -837,6 +847,41 @@ function cacheMovieEnhancement(movie) {
   localStorage.setItem("cinepick_poster_cache", JSON.stringify(posterCache));
 }
 
+function cacheTmdbCatalog() {
+  if (!tmdbMovies.length) return;
+  localStorage.setItem("cinepick_tmdb_catalog", JSON.stringify({
+    savedAt: Date.now(),
+    movies: tmdbMovies
+  }));
+}
+
+function restoreTmdbCatalogCache() {
+  const cached = JSON.parse(localStorage.getItem("cinepick_tmdb_catalog") || "null");
+  if (!cached?.movies?.length) return false;
+  if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
+
+  tmdbMovies = cached.movies;
+  useTmdb = true;
+  els.useTmdb.checked = true;
+  localStorage.setItem("cinepick_use_tmdb", "true");
+  updateProviderFilter();
+  els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do cache local. Atualizando em segundo plano.`;
+  return true;
+}
+
+function updateProviderFilter() {
+  const current = els.provider.value;
+  const providers = [...new Set(activeCatalog().flatMap((movie) => movie.providers || []))]
+    .sort((a, b) => a.localeCompare(b));
+
+  els.provider.innerHTML = [
+    `<option value="qualquer">Qualquer</option>`,
+    ...providers.map((provider) => `<option value="${provider}">${provider}</option>`)
+  ].join("");
+
+  els.provider.value = providers.includes(current) ? current : "qualquer";
+}
+
 function getColumn(row, names) {
   const keys = Object.keys(row);
   const found = keys.find((key) => names.includes(normalize(key)));
@@ -896,6 +941,7 @@ function filteredMovies() {
       if (els.duration.value !== "qualquer" && movieDuration(movie) && durationBucket(movieDuration(movie)) !== els.duration.value) return false;
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
+      if (els.provider.value !== "qualquer" && !(movie.providers || []).includes(els.provider.value)) return false;
       if (ratingAverage(movie) < Number(els.rating.value)) return false;
       if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
       return true;
@@ -1135,13 +1181,16 @@ function inferVibes(genre, overview) {
   return [...(vibes.size ? vibes : new Set(["comfort"]))];
 }
 
-async function loadTmdbCatalog() {
+async function loadTmdbCatalog({ auto = false } = {}) {
+  if (tmdbLoadInProgress) return false;
+
   const token = els.tmdbToken.value.trim();
   if (token) {
     localStorage.setItem("cinepick_tmdb_token", token);
   }
 
-  els.tmdbStatus.textContent = "Buscando filmes no TMDb...";
+  tmdbLoadInProgress = true;
+  els.tmdbStatus.textContent = auto ? "Carregando catalogo expandido automaticamente..." : "Buscando catalogo expandido no TMDb...";
   els.loadTmdb.disabled = true;
 
   try {
@@ -1152,24 +1201,43 @@ async function loadTmdbCatalog() {
       if (directorId) params.set("with_crew", directorId);
     }
 
-    const pages = await Promise.all([1, 2, 3].map((page) => {
+    const pages = await Promise.all(Array.from({ length: tmdbCatalogConfig.pages }, (_, index) => index + 1).map((page) => {
       const nextParams = new URLSearchParams(params);
       nextParams.set("page", String(page));
       return tmdbFetch("/discover/movie", nextParams);
     }));
     const baseResults = pages.flatMap((page) => page.results || []).filter((movie) => movie.poster_path);
-    const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, 42);
-    const detailed = await Promise.all(uniqueResults.map(async (movie) => {
-      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids,watch/providers", language: "pt-BR" }));
-      const mapped = mapTmdbMovie(movie, details);
-      await enrichRatingsFromOmdb(mapped).catch(() => false);
-      return mapped;
-    }));
+    const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, tmdbCatalogConfig.limit);
+    const detailed = [];
+
+    for (let index = 0; index < uniqueResults.length; index += tmdbCatalogConfig.batchSize) {
+      const batch = uniqueResults.slice(index, index + tmdbCatalogConfig.batchSize);
+      const nextMovies = await Promise.all(batch.map(async (movie, offset) => {
+        const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids,watch/providers", language: "pt-BR" }));
+        const mapped = mapTmdbMovie(movie, details);
+        if (index + offset < tmdbCatalogConfig.omdbEnrichLimit) {
+          await enrichRatingsFromOmdb(mapped).catch(() => false);
+        }
+        return mapped;
+      }));
+
+      detailed.push(...nextMovies);
+      tmdbMovies = detailed;
+      useTmdb = true;
+      els.useTmdb.checked = true;
+      localStorage.setItem("cinepick_use_tmdb", "true");
+      updateProviderFilter();
+      cacheTmdbCatalog();
+      els.tmdbStatus.textContent = `${tmdbMovies.length} de ${uniqueResults.length} filmes carregados com capas e streaming.`;
+      render();
+    }
 
     tmdbMovies = detailed;
     useTmdb = true;
     els.useTmdb.checked = true;
     localStorage.setItem("cinepick_use_tmdb", "true");
+    updateProviderFilter();
+    cacheTmdbCatalog();
     roulettePick = "";
     if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
     els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do TMDb com capas oficiais.`;
@@ -1182,6 +1250,9 @@ async function loadTmdbCatalog() {
     els.tmdbStatus.textContent = `${error.message} Mantive a curadoria local ativa.`;
     render();
     return false;
+  } finally {
+    tmdbLoadInProgress = false;
+    els.loadTmdb.disabled = false;
   }
 }
 
@@ -1244,10 +1315,12 @@ async function hydrateCuratedPosters() {
       const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
       attempted += batch.length;
       found += results.filter(Boolean).length;
+      updateProviderFilter();
       els.tmdbStatus.textContent = `Capas encontradas: ${found}. Processados: ${attempted} de ${pending.length}.`;
       render();
     }
 
+    updateProviderFilter();
     els.tmdbStatus.textContent = `${found} capas oficiais adicionadas a curadoria local.`;
     render();
   } catch (error) {
@@ -1457,9 +1530,11 @@ function renderShortlist(list) {
 }
 
 function renderMoreOptions(list) {
-  const extra = list.slice(5, 17);
+  const extra = list.slice(5, 29);
   els.moreCount.textContent = extra.length ? `${extra.length} filmes` : "sem extras";
-  els.moreGrid.innerHTML = extra.map((movie) => `
+  els.moreGrid.innerHTML = extra.map((movie) => {
+    const providerLine = movie.providers?.length ? `<br>${movie.providers.slice(0, 2).join(" / ")}` : "";
+    return `
     <article class="more-card">
       <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
         ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="">` : ""}
@@ -1467,10 +1542,11 @@ function renderMoreOptions(list) {
       </div>
       <div>
         <h3>${movie.title}</h3>
-        <p>${movie.genre} | ${movie.country}<br>${movie.director}</p>
+        <p>${movie.genre} | ${movie.country}<br>${movie.director}${providerLine}</p>
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function render() {
@@ -1541,10 +1617,11 @@ els.useTmdb.addEventListener("change", () => {
   localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
 
   if (useTmdb && !tmdbMovies.length) {
-    els.tmdbStatus.textContent = "Clique em Buscar para carregar filmes reais do TMDb.";
+    els.tmdbStatus.textContent = "Clique em Atualizar para carregar filmes reais do TMDb.";
   }
 
   roulettePick = "";
+  updateProviderFilter();
   if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
   render();
 });
@@ -1588,4 +1665,9 @@ els.hero.addEventListener("click", (event) => {
   render();
 });
 
+restoreTmdbCatalogCache();
+updateProviderFilter();
 render();
+window.setTimeout(() => {
+  loadTmdbCatalog({ auto: true });
+}, 700);

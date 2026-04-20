@@ -55,7 +55,7 @@
         <details class="settings-panel">
           <summary>
             <span>Ajustes finos</span>
-            <small>genero, tempo, nota e origem</small>
+            <small>genero, tempo, nota e streaming</small>
           </summary>
           <div class="filter-grid">
             <label>
@@ -112,6 +112,12 @@
               <input id="rating" type="range" min="0" max="95" value="72">
               <span id="rating-value">72</span>
             </label>
+            <label>
+              Streaming
+              <select id="provider">
+                <option value="qualquer">Qualquer</option>
+              </select>
+            </label>
           </div>
 
           <div class="toggle-row">
@@ -158,7 +164,7 @@
               <input id="tmdb-token" type="password" placeholder="Opcional se a Vercel tiver TMDB_READ_TOKEN">
               <button id="load-tmdb" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0 0 19 5M19 5v5h-5"/></svg>
-                Buscar
+                Atualizar
               </button>
             </div>
             <label for="omdb-key">Chave OMDb</label>
@@ -174,7 +180,7 @@
               </label>
               <span>Usar catalogo TMDb quando disponivel</span>
             </div>
-            <p id="tmdb-status" class="microcopy">Com tokens no servidor ou no navegador, Buscar carrega catalogo, capas, IMDb, Rotten Tomatoes e streaming em lotes.</p>
+            <p id="tmdb-status" class="microcopy">O catalogo expandido carrega sozinho; Atualizar renova capas, notas e streaming em lotes.</p>
           </div>
         </details>
       </section>
