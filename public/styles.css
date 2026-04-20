@@ -615,15 +615,16 @@ input[type="range"] {
 
 .reason {
   max-width: 58ch;
-  color: #ddd4c7;
-  font-size: 1.05rem;
-  line-height: 1.55;
+  margin-bottom: 18px;
+  color: #d8d0c4;
+  font-size: 1.02rem;
+  line-height: 1.45;
 }
 
 .meta-line {
   flex-wrap: wrap;
   gap: 8px;
-  margin: 18px 0;
+  margin: 8px 0 0;
 }
 
 .pill {
@@ -636,19 +637,86 @@ input[type="range"] {
   font-weight: 800;
 }
 
+.provider-pill {
+  border-color: rgba(86, 182, 168, .42);
+  color: #c8e7e1;
+}
+
+.fact-grid {
+  display: grid;
+  max-width: 560px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.fact-item {
+  display: grid;
+  gap: 5px;
+  border-left: 2px solid rgba(231, 183, 95, .5);
+  background: rgba(255, 255, 255, .025);
+  padding: 10px 12px;
+}
+
+.fact-item span,
+.section-label,
+.watch-strip span {
+  color: #8d877e;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.fact-item strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: .94rem;
+  line-height: 1.15;
+}
+
+.watch-strip {
+  display: grid;
+  max-width: 560px;
+  gap: 6px;
+  border: 1px solid rgba(86, 182, 168, .28);
+  border-radius: 8px;
+  background: rgba(86, 182, 168, .08);
+  margin: 2px 0 14px;
+  padding: 12px;
+}
+
+.watch-strip strong {
+  color: #dff6f1;
+  font-size: .98rem;
+  line-height: 1.25;
+}
+
+.meta-block {
+  margin-bottom: 18px;
+}
+
 .score-row {
-  max-width: 440px;
+  display: grid;
+  max-width: 360px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   margin: 4px 0 22px;
 }
 
 .score {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #10100f;
+  padding: 12px;
 }
 
 .score strong {
   color: var(--accent);
-  font-size: 1.35rem;
+  font-size: 1.65rem;
+  line-height: .9;
 }
 
 .score span {
@@ -872,6 +940,11 @@ input[type="range"] {
   .more-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .fact-grid,
+  .score-row {
+    max-width: none;
+  }
 }
 
 @media (max-width: 520px) {
@@ -907,6 +980,11 @@ input[type="range"] {
 
   .shortlist {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fact-grid,
+  .score-row {
+    grid-template-columns: 1fr;
   }
 
   .more-grid {

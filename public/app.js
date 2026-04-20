@@ -792,6 +792,14 @@ function ratingAverage(movie) {
   return Math.round((movie.imdb + movie.rt) / 2);
 }
 
+function formatImdbScore(score) {
+  return (Number(score || 0) / 10).toFixed(1).replace(".", ",");
+}
+
+function formatRuntime(minutes) {
+  return minutes ? `${minutes} min` : "n/d";
+}
+
 function normalize(value) {
   return String(value || "")
     .normalize("NFD")
@@ -950,36 +958,13 @@ function filteredMovies() {
 }
 
 function reasonFor(movie) {
-  const providerText = movie.providers?.length ? `, disponivel em ${movie.providers.slice(0, 2).join(" ou ")}` : "";
-
   if (activeMode === "roulette") {
-    const parts = [
-      movie.duration ? `${movie.duration} min` : "duracao a confirmar",
-      `${movie.director}`,
-      `media critica ${ratingAverage(movie)}`,
-      `${movie.country}`
-    ];
-
-    if (profileLoaded && profileAffinity(movie) > 10) {
-      parts.push("bom encaixe com seus favoritos");
-    }
-
-    return `A roleta ignorou humor e sorteou dentro dos seus limites: ${parts.join(", ")}${providerText}. E pronto: agora e apertar play, nao abrir mais quinze abas.`;
+    return "A roleta ignorou o humor e puxou uma opcao forte dentro dos seus filtros. E pronto: agora e apertar play, nao abrir mais quinze abas.";
   }
 
   const mood = moods.find((item) => item.id === activeMood);
-  const parts = [
-    `Combina com "${mood.label.toLowerCase()}"`,
-    movie.duration ? `${movie.duration} min` : "duracao a confirmar",
-    `${movie.director}`,
-    `media critica ${ratingAverage(movie)}`
-  ];
-
-  if (profileLoaded && profileAffinity(movie) > 10) {
-    parts.push("parece conversar com seus favoritos");
-  }
-
-  return `${parts.join(", ")}${providerText}. A sugestao tenta resolver a duvida sem transformar a noite em pesquisa.`;
+  const profileText = profileLoaded && profileAffinity(movie) > 10 ? " Tambem conversa com sinais do seu perfil." : "";
+  return `A sugestao prioriza o clima "${mood.label.toLowerCase()}" sem transformar a noite em pesquisa.${profileText}`;
 }
 
 function selectRouletteMovie(list) {
@@ -1466,7 +1451,9 @@ function renderHero(movie) {
 
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
-  const providerPills = (movie.providers || []).slice(0, 3).map((provider) => `<span class="pill">${provider}</span>`).join("");
+  const providers = (movie.providers || []).slice(0, 3);
+  const providerPills = providers.map((provider) => `<span class="pill provider-pill">${provider}</span>`).join("");
+  const tagPills = movie.tags.slice(0, 3).map((tag) => `<span class="pill">${tag}</span>`).join("");
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
@@ -1480,17 +1467,29 @@ function renderHero(movie) {
       <span class="kicker">${activeMode === "roulette" ? "Roleta escolheu" : "Melhor escolha agora"}</span>
       <h2>${movie.title}</h2>
       <p class="reason">${reasonFor(movie)}</p>
-      <div class="meta-line">
-        <span class="pill">${movie.genre}</span>
-        <span class="pill">${movie.country}</span>
-        <span class="pill">${movie.decade}s</span>
-        <span class="pill">${movie.tags.slice(0, 2).join(" + ")}</span>
-        ${providerPills}
+      <div class="fact-grid">
+        <div class="fact-item"><span>Direcao</span><strong>${movie.director}</strong></div>
+        <div class="fact-item"><span>Duracao</span><strong>${formatRuntime(movie.duration)}</strong></div>
+        <div class="fact-item"><span>Origem</span><strong>${movie.country}</strong></div>
+        <div class="fact-item"><span>Periodo</span><strong>${movie.decade}s</strong></div>
+      </div>
+      ${providers.length ? `
+        <div class="watch-strip">
+          <span>Onde assistir</span>
+          <strong>${providers.join(" / ")}</strong>
+        </div>
+      ` : ""}
+      <div class="meta-block">
+        <span class="section-label">Vibe</span>
+        <div class="meta-line">
+          <span class="pill">${movie.genre}</span>
+          ${tagPills}
+          ${providerPills}
+        </div>
       </div>
       <div class="score-row">
-        <div class="score"><strong>${movie.imdb}</strong><span>${hasOmdb || !hasTmdb ? "IMDb x10" : "TMDb x10"}</span></div>
+        <div class="score"><strong>${formatImdbScore(movie.imdb)}</strong><span>${hasOmdb || !hasTmdb ? "IMDb" : "TMDb"}</span></div>
         <div class="score"><strong>${hasTmdb && !hasOmdb ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${hasTmdb && !hasOmdb ? "votos" : "Rotten Tomatoes"}</span></div>
-        <div class="score"><strong>${Math.round(Math.max(movie.score, 0))}</strong><span>${activeMode === "roulette" ? "peso" : "encaixe"}</span></div>
       </div>
       <div class="rec-actions">
         <button type="button" data-next>
@@ -1500,10 +1499,6 @@ function renderHero(movie) {
         <button type="button" data-seen="${movie.title}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
           Ja vi
-        </button>
-        <button class="secondary" type="button" id="why">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17h.01M12 13a4 4 0 1 0-4-4"/></svg>
-          Por que?
         </button>
       </div>
     </div>
