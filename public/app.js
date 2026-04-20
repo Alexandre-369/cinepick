@@ -1,10 +1,10 @@
 const moods = [
-  { id: "leve", label: "Quero rir", hint: "leve, rapido, sem dever de casa" },
+  { id: "leve", label: "Quero rir", hint: "leve, rápido, sem dever de casa" },
   { id: "comfort", label: "Comfort movie", hint: "aconchego, revisita emocional" },
-  { id: "nostalgia", label: "Nostalgia", hint: "cara de outra epoca" },
-  { id: "complexo", label: "Quero pensar", hint: "Nolan, Kaufman, quebra-cabeca" },
-  { id: "intenso", label: "Algo tenso", hint: "suspense, crime, pressao" },
-  { id: "sensivel", label: "Estou sensivel", hint: "humano, bonito, melancolico" }
+  { id: "nostalgia", label: "Nostalgia", hint: "cara de outra época" },
+  { id: "complexo", label: "Quero pensar", hint: "Nolan, Kaufman, quebra-cabeça" },
+  { id: "intenso", label: "Algo tenso", hint: "suspense, crime, pressão" },
+  { id: "sensivel", label: "Estou sensível", hint: "humano, bonito, melancólico" }
 ];
 
 const genreIds = {
@@ -13,34 +13,131 @@ const genreIds = {
   "Ficcao cientifica": 878,
   "Suspense": 53,
   "Romance": 10749,
-  "Crime": 80
+  "Crime": 80,
+  "Acao": 28,
+  "Animacao": 16,
+  "Familia": 10751,
+  "Terror": 27,
+  "Misterio": 9648
 };
 
 const tmdbGenres = {
   28: "Acao",
+  12: "Aventura",
+  16: "Animacao",
   35: "Comedia",
   80: "Crime",
+  99: "Documentario",
   18: "Drama",
+  14: "Fantasia",
+  36: "Historia",
+  27: "Terror",
+  10402: "Musica",
+  9648: "Misterio",
   878: "Ficcao cientifica",
   53: "Suspense",
-  10749: "Romance"
+  10749: "Romance",
+  10751: "Familia",
+  10752: "Guerra",
+  37: "Faroeste"
 };
 
 const countryCodes = {
+  "Alemanha": "DE",
+  "Argentina": "AR",
+  "Australia": "AU",
   "Brasil": "BR",
+  "Canada": "CA",
+  "Chile": "CL",
+  "China": "CN",
+  "Dinamarca": "DK",
+  "Espanha": "ES",
   "Estados Unidos": "US",
+  "India": "IN",
+  "Ira": "IR",
+  "Irlanda": "IE",
+  "Italia": "IT",
   "Coreia do Sul": "KR",
   "Japao": "JP",
   "Franca": "FR",
+  "Mexico": "MX",
+  "Noruega": "NO",
+  "Suecia": "SE",
   "Reino Unido": "GB"
 };
 
 const tmdbCatalogConfig = {
+  cacheVersion: 2,
   pages: 8,
   limit: 140,
   batchSize: 10,
   omdbEnrichLimit: 36,
   cacheMaxAge: 1000 * 60 * 60 * 8
+};
+
+const displayNames = {
+  Acao: "Ação",
+  Animacao: "Animação",
+  Comedia: "Comédia",
+  Documentario: "Documentário",
+  Familia: "Família",
+  Fantasia: "Fantasia",
+  Ficcao: "Ficção",
+  "Ficcao cientifica": "Ficção científica",
+  Historia: "História",
+  Japao: "Japão",
+  Franca: "França",
+  Australia: "Austrália",
+  Canada: "Canadá",
+  India: "Índia",
+  Ira: "Irã",
+  Italia: "Itália",
+  Mexico: "México",
+  Suecia: "Suécia",
+  Misterio: "Mistério",
+  Musica: "Música",
+  nostalgia: "nostalgia",
+  comfort: "comfort",
+  leve: "leve",
+  complexo: "complexo",
+  intenso: "intenso",
+  sensivel: "sensível"
+};
+
+const moodProfiles = {
+  leve: {
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Musica"],
+    avoidGenres: ["Crime", "Terror", "Suspense", "Guerra"],
+    hardAvoidGenres: ["Crime", "Terror"],
+    requiredPositive: true,
+    longMoviePenalty: 145
+  },
+  comfort: {
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Aventura", "Drama"],
+    avoidGenres: ["Terror", "Guerra", "Crime"],
+    longMoviePenalty: 165
+  },
+  nostalgia: {
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Fantasia", "Drama"],
+    avoidGenres: ["Terror"],
+    oldBonus: true
+  },
+  complexo: {
+    preferredGenres: ["Drama", "Ficcao cientifica", "Misterio", "Suspense", "Crime", "Documentario"],
+    avoidGenres: ["Familia", "Animacao"],
+    keywords: ["tempo", "memoria", "sonho", "identidade", "misterio", "obsessao", "politica"]
+  },
+  intenso: {
+    preferredGenres: ["Suspense", "Crime", "Terror", "Misterio", "Acao", "Guerra"],
+    avoidGenres: ["Familia", "Animacao", "Comedia", "Romance", "Musica"],
+    hardAvoidGenres: ["Familia", "Animacao"],
+    requiredPositive: true
+  },
+  sensivel: {
+    preferredGenres: ["Drama", "Romance", "Familia", "Musica"],
+    avoidGenres: ["Terror", "Acao", "Guerra"],
+    keywords: ["familia", "amor", "luto", "memoria", "infancia", "solidão", "solidao"]
+  }
 };
 
 const curatedMovies = [
@@ -783,9 +880,23 @@ useTmdb = els.useTmdb.checked;
 applyPosterCache();
 
 function durationBucket(minutes) {
+  if (minutes <= 90) return "ate90";
   if (minutes <= 100) return "curto";
   if (minutes <= 130) return "medio";
   return "longo";
+}
+
+function durationMatches(filter, minutes) {
+  if (filter === "qualquer" || !minutes) return true;
+  if (filter === "ate90") return minutes <= 90;
+  if (filter === "curto") return minutes <= 100;
+  if (filter === "medio") return minutes > 100 && minutes <= 130;
+  if (filter === "longo") return minutes > 130;
+  return true;
+}
+
+function displayText(value) {
+  return displayNames[value] || value;
 }
 
 function ratingAverage(movie) {
@@ -808,6 +919,16 @@ function normalize(value) {
     .toLowerCase();
 }
 
+function uniqueNormalized(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = normalize(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function movieKey(title, year) {
   return `${normalize(title)}|${String(year || "").trim()}`;
 }
@@ -824,6 +945,50 @@ function hashString(value) {
 function shuffleNoise(movie) {
   const key = `${sessionSeed}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
   return (hashString(key) % 1000) / 1000;
+}
+
+function movieGenres(movie) {
+  return uniqueNormalized([movie.genre, ...(movie.genres || [])]);
+}
+
+function movieSearchText(movie) {
+  return normalize([
+    movie.title,
+    movie.director,
+    movie.genre,
+    ...(movie.genres || []),
+    ...(movie.vibes || []),
+    ...(movie.tags || []),
+    movie.overview
+  ].join(" "));
+}
+
+function moodScore(movie) {
+  if (activeMode !== "mood") return 0;
+
+  const profile = moodProfiles[activeMood] || {};
+  const genres = movieGenres(movie);
+  const text = movieSearchText(movie);
+  const hasVibe = (movie.vibes || []).includes(activeMood);
+  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
+  const avoidMatches = genres.filter((genre) => (profile.avoidGenres || []).includes(genre)).length;
+  const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
+  let score = 0;
+
+  if (hasVibe) score += 44;
+  score += Math.min(preferredMatches, 3) * 22;
+  score += Math.min(keywordMatches, 3) * 8;
+  score -= avoidMatches * 28;
+  score -= hardAvoidMatches * 34;
+
+  if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
+  if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
+  if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
+  if (activeMood === "nostalgia" && Number(movie.year) && Number(movie.year) >= 2020) score -= 10;
+  if (activeMood === "leve" && ratingAverage(movie) < 62) score -= 8;
+
+  return score;
 }
 
 function applyPosterCache() {
@@ -858,6 +1023,7 @@ function cacheMovieEnhancement(movie) {
 function cacheTmdbCatalog() {
   if (!tmdbMovies.length) return;
   localStorage.setItem("cinepick_tmdb_catalog", JSON.stringify({
+    version: tmdbCatalogConfig.cacheVersion,
     savedAt: Date.now(),
     movies: tmdbMovies
   }));
@@ -866,6 +1032,7 @@ function cacheTmdbCatalog() {
 function restoreTmdbCatalogCache() {
   const cached = JSON.parse(localStorage.getItem("cinepick_tmdb_catalog") || "null");
   if (!cached?.movies?.length) return false;
+  if (cached.version !== tmdbCatalogConfig.cacheVersion) return false;
   if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
 
   tmdbMovies = cached.movies;
@@ -927,18 +1094,18 @@ function scoreMovie(movie) {
   const query = normalize(els.director.value);
   const minRating = Number(els.rating.value);
 
-  if (activeMode === "mood" && movie.vibes.includes(activeMood)) score += 42;
+  score += moodScore(movie);
   if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
   if (profileLoaded) score += profileAffinity(movie);
   if (els.genre.value === movie.genre) score += 15;
-  if (movieDuration(movie) && els.duration.value === durationBucket(movieDuration(movie))) score += 10;
+  if (movieDuration(movie) && durationMatches(els.duration.value, movieDuration(movie)) && els.duration.value !== "qualquer") score += 10;
   if (els.decade.value === movie.decade) score += 10;
   if (els.country.value === movie.country) score += 10;
   if (query && `${movie.director} ${movie.tags.join(" ")}`.toLowerCase().includes(query)) score += 24;
   if (ratingAverage(movie) >= minRating) score += 12;
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
 
-  return score + shuffleNoise(movie) * 9;
+  return score + shuffleNoise(movie) * 18;
 }
 
 function filteredMovies() {
@@ -946,7 +1113,7 @@ function filteredMovies() {
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .filter((movie) => {
       if (els.genre.value !== "qualquer" && movie.genre !== els.genre.value) return false;
-      if (els.duration.value !== "qualquer" && movieDuration(movie) && durationBucket(movieDuration(movie)) !== els.duration.value) return false;
+      if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
       if (els.provider.value !== "qualquer" && !(movie.providers || []).includes(els.provider.value)) return false;
@@ -1104,6 +1271,13 @@ function countryNameFromCode(code) {
   return Object.entries(countryCodes).find(([, value]) => value === code)?.[0] || code || "Internacional";
 }
 
+function genreNamesFromDetails(movie, details) {
+  const ids = movie.genre_ids || [];
+  const mapped = ids.map((id) => tmdbGenres[id]).filter(Boolean);
+  const detailNames = (details.genres || []).map((genre) => tmdbGenres[genre.id] || genre.name).filter(Boolean);
+  return uniqueNormalized([...mapped, ...detailNames]);
+}
+
 function providersFromDetails(details) {
   const br = details["watch/providers"]?.results?.BR || {};
   const providers = [...(br.flatrate || []), ...(br.rent || []), ...(br.buy || [])]
@@ -1112,10 +1286,27 @@ function providersFromDetails(details) {
   return [...new Set(providers)].slice(0, 4);
 }
 
+function tagsForMovie(movie, details, genre, director, country) {
+  const genres = genreNamesFromDetails(movie, details);
+  const overview = normalize(movie.overview || "");
+  const signals = [];
+
+  if (overview.includes("amizade")) signals.push("amizade");
+  if (overview.includes("familia")) signals.push("família");
+  if (overview.includes("investiga")) signals.push("investigação");
+  if (overview.includes("amor") || overview.includes("romance")) signals.push("romance");
+  if (overview.includes("tempo") || overview.includes("memoria")) signals.push("tempo e memória");
+  if (overview.includes("assassin") || overview.includes("crime")) signals.push("crime");
+
+  const blocked = new Set([normalize(genre), normalize(director), normalize(country)]);
+  return uniqueNormalized([...genres, ...signals]).filter((tag) => !blocked.has(normalize(tag))).slice(0, 5);
+}
+
 function mapTmdbMovie(movie, details) {
   const releaseYear = Number((movie.release_date || "").slice(0, 4)) || 0;
   const director = (details.credits?.crew || []).find((person) => person.job === "Director")?.name || "Direcao nao informada";
-  const genre = movie.genre_ids.map((id) => tmdbGenres[id]).find(Boolean) || details.genres?.[0]?.name || "Drama";
+  const genres = genreNamesFromDetails(movie, details);
+  const genre = genres[0] || "Drama";
   const country = countryNameFromCode(details.origin_country?.[0] || movie.original_language?.toUpperCase());
   const vote = Math.round((movie.vote_average || 0) * 10);
 
@@ -1127,13 +1318,15 @@ function mapTmdbMovie(movie, details) {
     duration: details.runtime || 0,
     country,
     director,
+    genres,
+    overview: movie.overview || "",
     imdb: vote,
     rt: Math.min(100, Math.round((movie.popularity || 0) / 2) + 50),
     tmdbVotes: movie.vote_count || 0,
     imdbId: details.external_ids?.imdb_id || "",
     providers: providersFromDetails(details),
-    vibes: inferVibes(genre, movie.overview || ""),
-    tags: [genre, director, country].filter(Boolean),
+    vibes: inferVibes(genres, movie.overview || "", releaseYear),
+    tags: tagsForMovie(movie, details, genre, director, country),
     seen: false,
     favoriteSignal: false,
     posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "",
@@ -1155,14 +1348,16 @@ function colorPairForMovie(seed) {
   return palette[Math.abs(Number(seed) || 0) % palette.length];
 }
 
-function inferVibes(genre, overview) {
-  const text = normalize(`${genre} ${overview}`);
+function inferVibes(genres, overview, year = 0) {
+  const genreList = Array.isArray(genres) ? genres : [genres];
+  const text = normalize(`${genreList.join(" ")} ${overview}`);
   const vibes = new Set();
-  if (text.includes("comedia") || text.includes("familia")) vibes.add("leve");
-  if (text.includes("romance") || text.includes("drama")) vibes.add("sensivel");
-  if (text.includes("crime") || text.includes("suspense") || text.includes("thriller")) vibes.add("intenso");
-  if (text.includes("ficcao") || text.includes("science") || text.includes("misterio")) vibes.add("complexo");
-  if (text.includes("familia") || text.includes("amizade")) vibes.add("comfort");
+  if (text.includes("comedia") || text.includes("familia") || text.includes("animacao") || text.includes("aventura")) vibes.add("leve");
+  if (text.includes("romance") || text.includes("drama") || text.includes("familia")) vibes.add("sensivel");
+  if (text.includes("crime") || text.includes("suspense") || text.includes("thriller") || text.includes("terror") || text.includes("misterio")) vibes.add("intenso");
+  if (text.includes("ficcao") || text.includes("science") || text.includes("misterio") || text.includes("memoria") || text.includes("tempo")) vibes.add("complexo");
+  if (text.includes("familia") || text.includes("amizade") || text.includes("animacao")) vibes.add("comfort");
+  if (Number(year) && Number(year) < 2005) vibes.add("nostalgia");
   return [...(vibes.size ? vibes : new Set(["comfort"]))];
 }
 
@@ -1452,13 +1647,16 @@ function renderHero(movie) {
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
   const providers = (movie.providers || []).slice(0, 3);
-  const providerPills = providers.map((provider) => `<span class="pill provider-pill">${provider}</span>`).join("");
-  const tagPills = movie.tags.slice(0, 3).map((tag) => `<span class="pill">${tag}</span>`).join("");
+  const providerPills = providers.map((provider) => `<span class="pill provider-pill">${displayText(provider)}</span>`).join("");
+  const displayTags = uniqueNormalized([...(movie.tags || []), ...(movie.vibes || [])])
+    .filter((tag) => ![movie.genre, movie.country, movie.director, ...providers].map(normalize).includes(normalize(tag)))
+    .slice(0, 4);
+  const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
       ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
-      <span class="poster-badge">${movie.genre}</span>
+      <span class="poster-badge">${displayText(movie.genre)}</span>
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
       <h2 class="poster-title">${movie.title}</h2>
@@ -1470,7 +1668,7 @@ function renderHero(movie) {
       <div class="fact-grid">
         <div class="fact-item"><span>Direcao</span><strong>${movie.director}</strong></div>
         <div class="fact-item"><span>Duracao</span><strong>${formatRuntime(movie.duration)}</strong></div>
-        <div class="fact-item"><span>Origem</span><strong>${movie.country}</strong></div>
+        <div class="fact-item"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
         <div class="fact-item"><span>Periodo</span><strong>${movie.decade}s</strong></div>
       </div>
       ${providers.length ? `
@@ -1482,7 +1680,7 @@ function renderHero(movie) {
       <div class="meta-block">
         <span class="section-label">Vibe</span>
         <div class="meta-line">
-          <span class="pill">${movie.genre}</span>
+          <span class="pill">${displayText(movie.genre)}</span>
           ${tagPills}
           ${providerPills}
         </div>
@@ -1517,7 +1715,7 @@ function renderShortlist(list) {
         <strong>${movie.title}</strong>
       </div>
       <h3>${movie.title}</h3>
-      <p>${movie.genre} | ${movie.duration ? `${movie.duration} min` : "duracao n/d"}<br>${movie.director}${providerLine}</p>
+      <p>${displayText(movie.genre)} | ${movie.duration ? `${movie.duration} min` : "duração n/d"}<br>${movie.director}${providerLine}</p>
     </article>
   `;
   }).join("");
@@ -1537,7 +1735,7 @@ function renderMoreOptions(list) {
       </div>
       <div>
         <h3>${movie.title}</h3>
-        <p>${movie.genre} | ${movie.country}<br>${movie.director}${providerLine}</p>
+        <p>${displayText(movie.genre)} | ${displayText(movie.country)}<br>${movie.director}${providerLine}</p>
       </div>
     </article>
   `;
@@ -1631,7 +1829,7 @@ els.reroll.addEventListener("click", () => {
     return;
   }
 
-  rerollOffset += 1;
+  rerollOffset += 1 + Math.floor(Math.random() * 7);
   render();
 });
 
