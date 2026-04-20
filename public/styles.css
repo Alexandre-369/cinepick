@@ -492,16 +492,18 @@ input[type="range"] {
 
 .hero-rec {
   display: grid;
-  grid-template-columns: minmax(170px, 240px) minmax(0, 1fr);
-  min-height: 405px;
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  min-height: 0;
+  gap: 26px;
+  align-items: center;
 }
 
 .poster {
   position: relative;
   display: grid;
-  min-height: 370px;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 2 / 3;
   align-content: end;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, .12);
@@ -538,14 +540,18 @@ input[type="range"] {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #111;
 }
 
 .has-official-poster::before {
   z-index: 1;
-  background:
-    linear-gradient(transparent 0 36%, rgba(0, 0, 0, .86)),
-    linear-gradient(90deg, rgba(0, 0, 0, .2), transparent 55%);
+  background: linear-gradient(transparent 0 70%, rgba(0, 0, 0, .58));
+}
+
+.has-official-poster .poster-title,
+.has-official-poster .poster-director {
+  display: none;
 }
 
 .poster > * {
@@ -584,7 +590,7 @@ input[type="range"] {
 
 .poster-director {
   right: -34px;
-  bottom: 96px;
+  bottom: 82px;
   max-width: 220px;
   padding: 7px 12px;
   transform: rotate(-90deg);

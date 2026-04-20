@@ -75,13 +75,16 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 3,
-  pages: 10,
-  limit: 180,
-  batchSize: 12,
+  cacheVersion: 4,
+  limit: 420,
+  batchSize: 14,
   omdbEnrichLimit: 24,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
+
+const catalogDecades = [1970, 1980, 1990, 2000, 2010, 2020];
+const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR"];
+const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
 
 const displayNames = {
   Acao: "Ação",
@@ -1279,6 +1282,99 @@ function tmdbParams() {
   return params;
 }
 
+function baseCatalogParams(overrides = {}) {
+  return new URLSearchParams({
+    include_adult: "false",
+    include_video: "false",
+    language: "pt-BR",
+    sort_by: overrides.sortBy || "vote_count.desc",
+    "vote_count.gte": String(overrides.minVotes || 90),
+    "vote_average.gte": String(overrides.minRating || 5.8),
+    page: String(overrides.page || 1)
+  });
+}
+
+function catalogDiscoveryGroups() {
+  const groups = [];
+
+  catalogSorts.forEach((sortBy) => {
+    const pages = sortBy === "vote_average.desc" ? 2 : 3;
+    for (let page = 1; page <= pages; page += 1) {
+      groups.push(baseCatalogParams({ sortBy, page, minVotes: sortBy === "vote_average.desc" ? 250 : 90 }));
+    }
+  });
+
+  Object.values(genreIds).forEach((genreId) => {
+    for (let page = 1; page <= 2; page += 1) {
+      const params = baseCatalogParams({ sortBy: page === 1 ? "vote_count.desc" : "popularity.desc", page });
+      params.set("with_genres", String(genreId));
+      groups.push(params);
+    }
+  });
+
+  catalogDecades.forEach((decade) => {
+    const params = baseCatalogParams({ sortBy: "vote_count.desc", page: 1, minVotes: 70 });
+    params.set("primary_release_date.gte", `${decade}-01-01`);
+    params.set("primary_release_date.lte", `${decade + 9}-12-31`);
+    groups.push(params);
+  });
+
+  catalogCountries.forEach((countryCode) => {
+    const params = baseCatalogParams({ sortBy: "vote_count.desc", page: 1, minVotes: 50 });
+    params.set("with_origin_country", countryCode);
+    groups.push(params);
+  });
+
+  if (els.genre.value !== "qualquer" && genreIds[els.genre.value]) {
+    const params = baseCatalogParams({ sortBy: "vote_count.desc", page: 1, minVotes: 40 });
+    params.set("with_genres", String(genreIds[els.genre.value]));
+    groups.unshift(params);
+  }
+
+  if (els.country.value !== "qualquer" && countryCodes[els.country.value]) {
+    const params = baseCatalogParams({ sortBy: "vote_count.desc", page: 1, minVotes: 40 });
+    params.set("with_origin_country", countryCodes[els.country.value]);
+    groups.unshift(params);
+  }
+
+  return groups;
+}
+
+function interleaveUniqueMovies(groups) {
+  const seen = new Set();
+  const rows = groups.map((group) => group.filter((movie) => movie.poster_path));
+  const result = [];
+  let cursor = 0;
+  let added = true;
+
+  while (added && result.length < tmdbCatalogConfig.limit) {
+    added = false;
+    rows.forEach((row) => {
+      const movie = row[cursor];
+      if (!movie || seen.has(movie.id)) return;
+      seen.add(movie.id);
+      result.push(movie);
+      added = true;
+    });
+    cursor += 1;
+  }
+
+  return result;
+}
+
+async function fetchCatalogPages(requests) {
+  const pages = [];
+  const batchSize = 8;
+
+  for (let index = 0; index < requests.length; index += batchSize) {
+    const batch = requests.slice(index, index + batchSize);
+    const nextPages = await Promise.all(batch.map((requestParams) => tmdbFetch("/discover/movie", requestParams)));
+    pages.push(...nextPages);
+  }
+
+  return pages;
+}
+
 async function tmdbFetch(path, params = new URLSearchParams()) {
   const headers = tmdbHeaders();
   const url = new URL("/api/tmdb", window.location.origin);
@@ -1454,13 +1550,15 @@ async function loadTmdbCatalog({ auto = false } = {}) {
       if (directorId) params.set("with_crew", directorId);
     }
 
-    const pages = await Promise.all(Array.from({ length: tmdbCatalogConfig.pages }, (_, index) => index + 1).map((page) => {
-      const nextParams = new URLSearchParams(params);
-      nextParams.set("page", String(page));
-      return tmdbFetch("/discover/movie", nextParams);
-    }));
-    const baseResults = pages.flatMap((page) => page.results || []).filter((movie) => movie.poster_path);
-    const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, tmdbCatalogConfig.limit);
+    const catalogRequests = catalogDiscoveryGroups().map((requestParams) => {
+      const nextParams = new URLSearchParams(requestParams);
+      params.forEach((value, key) => {
+        if (key === "with_crew") nextParams.set(key, value);
+      });
+      return nextParams;
+    });
+    const pages = await fetchCatalogPages(catalogRequests);
+    const uniqueResults = interleaveUniqueMovies(pages.map((page) => page.results || []));
     const detailed = [];
 
     for (let index = 0; index < uniqueResults.length; index += tmdbCatalogConfig.batchSize) {
