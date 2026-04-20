@@ -630,6 +630,91 @@ const curatedMovies = [
   }
 ];
 
+const extraCuratedMovies = [
+  ["Moonrise Kingdom", 2012, "Comedia", 94, "Estados Unidos", "Wes Anderson", 78, 93, ["leve", "comfort", "nostalgia"], ["Wes Anderson", "infancia", "aventura"], false],
+  ["The Royal Tenenbaums", 2001, "Comedia", 110, "Estados Unidos", "Wes Anderson", 76, 81, ["comfort", "nostalgia", "sensivel"], ["familia", "estilo", "melancolia"], false],
+  ["Little Miss Sunshine", 2006, "Comedia", 101, "Estados Unidos", "Jonathan Dayton", 78, 91, ["leve", "comfort", "sensivel"], ["familia", "estrada", "indie"], false],
+  ["Palm Springs", 2020, "Comedia", 90, "Estados Unidos", "Max Barbakow", 74, 95, ["leve", "comfort", "complexo"], ["loop temporal", "romance", "rapido"], false],
+  ["Game Night", 2018, "Comedia", 100, "Estados Unidos", "John Francis Daley", 69, 85, ["leve", "intenso"], ["misterio", "grupo", "noite"], false],
+  ["Booksmart", 2019, "Comedia", 102, "Estados Unidos", "Olivia Wilde", 71, 96, ["leve", "comfort"], ["amizade", "juventude", "festa"], false],
+  ["The Big Sick", 2017, "Romance", 120, "Estados Unidos", "Michael Showalter", 75, 98, ["leve", "sensivel", "comfort"], ["romance", "familia", "doenca"], false],
+  ["About Time", 2013, "Romance", 123, "Reino Unido", "Richard Curtis", 78, 70, ["comfort", "sensivel", "nostalgia"], ["tempo", "familia", "romance"], true],
+  ["Paddington 2", 2017, "Comedia", 103, "Reino Unido", "Paul King", 78, 99, ["comfort", "leve"], ["fofo", "familia", "bondade"], true],
+  ["Sing Street", 2016, "Drama", 106, "Irlanda", "John Carney", 79, 95, ["comfort", "nostalgia", "leve"], ["musica", "juventude", "anos 80"], false],
+  ["Once", 2007, "Romance", 86, "Irlanda", "John Carney", 78, 97, ["sensivel", "comfort"], ["musica", "Dublin", "romance"], false],
+  ["Drive My Car", 2021, "Drama", 179, "Japao", "Ryusuke Hamaguchi", 75, 97, ["sensivel", "complexo"], ["luto", "teatro", "conversa"], true],
+  ["Burning", 2018, "Suspense", 148, "Coreia do Sul", "Lee Chang-dong", 75, 95, ["complexo", "intenso"], ["misterio", "obsessao", "ambiguidade"], false],
+  ["Decision to Leave", 2022, "Suspense", 138, "Coreia do Sul", "Park Chan-wook", 73, 94, ["intenso", "sensivel", "complexo"], ["romance", "investigacao", "desejo"], true],
+  ["Past Lives", 2023, "Romance", 106, "Estados Unidos", "Celine Song", 78, 95, ["sensivel", "nostalgia", "comfort"], ["reencontro", "Coreia", "destino"], true],
+  ["Anatomy of a Fall", 2023, "Drama", 151, "Franca", "Justine Triet", 77, 96, ["complexo", "intenso"], ["julgamento", "casamento", "duvida"], true],
+  ["The Worst Person in the World", 2021, "Romance", 128, "Noruega", "Joachim Trier", 77, 96, ["sensivel", "leve", "complexo"], ["vida adulta", "Oslo", "amor"], true],
+  ["Another Round", 2020, "Drama", 117, "Dinamarca", "Thomas Vinterberg", 77, 92, ["sensivel", "leve"], ["amizade", "crise", "bebida"], false],
+  ["The Hunt", 2012, "Drama", 115, "Dinamarca", "Thomas Vinterberg", 83, 93, ["intenso", "sensivel"], ["acusacao", "comunidade", "pressao"], false],
+  ["Force Majeure", 2014, "Drama", 120, "Suecia", "Ruben Ostlund", 72, 94, ["complexo", "sensivel"], ["familia", "vergonha", "casamento"], false],
+  ["Triangle of Sadness", 2022, "Comedia", 147, "Suecia", "Ruben Ostlund", 73, 72, ["complexo", "leve"], ["satira", "classe", "cruzeiro"], false],
+  ["The Banshees of Inisherin", 2022, "Drama", 114, "Irlanda", "Martin McDonagh", 77, 96, ["sensivel", "complexo"], ["amizade", "ilha", "melancolia"], true],
+  ["In Bruges", 2008, "Crime", 107, "Reino Unido", "Martin McDonagh", 79, 85, ["intenso", "leve"], ["crime", "culpa", "humor seco"], false],
+  ["Children of Men", 2006, "Ficcao cientifica", 109, "Reino Unido", "Alfonso Cuaron", 79, 92, ["intenso", "complexo"], ["distopia", "esperanca", "acao"], true],
+  ["Ex Machina", 2014, "Ficcao cientifica", 108, "Reino Unido", "Alex Garland", 77, 92, ["complexo", "intenso"], ["IA", "isolamento", "controle"], false],
+  ["Annihilation", 2018, "Ficcao cientifica", 115, "Estados Unidos", "Alex Garland", 68, 88, ["complexo", "intenso"], ["mutacao", "luto", "estranho"], false],
+  ["Coherence", 2013, "Ficcao cientifica", 89, "Estados Unidos", "James Ward Byrkit", 72, 89, ["complexo", "intenso"], ["baixo orcamento", "multiverso", "jantar"], false],
+  ["Primer", 2004, "Ficcao cientifica", 77, "Estados Unidos", "Shane Carruth", 68, 73, ["complexo"], ["tempo", "quebra-cabeca", "indie"], false],
+  ["The Lobster", 2015, "Comedia", 119, "Irlanda", "Yorgos Lanthimos", 71, 87, ["complexo", "leve"], ["absurdo", "romance", "distopia"], false],
+  ["Poor Things", 2023, "Comedia", 141, "Reino Unido", "Yorgos Lanthimos", 78, 92, ["complexo", "leve"], ["fantasia", "liberdade", "estranho"], true],
+  ["The Favourite", 2018, "Comedia", 120, "Reino Unido", "Yorgos Lanthimos", 75, 93, ["complexo", "intenso"], ["periodo", "poder", "humor acido"], false],
+  ["Lady Bird", 2017, "Drama", 94, "Estados Unidos", "Greta Gerwig", 74, 99, ["comfort", "sensivel", "nostalgia"], ["mae e filha", "adolescencia", "Sacramento"], true],
+  ["Barbie", 2023, "Comedia", 114, "Estados Unidos", "Greta Gerwig", 69, 88, ["leve", "comfort"], ["satira", "pop", "identidade"], false],
+  ["Marriage Story", 2019, "Drama", 137, "Estados Unidos", "Noah Baumbach", 79, 95, ["sensivel", "complexo"], ["divorcio", "familia", "ator"], false],
+  ["Uncut Gems", 2019, "Crime", 135, "Estados Unidos", "Josh Safdie", 74, 91, ["intenso"], ["Adam Sandler", "ansiedade", "apostas"], false],
+  ["Good Time", 2017, "Crime", 102, "Estados Unidos", "Josh Safdie", 73, 91, ["intenso"], ["noite", "fuga", "crime"], false],
+  ["Fargo", 1996, "Crime", 98, "Estados Unidos", "Joel Coen", 81, 94, ["intenso", "leve"], ["neve", "crime", "humor seco"], true],
+  ["No Country for Old Men", 2007, "Crime", 122, "Estados Unidos", "Joel Coen", 82, 93, ["intenso", "complexo"], ["perseguicao", "destino", "tensao"], true],
+  ["The Big Lebowski", 1998, "Comedia", 117, "Estados Unidos", "Joel Coen", 81, 80, ["leve", "comfort"], ["cult", "detetive", "Los Angeles"], false],
+  ["Jackie Brown", 1997, "Crime", 154, "Estados Unidos", "Quentin Tarantino", 75, 88, ["intenso", "comfort"], ["crime", "dialogo", "anos 90"], false],
+  ["Pulp Fiction", 1994, "Crime", 154, "Estados Unidos", "Quentin Tarantino", 89, 92, ["intenso", "leve"], ["cult", "dialogo", "crime"], true],
+  ["Heat", 1995, "Crime", 170, "Estados Unidos", "Michael Mann", 83, 83, ["intenso", "complexo"], ["assalto", "Los Angeles", "profissional"], true],
+  ["Collateral", 2004, "Crime", 120, "Estados Unidos", "Michael Mann", 75, 86, ["intenso"], ["noite", "taxi", "Los Angeles"], false],
+  ["Mad Max: Fury Road", 2015, "Ficcao cientifica", 120, "Australia", "George Miller", 81, 97, ["intenso"], ["acao", "deserto", "energia"], true],
+  ["Dune: Part One", 2021, "Ficcao cientifica", 155, "Estados Unidos", "Denis Villeneuve", 80, 83, ["complexo", "intenso"], ["deserto", "politica", "saga"], false],
+  ["Dune: Part Two", 2024, "Ficcao cientifica", 166, "Estados Unidos", "Denis Villeneuve", 85, 92, ["complexo", "intenso"], ["deserto", "profecia", "saga"], true],
+  ["Moonlight", 2016, "Drama", 111, "Estados Unidos", "Barry Jenkins", 74, 98, ["sensivel", "complexo"], ["identidade", "Miami", "intimo"], true],
+  ["If Beale Street Could Talk", 2018, "Romance", 119, "Estados Unidos", "Barry Jenkins", 71, 95, ["sensivel", "nostalgia"], ["amor", "familia", "injustica"], false],
+  ["Minari", 2020, "Drama", 115, "Estados Unidos", "Lee Isaac Chung", 74, 98, ["sensivel", "comfort"], ["familia", "imigracao", "fazenda"], false],
+  ["The Farewell", 2019, "Drama", 100, "Estados Unidos", "Lulu Wang", 75, 97, ["sensivel", "comfort"], ["familia", "China", "segredo"], false],
+  ["Everything Everywhere All at Once", 2022, "Ficcao cientifica", 139, "Estados Unidos", "Daniel Kwan", 78, 93, ["complexo", "leve", "sensivel"], ["multiverso", "familia", "caos"], true],
+  ["The Zone of Interest", 2023, "Drama", 105, "Reino Unido", "Jonathan Glazer", 74, 93, ["complexo", "intenso"], ["Holocausto", "banalidade", "som"], false],
+  ["Under the Skin", 2013, "Ficcao cientifica", 108, "Reino Unido", "Jonathan Glazer", 63, 84, ["complexo", "intenso"], ["alien", "estranho", "sensorial"], false],
+  ["Roma", 2018, "Drama", 135, "Mexico", "Alfonso Cuaron", 77, 96, ["sensivel", "nostalgia"], ["memoria", "familia", "preto e branco"], true],
+  ["Y Tu Mama Tambien", 2001, "Drama", 106, "Mexico", "Alfonso Cuaron", 77, 92, ["sensivel", "leve", "nostalgia"], ["estrada", "juventude", "desejo"], false],
+  ["Pan's Labyrinth", 2006, "Drama", 118, "Mexico", "Guillermo del Toro", 82, 95, ["complexo", "sensivel"], ["fantasia", "guerra", "conto"], true],
+  ["The Shape of Water", 2017, "Romance", 123, "Estados Unidos", "Guillermo del Toro", 73, 92, ["sensivel", "comfort"], ["fantasia", "monstro", "amor"], false],
+  ["A Separation", 2011, "Drama", 123, "Ira", "Asghar Farhadi", 83, 99, ["complexo", "sensivel"], ["familia", "moral", "julgamento"], true],
+  ["The Salesman", 2016, "Drama", 124, "Ira", "Asghar Farhadi", 77, 96, ["complexo", "intenso"], ["casal", "teatro", "culpa"], false],
+  ["Capernaum", 2018, "Drama", 126, "Libano", "Nadine Labaki", 84, 90, ["sensivel", "intenso"], ["infancia", "sobrevivencia", "rua"], false],
+  ["The Lunchbox", 2013, "Romance", 104, "India", "Ritesh Batra", 78, 97, ["comfort", "sensivel"], ["comida", "cartas", "solidao"], false]
+];
+
+function createCuratedMovie([title, year, genre, duration, country, director, imdb, rt, vibes, tags, favoriteSignal]) {
+  return {
+    title,
+    year,
+    decade: String(Math.floor(year / 10) * 10),
+    genre,
+    duration,
+    country,
+    director,
+    imdb,
+    rt,
+    vibes,
+    tags,
+    seen: false,
+    favoriteSignal,
+    colors: colorPairForMovie(title.length + year + duration)
+  };
+}
+
+curatedMovies.push(...extraCuratedMovies.map(createCuratedMovie));
+
 let activeMood = "comfort";
 let activeMode = "mood";
 let profileLoaded = false;
