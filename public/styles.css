@@ -524,6 +524,15 @@ input[type="range"] {
   content: "";
 }
 
+.poster::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .16), transparent 48%);
+  content: "";
+  pointer-events: none;
+}
+
 .poster-img {
   position: absolute;
   inset: 0;
@@ -601,6 +610,7 @@ input[type="range"] {
   margin: 10px 0 12px;
   font-size: clamp(2.2rem, 5vw, 5.3rem);
   line-height: .88;
+  text-wrap: balance;
 }
 
 .reason {
@@ -648,6 +658,7 @@ input[type="range"] {
 }
 
 .rec-actions {
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -672,6 +683,8 @@ input[type="range"] {
   display: grid;
   gap: 8px;
   min-width: 0;
+  transform: translateY(0);
+  transition: transform .2s ease;
 }
 
 .mini-poster {
@@ -686,6 +699,8 @@ input[type="range"] {
     radial-gradient(circle at 32% 22%, rgba(255,255,255,.22), transparent 24%),
     linear-gradient(150deg, var(--poster-a), var(--poster-b));
   padding: 10px;
+  transform: translateZ(0);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
 .mini-poster::before {
@@ -733,6 +748,16 @@ input[type="range"] {
   color: var(--muted);
   font-size: .72rem;
   line-height: 1.35;
+}
+
+.mini-card:hover {
+  transform: translateY(-4px);
+}
+
+.mini-card:hover .mini-poster {
+  border-color: rgba(231, 183, 95, .7);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .34);
+  transform: scale(1.015);
 }
 
 .more-options {

@@ -722,6 +722,8 @@ let rerollOffset = 0;
 let roulettePick = "";
 let useTmdb = false;
 let tmdbMovies = [];
+const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
+const posterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const profileData = {
   watched: new Set(),
   highRated: new Set(),
@@ -766,6 +768,8 @@ els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
 els.useTmdb.checked = localStorage.getItem("cinepick_use_tmdb") === "true";
 useTmdb = els.useTmdb.checked;
 
+applyPosterCache();
+
 function durationBucket(minutes) {
   if (minutes <= 100) return "curto";
   if (minutes <= 130) return "medio";
@@ -786,6 +790,47 @@ function normalize(value) {
 
 function movieKey(title, year) {
   return `${normalize(title)}|${String(year || "").trim()}`;
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function shuffleNoise(movie) {
+  const key = `${sessionSeed}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
+  return (hashString(key) % 1000) / 1000;
+}
+
+function applyPosterCache() {
+  curatedMovies.forEach((movie) => {
+    const cached = posterCache[movieKey(movie.title, movie.year)];
+    if (!cached) return;
+    movie.posterUrl = cached.posterUrl || movie.posterUrl;
+    movie.backdropUrl = cached.backdropUrl || movie.backdropUrl;
+    movie.imdb = cached.imdb || movie.imdb;
+    movie.rt = cached.rt || movie.rt;
+    movie.tmdbVotes = cached.tmdbVotes || movie.tmdbVotes;
+    movie.imdbId = cached.imdbId || movie.imdbId;
+    movie.source = cached.source || movie.source || "curated-tmdb-poster";
+  });
+}
+
+function cacheMovieEnhancement(movie) {
+  posterCache[movieKey(movie.title, movie.year)] = {
+    posterUrl: movie.posterUrl,
+    backdropUrl: movie.backdropUrl,
+    imdb: movie.imdb,
+    rt: movie.rt,
+    tmdbVotes: movie.tmdbVotes,
+    imdbId: movie.imdbId,
+    source: movie.source
+  };
+  localStorage.setItem("cinepick_poster_cache", JSON.stringify(posterCache));
 }
 
 function getColumn(row, names) {
@@ -836,7 +881,7 @@ function scoreMovie(movie) {
   if (ratingAverage(movie) >= minRating) score += 12;
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
 
-  return score;
+  return score + shuffleNoise(movie) * 9;
 }
 
 function filteredMovies() {
@@ -851,7 +896,7 @@ function filteredMovies() {
       if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
       return true;
     })
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a));
 }
 
 function reasonFor(movie) {
@@ -994,6 +1039,7 @@ function mapTmdbMovie(movie, details) {
     imdb: vote,
     rt: Math.min(100, Math.round((movie.popularity || 0) / 2) + 50),
     tmdbVotes: movie.vote_count || 0,
+    imdbId: details.external_ids?.imdb_id || "",
     vibes: inferVibes(genre, movie.overview || ""),
     tags: [genre, director, country].filter(Boolean),
     seen: false,
@@ -1053,7 +1099,7 @@ async function loadTmdbCatalog() {
     const baseResults = pages.flatMap((page) => page.results || []).filter((movie) => movie.poster_path);
     const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, 42);
     const detailed = await Promise.all(uniqueResults.map(async (movie) => {
-      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits", language: "pt-BR" }));
+      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids", language: "pt-BR" }));
       return mapTmdbMovie(movie, details);
     }));
 
@@ -1065,15 +1111,29 @@ async function loadTmdbCatalog() {
     if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
     els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do TMDb com capas oficiais.`;
     render();
+    return true;
   } catch (error) {
     useTmdb = false;
     els.useTmdb.checked = false;
     localStorage.setItem("cinepick_use_tmdb", "false");
     els.tmdbStatus.textContent = `${error.message} Mantive a curadoria local ativa.`;
     render();
-  } finally {
-    els.loadTmdb.disabled = false;
+    return false;
   }
+}
+
+async function searchTmdbAndHydrate() {
+  els.loadTmdb.disabled = true;
+  els.hydratePosters.disabled = true;
+  const loaded = await loadTmdbCatalog();
+  if (!loaded) {
+    els.loadTmdb.disabled = false;
+    els.hydratePosters.disabled = false;
+    return;
+  }
+  await hydrateCuratedPosters();
+  els.loadTmdb.disabled = false;
+  els.hydratePosters.disabled = false;
 }
 
 async function findPosterForMovie(movie) {
@@ -1088,9 +1148,15 @@ async function findPosterForMovie(movie) {
     || (result.results || []).find((item) => item.poster_path);
 
   if (!match) return false;
+  const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids", language: "pt-BR" }));
   movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
   if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
+  movie.imdb = Math.round((match.vote_average || movie.imdb / 10) * 10);
+  movie.rt = Math.max(movie.rt || 0, Math.min(100, Math.round((match.vote_average || 0) * 10)));
+  movie.tmdbVotes = match.vote_count || movie.tmdbVotes || 0;
+  movie.imdbId = details.external_ids?.imdb_id || movie.imdbId || "";
   movie.source = movie.source || "curated-tmdb-poster";
+  cacheMovieEnhancement(movie);
   return true;
 }
 
@@ -1105,14 +1171,16 @@ async function hydrateCuratedPosters() {
   let attempted = 0;
 
   try {
-    for (const movie of curatedMovies) {
-      if (movie.posterUrl) continue;
-      attempted += 1;
-      if (await findPosterForMovie(movie)) found += 1;
-      if (attempted % 8 === 0) {
-        els.tmdbStatus.textContent = `Capas encontradas: ${found}. Ainda buscando...`;
-        render();
-      }
+    const pending = curatedMovies.filter((movie) => !movie.posterUrl);
+    const batchSize = 6;
+
+    for (let index = 0; index < pending.length; index += batchSize) {
+      const batch = pending.slice(index, index + batchSize);
+      const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
+      attempted += batch.length;
+      found += results.filter(Boolean).length;
+      els.tmdbStatus.textContent = `Capas encontradas: ${found}. Processados: ${attempted} de ${pending.length}.`;
+      render();
     }
 
     els.tmdbStatus.textContent = `${found} capas oficiais adicionadas a curadoria local.`;
@@ -1277,11 +1345,15 @@ function renderHero(movie) {
         <span class="pill">${movie.tags.slice(0, 2).join(" + ")}</span>
       </div>
       <div class="score-row">
-        <div class="score"><strong>${movie.imdb}</strong><span>${movie.source === "tmdb" ? "TMDb x10" : "IMDb x10"}</span></div>
-        <div class="score"><strong>${movie.source === "tmdb" ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${movie.source === "tmdb" ? "votos" : "Rotten Tomatoes"}</span></div>
-        <div class="score"><strong>${Math.max(movie.score, 0)}</strong><span>${activeMode === "roulette" ? "peso" : "encaixe"}</span></div>
+        <div class="score"><strong>${movie.imdb}</strong><span>${movie.source && movie.source.includes("tmdb") ? "TMDb x10" : "IMDb x10"}</span></div>
+        <div class="score"><strong>${movie.source && movie.source.includes("tmdb") ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${movie.source && movie.source.includes("tmdb") ? "votos" : "Rotten Tomatoes"}</span></div>
+        <div class="score"><strong>${Math.round(Math.max(movie.score, 0))}</strong><span>${activeMode === "roulette" ? "peso" : "encaixe"}</span></div>
       </div>
       <div class="rec-actions">
+        <button type="button" data-next>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Proximo
+        </button>
         <button type="button" data-seen="${movie.title}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
           Ja vi
@@ -1384,7 +1456,7 @@ els.profileFiles.addEventListener("change", (event) => {
 });
 
 els.loadTmdb.addEventListener("click", () => {
-  loadTmdbCatalog();
+  searchTmdbAndHydrate();
 });
 
 els.hydratePosters.addEventListener("click", () => {
@@ -1396,7 +1468,7 @@ els.useTmdb.addEventListener("change", () => {
   localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
 
   if (useTmdb && !tmdbMovies.length) {
-    els.tmdbStatus.textContent = "Clique em Carregar para buscar filmes reais do TMDb.";
+    els.tmdbStatus.textContent = "Clique em Buscar para carregar filmes reais do TMDb.";
   }
 
   roulettePick = "";
@@ -1427,6 +1499,11 @@ els.spin.addEventListener("click", () => {
 });
 
 els.hero.addEventListener("click", (event) => {
+  if (event.target.closest("[data-next]")) {
+    els.reroll.click();
+    return;
+  }
+
   const seenButton = event.target.closest("[data-seen]");
   if (!seenButton) return;
   const movie = activeCatalog().find((item) => item.title === seenButton.dataset.seen);

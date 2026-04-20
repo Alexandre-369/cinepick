@@ -149,8 +149,8 @@
 
         <details class="settings-panel data-panel">
           <summary>
-            <span>Base TMDb</span>
-            <small>catalogo real e capas oficiais</small>
+            <span>TMDb / IMDb</span>
+            <small>catalogo, capas e notas</small>
           </summary>
           <div class="profile-sync">
             <label for="tmdb-token">Token de leitura da API</label>
@@ -158,7 +158,7 @@
               <input id="tmdb-token" type="password" placeholder="Opcional se a Vercel tiver TMDB_READ_TOKEN">
               <button id="load-tmdb" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0 0 19 5M19 5v5h-5"/></svg>
-                Carregar
+                Buscar
               </button>
             </div>
             <button class="wide-action" id="hydrate-posters" type="button">
@@ -172,7 +172,7 @@
               </label>
               <span>Usar catalogo TMDb quando disponivel</span>
             </div>
-            <p id="tmdb-status" class="microcopy">Com token no servidor ou no navegador, o app busca filmes reais e capas oficiais.</p>
+            <p id="tmdb-status" class="microcopy">Com token no servidor ou no navegador, Buscar carrega catalogo, hidrata capas e atualiza notas em lotes.</p>
           </div>
         </details>
       </section>
