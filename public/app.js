@@ -87,6 +87,8 @@ const tmdbCatalogConfig = {
 const catalogDecades = [1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR"];
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
+const recommendationHistoryKey = "cinepick_recommendation_history_v1";
+const recommendationHistoryLimit = 90;
 
 const displayNames = {
   Acao: "Ação",
@@ -875,8 +877,10 @@ let roulettePick = "";
 let useTmdb = false;
 let tmdbMovies = [];
 let tmdbLoadInProgress = false;
+let lastRenderedHeroKey = "";
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const posterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
+let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
 const profileData = {
   watched: new Set(),
   highRated: new Set(),
@@ -983,6 +987,10 @@ function movieKey(title, year) {
   return `${normalize(title)}|${String(year || "").trim()}`;
 }
 
+function movieTitleKey(movie) {
+  return normalize(movie.title);
+}
+
 function hashString(value) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -995,6 +1003,11 @@ function hashString(value) {
 function shuffleNoise(movie) {
   const key = `${sessionSeed}|${shuffleSalt}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
   return (hashString(key) % 1000) / 1000;
+}
+
+function seededUnit(movie, scope = "pick") {
+  const key = `${sessionSeed}|${shuffleSalt}|${scope}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
+  return ((hashString(key) % 9999) + 1) / 10000;
 }
 
 function movieGenres(movie) {
@@ -1042,6 +1055,138 @@ function moodScore(movie) {
   if (activeMood === "leve" && ratingAverage(movie) < 62) score -= 8;
 
   return score;
+}
+
+function moodCollectionScore(movie) {
+  if (activeMode !== "mood") return 0;
+
+  const profile = moodProfiles[activeMood] || {};
+  const genres = movieGenres(movie);
+  const hasVibe = (movie.vibes || []).includes(activeMood);
+  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => movieSearchText(movie).includes(normalize(keyword))).length;
+
+  if (hasVibe) return 28;
+  if (preferredMatches || keywordMatches) return 12;
+  return -18;
+}
+
+function recentRecommendationIndex(movie) {
+  const exactKey = movieKey(movie.title, movie.year);
+  const titleKey = movieTitleKey(movie);
+  return recommendationHistory.findIndex((item) => item === exactKey || item.startsWith(`${titleKey}|`));
+}
+
+function isRecentlyRecommended(movie, limit = 28) {
+  const index = recentRecommendationIndex(movie);
+  return index >= 0 && index < limit;
+}
+
+function freshnessPenalty(movie) {
+  const index = recentRecommendationIndex(movie);
+  if (index < 0) return 0;
+  if (index < 3) return 140;
+  if (index < 10) return 82;
+  if (index < 25) return 42;
+  if (index < 45) return 18;
+  return 8;
+}
+
+function rememberRecommendation(movie) {
+  if (!movie) return;
+  const key = movieKey(movie.title, movie.year);
+  if (key === lastRenderedHeroKey) return;
+
+  lastRenderedHeroKey = key;
+  const titleKey = movieTitleKey(movie);
+  recommendationHistory = [key, ...recommendationHistory.filter((item) => item !== key && !item.startsWith(`${titleKey}|`))].slice(0, recommendationHistoryLimit);
+  localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
+}
+
+function diversityPenalty(movie, selected) {
+  return selected.slice(0, 10).reduce((penalty, item, index) => {
+    const distance = Math.max(1, index + 1);
+    const sameGenre = movie.genre === item.genre || movieGenres(movie).some((genre) => movieGenres(item).includes(genre));
+    const sameCountry = movie.country === item.country;
+    const sameDecade = movie.decade === item.decade;
+    return penalty
+      + (sameGenre ? 15 / distance : 0)
+      + (sameCountry ? 10 / distance : 0)
+      + (sameDecade ? 7 / distance : 0);
+  }, 0);
+}
+
+function weightedShuffle(list, scope = "weighted") {
+  if (!list.length) return [];
+  const minScore = Math.min(...list.map((movie) => movie.score));
+
+  return list
+    .map((movie) => {
+      const normalizedScore = Math.max(1, movie.score - minScore + 12);
+      const weight = Math.pow(normalizedScore, 1.18);
+      const random = Math.max(0.0001, seededUnit(movie, scope));
+      return {
+        movie,
+        sortKey: -Math.log(random) / weight
+      };
+    })
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .map((item) => item.movie);
+}
+
+function dedupeByTitle(list) {
+  const byTitle = new Map();
+
+  list.forEach((movie) => {
+    const key = movieTitleKey(movie);
+    const current = byTitle.get(key);
+    if (!current || movie.score > current.score) byTitle.set(key, movie);
+  });
+
+  return [...byTitle.values()];
+}
+
+function diversifyMovies(list, anchors = []) {
+  const selected = [...anchors];
+  const remaining = [...list];
+  const result = [];
+
+  while (remaining.length) {
+    let bestIndex = 0;
+    let bestValue = -Infinity;
+    const windowSize = Math.min(90, remaining.length);
+
+    for (let index = 0; index < windowSize; index += 1) {
+      const movie = remaining[index];
+      const value = movie.score
+        - diversityPenalty(movie, selected)
+        + seededUnit(movie, `diversity-${result.length}`) * 26;
+      if (value > bestValue) {
+        bestValue = value;
+        bestIndex = index;
+      }
+    }
+
+    const [picked] = remaining.splice(bestIndex, 1);
+    selected.unshift(picked);
+    result.push(picked);
+  }
+
+  return result;
+}
+
+function recommendationList() {
+  const rankedAll = filteredMovies();
+  const veryFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 28));
+  const moderatelyFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 12));
+  const ranked = veryFresh.length ? veryFresh : (moderatelyFresh.length ? moderatelyFresh : rankedAll);
+  if (!ranked.length) return [];
+
+  const poolSize = Math.min(Math.max(36, Math.ceil(ranked.length * 0.28)), ranked.length);
+  const pool = ranked.slice(0, poolSize);
+  const [hero = ranked[0]] = weightedShuffle(pool, `hero-${rerollOffset}`);
+  const rest = ranked.filter((movie) => movieKey(movie.title, movie.year) !== movieKey(hero.title, hero.year));
+  return [hero, ...diversifyMovies(rest, [hero])];
 }
 
 function moodMismatch(movie) {
@@ -1122,6 +1267,29 @@ function restoreTmdbCatalogCache() {
   return true;
 }
 
+async function restoreCatalogSeed() {
+  if (tmdbMovies.length) return false;
+
+  try {
+    const response = await fetch("./catalog-seed.json", { cache: "force-cache" });
+    if (!response.ok) return false;
+    const seed = await response.json();
+    if (!seed?.movies?.length) return false;
+
+    tmdbMovies = seed.movies;
+    useTmdb = true;
+    els.useTmdb.checked = true;
+    localStorage.setItem("cinepick_use_tmdb", "true");
+    updateProviderFilter();
+    cacheTmdbCatalog();
+    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do catálogo pré-gerado. Atualizando em segundo plano.`;
+    render();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function updateProviderFilter() {
   const current = els.provider.value;
   const providers = [...new Set(activeCatalog().flatMap((movie) => movie.providers || []))]
@@ -1173,6 +1341,7 @@ function scoreMovie(movie) {
   const minRating = Number(els.rating.value);
 
   score += moodScore(movie);
+  score += moodCollectionScore(movie);
   if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
   if (profileLoaded) score += profileAffinity(movie);
   if (movieGenres(movie).includes(els.genre.value)) score += 15;
@@ -1182,12 +1351,13 @@ function scoreMovie(movie) {
   if (query && `${movie.director} ${movie.tags.join(" ")}`.toLowerCase().includes(query)) score += 24;
   if (ratingAverage(movie) >= minRating) score += 12;
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
+  score -= freshnessPenalty(movie);
 
   return score + shuffleNoise(movie) * 30;
 }
 
 function filteredMovies() {
-  return activeCatalog()
+  const filtered = activeCatalog()
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .filter((movie) => {
       if (activeMode === "mood" && moodMismatch(movie)) return false;
@@ -1199,7 +1369,9 @@ function filteredMovies() {
       if (ratingAverage(movie) < Number(els.rating.value)) return false;
       if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
       return true;
-    })
+    });
+
+  return dedupeByTitle(filtered)
     .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a));
 }
 
@@ -1219,22 +1391,11 @@ function selectRouletteMovie(list) {
     return;
   }
 
-  const weighted = list.map((movie) => ({
-    movie,
-    weight: Math.max(8, ratingAverage(movie) - Number(els.rating.value) + 18 + (profileLoaded ? profileAffinity(movie) : 0))
-  }));
-  const total = weighted.reduce((sum, item) => sum + item.weight, 0);
-  let cursor = Math.random() * total;
-
-  for (const item of weighted) {
-    cursor -= item.weight;
-    if (cursor <= 0) {
-      roulettePick = item.movie.title;
-      return;
-    }
-  }
-
-  roulettePick = weighted[0].movie.title;
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 28));
+  const source = freshList.length ? freshList : list;
+  const roulettePool = diversifyMovies(weightedShuffle(source.slice(0, Math.min(160, source.length)), "roulette-pool"));
+  roulettePick = (roulettePool[0] || list[0]).title;
 }
 
 function tmdbHeaders() {
@@ -1602,6 +1763,15 @@ async function loadTmdbCatalog({ auto = false } = {}) {
     render();
     return true;
   } catch (error) {
+    if (tmdbMovies.length) {
+      useTmdb = true;
+      els.useTmdb.checked = true;
+      localStorage.setItem("cinepick_use_tmdb", "true");
+      els.tmdbStatus.textContent = `${error.message} Mantive o catálogo pré-carregado ativo.`;
+      render();
+      return false;
+    }
+
     useTmdb = false;
     els.useTmdb.checked = false;
     localStorage.setItem("cinepick_use_tmdb", "false");
@@ -1930,19 +2100,19 @@ function renderMoreOptions(list) {
 
 function render() {
   renderMoods();
-  const list = filteredMovies();
+  const list = recommendationList();
   if (activeMode === "roulette") {
     const selected = list.find((movie) => movie.title === roulettePick) || list[0];
-    const rotated = selected ? [selected, ...list.filter((movie) => movie.title !== selected.title)] : [];
+    const rotated = selected ? [selected, ...diversifyMovies(list.filter((movie) => movie.title !== selected.title), [selected])] : [];
     renderHero(rotated[0]);
     renderShortlist(rotated);
+    rememberRecommendation(rotated[0]);
     return;
   }
 
-  const index = list.length ? rerollOffset % list.length : 0;
-  const rotated = [...list.slice(index), ...list.slice(0, index)];
-  renderHero(rotated[0]);
-  renderShortlist(rotated);
+  renderHero(list[0]);
+  renderShortlist(list);
+  rememberRecommendation(list[0]);
 }
 
 els.modeTabs.forEach((button) => {
@@ -2050,6 +2220,7 @@ els.hero.addEventListener("click", (event) => {
 restoreTmdbCatalogCache();
 updateProviderFilter();
 render();
-window.setTimeout(() => {
+window.setTimeout(async () => {
+  await restoreCatalogSeed();
   loadTmdbCatalog({ auto: true });
 }, 700);
