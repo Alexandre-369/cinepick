@@ -15,6 +15,6 @@ It combines mood-based recommendations, objective filters, a roulette mode, Lett
 
 ## Local Use
 
-Open `index.html` directly in a browser.
+Open `public/index.html` directly in a browser.
 
 No build step is required.

@@ -155,12 +155,16 @@
           <div class="profile-sync">
             <label for="tmdb-token">Token de leitura da API</label>
             <div class="sync-row">
-              <input id="tmdb-token" type="password" placeholder="Bearer token do TMDb">
+              <input id="tmdb-token" type="password" placeholder="Opcional se a Vercel tiver TMDB_READ_TOKEN">
               <button id="load-tmdb" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0 0 19 5M19 5v5h-5"/></svg>
                 Carregar
               </button>
             </div>
+            <button class="wide-action" id="hydrate-posters" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 13l2.2-2.2a1 1 0 0 1 1.4 0L18 17M8 9h.01"/></svg>
+              Buscar capas da curadoria
+            </button>
             <div class="toggle-row">
               <label class="switch">
                 <input id="use-tmdb" type="checkbox">
@@ -168,7 +172,7 @@
               </label>
               <span>Usar catalogo TMDb quando disponivel</span>
             </div>
-            <p id="tmdb-status" class="microcopy">Sem token, o app usa a curadoria local. Com token, busca filmes reais seguindo os filtros atuais.</p>
+            <p id="tmdb-status" class="microcopy">Com token no servidor ou no navegador, o app busca filmes reais e capas oficiais.</p>
           </div>
         </details>
       </section>

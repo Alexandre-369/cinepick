@@ -754,6 +754,7 @@ const els = {
   profileStats: document.querySelector("#profile-stats"),
   tmdbToken: document.querySelector("#tmdb-token"),
   loadTmdb: document.querySelector("#load-tmdb"),
+  hydratePosters: document.querySelector("#hydrate-posters"),
   useTmdb: document.querySelector("#use-tmdb"),
   tmdbStatus: document.querySelector("#tmdb-status"),
   reroll: document.querySelector("#reroll"),
@@ -954,10 +955,10 @@ function tmdbParams() {
 
 async function tmdbFetch(path, params = new URLSearchParams()) {
   const headers = tmdbHeaders();
-  if (!headers) throw new Error("Token TMDb ausente.");
-  const url = new URL(`https://api.themoviedb.org/3${path}`);
+  const url = headers ? new URL(`https://api.themoviedb.org/3${path}`) : new URL("/api/tmdb", window.location.origin);
+  if (!headers) url.searchParams.set("path", path);
   params.forEach((value, key) => url.searchParams.set(key, value));
-  const response = await fetch(url, { headers });
+  const response = await fetch(url, headers ? { headers } : {});
   if (!response.ok) throw new Error(`TMDb respondeu ${response.status}.`);
   return response.json();
 }
@@ -1029,12 +1030,10 @@ function inferVibes(genre, overview) {
 
 async function loadTmdbCatalog() {
   const token = els.tmdbToken.value.trim();
-  if (!token) {
-    els.tmdbStatus.textContent = "Cole um token de leitura do TMDb para buscar catalogo real.";
-    return;
+  if (token) {
+    localStorage.setItem("cinepick_tmdb_token", token);
   }
 
-  localStorage.setItem("cinepick_tmdb_token", token);
   els.tmdbStatus.textContent = "Buscando filmes no TMDb...";
   els.loadTmdb.disabled = true;
 
@@ -1074,6 +1073,54 @@ async function loadTmdbCatalog() {
     render();
   } finally {
     els.loadTmdb.disabled = false;
+  }
+}
+
+async function findPosterForMovie(movie) {
+  const params = new URLSearchParams({
+    query: movie.title,
+    language: "pt-BR",
+    include_adult: "false",
+    year: String(movie.year)
+  });
+  const result = await tmdbFetch("/search/movie", params);
+  const match = (result.results || []).find((item) => item.poster_path && Number((item.release_date || "").slice(0, 4)) === Number(movie.year))
+    || (result.results || []).find((item) => item.poster_path);
+
+  if (!match) return false;
+  movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
+  if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
+  movie.source = movie.source || "curated-tmdb-poster";
+  return true;
+}
+
+async function hydrateCuratedPosters() {
+  const token = els.tmdbToken.value.trim();
+  if (token) localStorage.setItem("cinepick_tmdb_token", token);
+
+  els.hydratePosters.disabled = true;
+  els.tmdbStatus.textContent = "Buscando capas oficiais da curadoria...";
+
+  let found = 0;
+  let attempted = 0;
+
+  try {
+    for (const movie of curatedMovies) {
+      if (movie.posterUrl) continue;
+      attempted += 1;
+      if (await findPosterForMovie(movie)) found += 1;
+      if (attempted % 8 === 0) {
+        els.tmdbStatus.textContent = `Capas encontradas: ${found}. Ainda buscando...`;
+        render();
+      }
+    }
+
+    els.tmdbStatus.textContent = `${found} capas oficiais adicionadas a curadoria local.`;
+    render();
+  } catch (error) {
+    els.tmdbStatus.textContent = `${error.message} Configure TMDB_READ_TOKEN na Vercel ou cole um token no campo acima.`;
+  } finally {
+    els.hydratePosters.disabled = false;
   }
 }
 
@@ -1338,6 +1385,10 @@ els.profileFiles.addEventListener("change", (event) => {
 
 els.loadTmdb.addEventListener("click", () => {
   loadTmdbCatalog();
+});
+
+els.hydratePosters.addEventListener("click", () => {
+  hydrateCuratedPosters();
 });
 
 els.useTmdb.addEventListener("change", () => {

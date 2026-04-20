@@ -213,6 +213,7 @@ button:focus-visible {
 
 .sync-row button,
 .roulette-panel button,
+.wide-action,
 .rec-actions button {
   display: inline-flex;
   min-height: 42px;
@@ -223,6 +224,14 @@ button:focus-visible {
   color: #15110a;
   padding: 0 14px;
   font-weight: 900;
+}
+
+.wide-action {
+  width: 100%;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
 }
 
 .mode-panel[hidden] {
