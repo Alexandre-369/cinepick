@@ -113,9 +113,11 @@ const moodProfiles = {
     longMoviePenalty: 145
   },
   comfort: {
-    preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Aventura", "Drama"],
-    avoidGenres: ["Terror", "Guerra", "Crime"],
-    longMoviePenalty: 165
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Drama", "Musica"],
+    avoidGenres: ["Terror", "Guerra", "Crime", "Suspense", "Acao"],
+    hardAvoidGenres: ["Terror", "Crime"],
+    requiredPositive: true,
+    longMoviePenalty: 155
   },
   nostalgia: {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Fantasia", "Drama"],
