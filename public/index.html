@@ -161,9 +161,11 @@
                 Buscar
               </button>
             </div>
+            <label for="omdb-key">Chave OMDb</label>
+            <input id="omdb-key" type="password" placeholder="Opcional se a Vercel tiver OMDB_API_KEY">
             <button class="wide-action" id="hydrate-posters" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 13l2.2-2.2a1 1 0 0 1 1.4 0L18 17M8 9h.01"/></svg>
-              Buscar capas da curadoria
+              Buscar capas e notas da curadoria
             </button>
             <div class="toggle-row">
               <label class="switch">
@@ -172,7 +174,7 @@
               </label>
               <span>Usar catalogo TMDb quando disponivel</span>
             </div>
-            <p id="tmdb-status" class="microcopy">Com token no servidor ou no navegador, Buscar carrega catalogo, hidrata capas e atualiza notas em lotes.</p>
+            <p id="tmdb-status" class="microcopy">Com tokens no servidor ou no navegador, Buscar carrega catalogo, capas, IMDb, Rotten Tomatoes e streaming em lotes.</p>
           </div>
         </details>
       </section>

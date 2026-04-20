@@ -2,7 +2,8 @@ const allowedPaths = [
   /^\/discover\/movie$/,
   /^\/search\/movie$/,
   /^\/search\/person$/,
-  /^\/movie\/\d+$/
+  /^\/movie\/\d+$/,
+  /^\/movie\/\d+\/watch\/providers$/
 ];
 
 module.exports = async function handler(request, response) {

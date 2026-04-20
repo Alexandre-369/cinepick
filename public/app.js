@@ -755,6 +755,7 @@ const els = {
   profileFiles: document.querySelector("#profile-files"),
   profileStats: document.querySelector("#profile-stats"),
   tmdbToken: document.querySelector("#tmdb-token"),
+  omdbKey: document.querySelector("#omdb-key"),
   loadTmdb: document.querySelector("#load-tmdb"),
   hydratePosters: document.querySelector("#hydrate-posters"),
   useTmdb: document.querySelector("#use-tmdb"),
@@ -765,6 +766,7 @@ const els = {
 };
 
 els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
+els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
 els.useTmdb.checked = localStorage.getItem("cinepick_use_tmdb") === "true";
 useTmdb = els.useTmdb.checked;
 
@@ -816,6 +818,7 @@ function applyPosterCache() {
     movie.rt = cached.rt || movie.rt;
     movie.tmdbVotes = cached.tmdbVotes || movie.tmdbVotes;
     movie.imdbId = cached.imdbId || movie.imdbId;
+    movie.providers = cached.providers || movie.providers;
     movie.source = cached.source || movie.source || "curated-tmdb-poster";
   });
 }
@@ -828,6 +831,7 @@ function cacheMovieEnhancement(movie) {
     rt: movie.rt,
     tmdbVotes: movie.tmdbVotes,
     imdbId: movie.imdbId,
+    providers: movie.providers,
     source: movie.source
   };
   localStorage.setItem("cinepick_poster_cache", JSON.stringify(posterCache));
@@ -900,6 +904,8 @@ function filteredMovies() {
 }
 
 function reasonFor(movie) {
+  const providerText = movie.providers?.length ? `, disponivel em ${movie.providers.slice(0, 2).join(" ou ")}` : "";
+
   if (activeMode === "roulette") {
     const parts = [
       movie.duration ? `${movie.duration} min` : "duracao a confirmar",
@@ -912,7 +918,7 @@ function reasonFor(movie) {
       parts.push("bom encaixe com seus favoritos");
     }
 
-    return `A roleta ignorou humor e sorteou dentro dos seus limites: ${parts.join(", ")}. E pronto: agora e apertar play, nao abrir mais quinze abas.`;
+    return `A roleta ignorou humor e sorteou dentro dos seus limites: ${parts.join(", ")}${providerText}. E pronto: agora e apertar play, nao abrir mais quinze abas.`;
   }
 
   const mood = moods.find((item) => item.id === activeMood);
@@ -927,7 +933,7 @@ function reasonFor(movie) {
     parts.push("parece conversar com seus favoritos");
   }
 
-  return `${parts.join(", ")}. A sugestao tenta resolver a duvida sem transformar a noite em pesquisa.`;
+  return `${parts.join(", ")}${providerText}. A sugestao tenta resolver a duvida sem transformar a noite em pesquisa.`;
 }
 
 function selectRouletteMovie(list) {
@@ -958,9 +964,15 @@ function tmdbHeaders() {
   const token = els.tmdbToken.value.trim();
   if (!token) return null;
   return {
-    Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+    "x-tmdb-token": token.startsWith("Bearer ") ? token : `Bearer ${token}`,
     "Content-Type": "application/json;charset=utf-8"
   };
+}
+
+function omdbHeaders() {
+  const key = els.omdbKey.value.trim();
+  if (!key) return {};
+  return { "x-omdb-key": key };
 }
 
 function tmdbParams() {
@@ -1000,12 +1012,52 @@ function tmdbParams() {
 
 async function tmdbFetch(path, params = new URLSearchParams()) {
   const headers = tmdbHeaders();
-  const url = headers ? new URL(`https://api.themoviedb.org/3${path}`) : new URL("/api/tmdb", window.location.origin);
-  if (!headers) url.searchParams.set("path", path);
+  const url = new URL("/api/tmdb", window.location.origin);
+  url.searchParams.set("path", path);
   params.forEach((value, key) => url.searchParams.set(key, value));
-  const response = await fetch(url, headers ? { headers } : {});
-  if (!response.ok) throw new Error(`TMDb respondeu ${response.status}.`);
+  const response = await fetch(url, { headers: headers || {} });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error || `TMDb respondeu ${response.status}.`);
+  }
   return response.json();
+}
+
+async function omdbFetch(movie) {
+  const key = els.omdbKey.value.trim();
+  if (key) localStorage.setItem("cinepick_omdb_key", key);
+
+  const params = new URLSearchParams();
+  if (movie.imdbId) params.set("i", movie.imdbId);
+  if (!movie.imdbId) {
+    params.set("t", movie.title);
+    params.set("y", String(movie.year));
+  }
+
+  const response = await fetch(`/api/omdb?${params.toString()}`, { headers: omdbHeaders() });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  if (payload.Response === "False") return null;
+  return payload;
+}
+
+function rottenTomatoesFromOmdb(payload) {
+  const rating = (payload.Ratings || []).find((item) => item.Source === "Rotten Tomatoes")?.Value || "";
+  return Number(rating.replace("%", "")) || 0;
+}
+
+async function enrichRatingsFromOmdb(movie) {
+  const payload = await omdbFetch(movie);
+  if (!payload) return false;
+
+  const imdb = Math.round((Number(payload.imdbRating) || 0) * 10);
+  const rt = rottenTomatoesFromOmdb(payload);
+  if (imdb) movie.imdb = imdb;
+  if (rt) movie.rt = rt;
+  movie.imdbId = payload.imdbID || movie.imdbId || "";
+  movie.source = movie.source && movie.source.includes("tmdb") ? "tmdb-omdb" : "curated-omdb";
+  cacheMovieEnhancement(movie);
+  return Boolean(imdb || rt);
 }
 
 async function directorIdForQuery(query) {
@@ -1019,6 +1071,14 @@ async function directorIdForQuery(query) {
 
 function countryNameFromCode(code) {
   return Object.entries(countryCodes).find(([, value]) => value === code)?.[0] || code || "Internacional";
+}
+
+function providersFromDetails(details) {
+  const br = details["watch/providers"]?.results?.BR || {};
+  const providers = [...(br.flatrate || []), ...(br.rent || []), ...(br.buy || [])]
+    .map((provider) => provider.provider_name)
+    .filter(Boolean);
+  return [...new Set(providers)].slice(0, 4);
 }
 
 function mapTmdbMovie(movie, details) {
@@ -1040,6 +1100,7 @@ function mapTmdbMovie(movie, details) {
     rt: Math.min(100, Math.round((movie.popularity || 0) / 2) + 50),
     tmdbVotes: movie.vote_count || 0,
     imdbId: details.external_ids?.imdb_id || "",
+    providers: providersFromDetails(details),
     vibes: inferVibes(genre, movie.overview || ""),
     tags: [genre, director, country].filter(Boolean),
     seen: false,
@@ -1099,8 +1160,10 @@ async function loadTmdbCatalog() {
     const baseResults = pages.flatMap((page) => page.results || []).filter((movie) => movie.poster_path);
     const uniqueResults = [...new Map(baseResults.map((movie) => [movie.id, movie])).values()].slice(0, 42);
     const detailed = await Promise.all(uniqueResults.map(async (movie) => {
-      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids", language: "pt-BR" }));
-      return mapTmdbMovie(movie, details);
+      const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids,watch/providers", language: "pt-BR" }));
+      const mapped = mapTmdbMovie(movie, details);
+      await enrichRatingsFromOmdb(mapped).catch(() => false);
+      return mapped;
     }));
 
     tmdbMovies = detailed;
@@ -1148,14 +1211,16 @@ async function findPosterForMovie(movie) {
     || (result.results || []).find((item) => item.poster_path);
 
   if (!match) return false;
-  const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids", language: "pt-BR" }));
+  const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids,watch/providers", language: "pt-BR" }));
   movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
   if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
   movie.imdb = Math.round((match.vote_average || movie.imdb / 10) * 10);
   movie.rt = Math.max(movie.rt || 0, Math.min(100, Math.round((match.vote_average || 0) * 10)));
   movie.tmdbVotes = match.vote_count || movie.tmdbVotes || 0;
   movie.imdbId = details.external_ids?.imdb_id || movie.imdbId || "";
+  movie.providers = providersFromDetails(details);
   movie.source = movie.source || "curated-tmdb-poster";
+  await enrichRatingsFromOmdb(movie).catch(() => false);
   cacheMovieEnhancement(movie);
   return true;
 }
@@ -1326,6 +1391,10 @@ function renderHero(movie) {
     return;
   }
 
+  const hasOmdb = movie.source && movie.source.includes("omdb");
+  const hasTmdb = movie.source && movie.source.includes("tmdb");
+  const providerPills = (movie.providers || []).slice(0, 3).map((provider) => `<span class="pill">${provider}</span>`).join("");
+
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
       ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
@@ -1343,10 +1412,11 @@ function renderHero(movie) {
         <span class="pill">${movie.country}</span>
         <span class="pill">${movie.decade}s</span>
         <span class="pill">${movie.tags.slice(0, 2).join(" + ")}</span>
+        ${providerPills}
       </div>
       <div class="score-row">
-        <div class="score"><strong>${movie.imdb}</strong><span>${movie.source && movie.source.includes("tmdb") ? "TMDb x10" : "IMDb x10"}</span></div>
-        <div class="score"><strong>${movie.source && movie.source.includes("tmdb") ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${movie.source && movie.source.includes("tmdb") ? "votos" : "Rotten Tomatoes"}</span></div>
+        <div class="score"><strong>${movie.imdb}</strong><span>${hasOmdb || !hasTmdb ? "IMDb x10" : "TMDb x10"}</span></div>
+        <div class="score"><strong>${hasTmdb && !hasOmdb ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${hasTmdb && !hasOmdb ? "votos" : "Rotten Tomatoes"}</span></div>
         <div class="score"><strong>${Math.round(Math.max(movie.score, 0))}</strong><span>${activeMode === "roulette" ? "peso" : "encaixe"}</span></div>
       </div>
       <div class="rec-actions">
@@ -1369,7 +1439,9 @@ function renderHero(movie) {
 
 function renderShortlist(list) {
   els.matchCount.textContent = `${list.length} opcoes`;
-  els.shortlist.innerHTML = list.slice(1, 5).map((movie) => `
+  els.shortlist.innerHTML = list.slice(1, 5).map((movie) => {
+    const providerLine = movie.providers?.length ? `<br>${movie.providers.slice(0, 2).join(" / ")}` : "";
+    return `
     <article class="mini-card">
       <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
         ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
@@ -1377,9 +1449,10 @@ function renderShortlist(list) {
         <strong>${movie.title}</strong>
       </div>
       <h3>${movie.title}</h3>
-      <p>${movie.genre} | ${movie.duration ? `${movie.duration} min` : "duracao n/d"}<br>${movie.director}</p>
+      <p>${movie.genre} | ${movie.duration ? `${movie.duration} min` : "duracao n/d"}<br>${movie.director}${providerLine}</p>
     </article>
-  `).join("");
+  `;
+  }).join("");
   renderMoreOptions(list);
 }
 
