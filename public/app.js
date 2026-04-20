@@ -141,6 +141,7 @@ const moodProfiles = {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Musica"],
     avoidGenres: ["Crime", "Terror", "Suspense", "Guerra", "Misterio"],
     hardAvoidGenres: ["Crime", "Terror", "Guerra"],
+    conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
     longMoviePenalty: 145
   },
@@ -148,6 +149,7 @@ const moodProfiles = {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Drama", "Musica"],
     avoidGenres: ["Terror", "Guerra", "Crime", "Suspense", "Acao", "Misterio", "Ficcao cientifica"],
     hardAvoidGenres: ["Terror", "Crime", "Guerra"],
+    conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
     longMoviePenalty: 155
   },
@@ -165,6 +167,7 @@ const moodProfiles = {
     preferredGenres: ["Suspense", "Crime", "Terror", "Misterio", "Acao", "Guerra"],
     avoidGenres: ["Familia", "Animacao", "Comedia", "Romance", "Musica"],
     hardAvoidGenres: ["Familia", "Animacao", "Musica"],
+    conflictingVibes: ["comfort"],
     requiredPositive: true
   },
   sensivel: {
@@ -1040,17 +1043,18 @@ function moodMismatch(movie) {
   const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
   const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
   const hasVibe = (movie.vibes || []).includes(activeMood);
+  const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
 
   if (activeMood === "leve") {
-    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
   }
 
   if (activeMood === "comfort") {
-    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
   }
 
   if (activeMood === "intenso") {
-    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
   }
 
   return false;
@@ -1724,7 +1728,8 @@ function renderHero(movie) {
     movie.director,
     ...providers
   ].map(normalize);
-  const displayTags = uniqueNormalized([...(movie.tags || []), ...(movie.vibes || [])])
+  const visibleVibes = (movie.vibes || []).filter((vibe) => vibe === activeMood || (activeMood === "nostalgia" && vibe === "comfort"));
+  const displayTags = uniqueNormalized([...(movie.tags || []), ...visibleVibes])
     .filter((tag) => !blockedTagKeys.includes(normalize(tag)))
     .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
