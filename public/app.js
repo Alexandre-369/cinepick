@@ -44,7 +44,9 @@ const tmdbGenres = {
 
 const countryCodes = {
   "Alemanha": "DE",
+  "Africa do Sul": "ZA",
   "Argentina": "AR",
+  "Austria": "AT",
   "Australia": "AU",
   "Brasil": "BR",
   "Canada": "CA",
@@ -75,7 +77,7 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 4,
+  cacheVersion: 5,
   limit: 420,
   batchSize: 14,
   omdbEnrichLimit: 24,
@@ -88,7 +90,10 @@ const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc",
 
 const displayNames = {
   Acao: "Ação",
+  "Africa do Sul": "África do Sul",
   Animacao: "Animação",
+  AT: "Áustria",
+  Austria: "Áustria",
   Comedia: "Comédia",
   Documentario: "Documentário",
   Familia: "Família",
@@ -109,6 +114,7 @@ const displayNames = {
   Russia: "Rússia",
   Suecia: "Suécia",
   Tailandia: "Tailândia",
+  ZA: "África do Sul",
   acao: "ação",
   adolescencia: "adolescência",
   acusacao: "acusação",
@@ -1349,13 +1355,14 @@ function interleaveUniqueMovies(groups) {
 
   while (added && result.length < tmdbCatalogConfig.limit) {
     added = false;
-    rows.forEach((row) => {
+    for (const row of rows) {
+      if (result.length >= tmdbCatalogConfig.limit) break;
       const movie = row[cursor];
-      if (!movie || seen.has(movie.id)) return;
+      if (!movie || seen.has(movie.id)) continue;
       seen.add(movie.id);
       result.push(movie);
       added = true;
-    });
+    }
     cursor += 1;
   }
 
