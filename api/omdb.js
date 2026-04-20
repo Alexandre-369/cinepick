@@ -23,7 +23,7 @@ module.exports = async function handler(request, response) {
   try {
     const omdbResponse = await fetch(url);
     const payload = await omdbResponse.json();
-    response.status(omdbResponse.status).json(payload);
+    response.status(200).json(payload);
   } catch (error) {
     response.status(502).json({ error: error.message });
   }
