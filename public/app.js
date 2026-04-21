@@ -2,11 +2,11 @@ const moods = [
   { id: "leve", label: "Quero rir", hint: "leve, rápido, sem dever de casa" },
   { id: "comfort", label: "Comfort movie", hint: "aconchego, seguro, caloroso" },
   { id: "nostalgia", label: "Nostalgia", hint: "cara de outra época" },
-  { id: "complexo", label: "Quero pensar", hint: "Nolan, Kaufman, quebra-cabeça" },
+  { id: "complexo", label: "Reflexivos", hint: "Nolan, Kaufman, quebra-cabeça" },
   { id: "intenso", label: "Algo tenso", hint: "suspense, crime, pressão" },
-  { id: "sensivel", label: "Estou sensível", hint: "humano, bonito, melancólico" },
+  { id: "sensivel", label: "Sensível", hint: "humano, bonito, melancólico" },
   { id: "acao", label: "Quero ação", hint: "ritmo, aventura, adrenalina" },
-  { id: "surpresa", label: "Me surpreenda", hint: "cult, estranho, fora da bolha" }
+  { id: "surpresa", label: "Surpreenda-se", hint: "cult, estranho, fora da bolha" }
 ];
 
 const genreIds = {
@@ -1081,6 +1081,7 @@ let lastRenderedHeroKey = "";
 let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
+let priorityPosterHydrationStarted = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const posterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
@@ -1342,13 +1343,65 @@ function weightedShuffle(list, scope = "weighted") {
     .map((item) => item.movie);
 }
 
+function mergeMovieEnhancements(primary, candidate) {
+  return {
+    ...primary,
+    posterUrl: primary.posterUrl || candidate.posterUrl || "",
+    backdropUrl: primary.backdropUrl || candidate.backdropUrl || "",
+    imdbId: primary.imdbId || candidate.imdbId || "",
+    tmdbVotes: primary.tmdbVotes || candidate.tmdbVotes || 0,
+    providers: primary.providers?.length ? primary.providers : candidate.providers || [],
+    source: primary.source || candidate.source || "",
+    genres: uniqueNormalized([...(primary.genres || []), ...(candidate.genres || [])]),
+    overview: primary.overview || candidate.overview || "",
+    tags: uniqueNormalized([...(primary.tags || []), ...(candidate.tags || [])]).slice(0, 8),
+    vibes: uniqueNormalized([...(primary.vibes || []), ...(candidate.vibes || [])])
+  };
+}
+
+function applyMovieEnhancements(target, enhanced) {
+  target.posterUrl = target.posterUrl || enhanced.posterUrl || "";
+  target.backdropUrl = target.backdropUrl || enhanced.backdropUrl || "";
+  target.imdbId = target.imdbId || enhanced.imdbId || "";
+  target.tmdbVotes = target.tmdbVotes || enhanced.tmdbVotes || 0;
+  target.providers = target.providers?.length ? target.providers : enhanced.providers || [];
+  target.source = target.source || enhanced.source || "";
+  target.genres = uniqueNormalized([...(target.genres || []), ...(enhanced.genres || [])]);
+  target.overview = target.overview || enhanced.overview || "";
+  target.tags = uniqueNormalized([...(target.tags || []), ...(enhanced.tags || [])]).slice(0, 8);
+  target.vibes = uniqueNormalized([...(target.vibes || []), ...(enhanced.vibes || [])]);
+}
+
+function mergeCatalogEnhancements(list) {
+  const byTitle = new Map();
+
+  list.forEach((movie) => {
+    const key = movieTitleKey(movie);
+    const current = byTitle.get(key);
+    if (!current) {
+      byTitle.set(key, movie);
+      return;
+    }
+
+    applyMovieEnhancements(current, mergeMovieEnhancements(current, movie));
+    applyMovieEnhancements(movie, mergeMovieEnhancements(movie, current));
+  });
+}
+
 function dedupeByTitle(list) {
   const byTitle = new Map();
 
   list.forEach((movie) => {
     const key = movieTitleKey(movie);
     const current = byTitle.get(key);
-    if (!current || movie.score > current.score) byTitle.set(key, movie);
+    if (!current) {
+      byTitle.set(key, movie);
+      return;
+    }
+
+    const winner = movie.score > current.score ? movie : current;
+    const detailsSource = movie.score > current.score ? current : movie;
+    byTitle.set(key, mergeMovieEnhancements(winner, detailsSource));
   });
 
   return [...byTitle.values()];
@@ -1608,7 +1661,9 @@ function wasWatched(movie) {
 }
 
 function activeCatalog() {
-  return useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
+  const catalog = useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
+  mergeCatalogEnhancements(catalog);
+  return catalog;
 }
 
 function movieDuration(movie) {
@@ -2216,6 +2271,43 @@ async function hydrateCuratedPosters() {
   }
 }
 
+async function hydratePriorityPosters() {
+  if (priorityPosterHydrationStarted) return;
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  if (staticLocalhost) return;
+  priorityPosterHydrationStarted = true;
+
+  const candidates = filteredMovies()
+    .filter((movie) => !movie.posterUrl)
+    .slice(0, 24);
+  if (!candidates.length) return;
+
+  const previousStatus = els.tmdbStatus.textContent;
+  let found = 0;
+
+  try {
+    for (let index = 0; index < candidates.length; index += 4) {
+      const batch = candidates.slice(index, index + 4);
+      const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
+      found += results.filter(Boolean).length;
+      if (found) {
+        updateProviderFilter();
+        render();
+      }
+    }
+
+    if (found) {
+      els.tmdbStatus.textContent = `${found} capas oficiais adicionadas automaticamente aos filmes em destaque.`;
+      render();
+      return;
+    }
+
+    els.tmdbStatus.textContent = previousStatus;
+  } catch {
+    els.tmdbStatus.textContent = previousStatus;
+  }
+}
+
 function setMode(mode) {
   activeMode = mode;
   rerollOffset = 0;
@@ -2599,4 +2691,5 @@ window.setTimeout(async () => {
   if (!restoredInitialCatalog && tmdbMovies.length < 200) {
     loadTmdbCatalog({ auto: true });
   }
+  hydratePriorityPosters();
 }, 700);
