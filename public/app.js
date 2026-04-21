@@ -1,10 +1,12 @@
 const moods = [
   { id: "leve", label: "Quero rir", hint: "leve, rápido, sem dever de casa" },
-  { id: "comfort", label: "Comfort movie", hint: "aconchego, revisita emocional" },
+  { id: "comfort", label: "Comfort movie", hint: "aconchego, seguro, caloroso" },
   { id: "nostalgia", label: "Nostalgia", hint: "cara de outra época" },
   { id: "complexo", label: "Quero pensar", hint: "Nolan, Kaufman, quebra-cabeça" },
   { id: "intenso", label: "Algo tenso", hint: "suspense, crime, pressão" },
-  { id: "sensivel", label: "Estou sensível", hint: "humano, bonito, melancólico" }
+  { id: "sensivel", label: "Estou sensível", hint: "humano, bonito, melancólico" },
+  { id: "acao", label: "Quero ação", hint: "ritmo, aventura, adrenalina" },
+  { id: "surpresa", label: "Me surpreenda", hint: "cult, estranho, fora da bolha" }
 ];
 
 const genreIds = {
@@ -77,7 +79,7 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 6,
+  cacheVersion: 7,
   limit: 420,
   batchSize: 14,
   omdbEnrichLimit: 24,
@@ -144,7 +146,8 @@ const displayNames = {
   leve: "leve",
   complexo: "complexo",
   intenso: "intenso",
-  sensivel: "sensível"
+  sensivel: "sensível",
+  surpresa: "surpresa"
 };
 
 const moodProfiles = {
@@ -157,9 +160,9 @@ const moodProfiles = {
     longMoviePenalty: 145
   },
   comfort: {
-    preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Drama", "Musica"],
-    avoidGenres: ["Terror", "Guerra", "Crime", "Suspense", "Acao", "Misterio", "Ficcao cientifica"],
-    hardAvoidGenres: ["Terror", "Crime", "Guerra"],
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Musica", "Fantasia"],
+    avoidGenres: ["Drama", "Terror", "Guerra", "Crime", "Suspense", "Acao", "Misterio", "Ficcao cientifica"],
+    hardAvoidGenres: ["Terror", "Crime", "Guerra", "Suspense"],
     conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
     longMoviePenalty: 155
@@ -185,6 +188,20 @@ const moodProfiles = {
     preferredGenres: ["Drama", "Romance", "Familia", "Musica"],
     avoidGenres: ["Terror", "Acao", "Guerra"],
     keywords: ["familia", "amor", "luto", "memoria", "infancia", "solidão", "solidao"]
+  },
+  acao: {
+    preferredGenres: ["Acao", "Aventura", "Ficcao cientifica", "Fantasia", "Faroeste"],
+    avoidGenres: ["Romance", "Musica", "Documentario"],
+    hardAvoidGenres: ["Documentario"],
+    keywords: ["perseguicao", "aventura", "guerra", "fuga", "assalto", "energia", "missao"],
+    longMoviePenalty: 170
+  },
+  surpresa: {
+    preferredGenres: ["Documentario", "Ficcao cientifica", "Fantasia", "Misterio", "Terror", "Drama", "Comedia"],
+    avoidGenres: ["Familia"],
+    conflictingVibes: ["comfort"],
+    keywords: ["estranho", "surreal", "cult", "identidade", "sonho", "metalinguagem", "sensorial", "politica", "obsessao"],
+    surpriseMode: true
   }
 };
 
@@ -1056,6 +1073,11 @@ function moodScore(movie) {
   if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
   if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 16;
   if (activeMood === "leve" && ratingAverage(movie) < 62) score -= 8;
+  if (activeMood === "surpresa") {
+    if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
+    if (ratingAverage(movie) >= 78) score += 8;
+    if ((movie.providers || []).length) score += 4;
+  }
 
   return score;
 }
@@ -1206,10 +1228,14 @@ function buildRecommendationQueue(rankedAll, scope = "queue") {
   const ranked = veryFresh.length ? veryFresh : (moderatelyFresh.length ? moderatelyFresh : rankedAll);
   if (!ranked.length) return [];
 
-  const poolSize = Math.min(Math.max(44, Math.ceil(ranked.length * 0.36)), ranked.length);
+  const profile = moodProfiles[activeMood] || {};
+  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.68 : 0.48;
+  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 90 : 58;
+  const poolSize = Math.min(Math.max(minimumPool, Math.ceil(ranked.length * spread)), ranked.length);
   const frontPool = weightedShuffle(ranked.slice(0, poolSize), `${scope}-front`);
-  const tail = weightedShuffle(ranked.slice(poolSize), `${scope}-tail`);
-  return diversifyMovies([...frontPool, ...tail]);
+  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 90)), `${scope}-middle`);
+  const tail = weightedShuffle(ranked.slice(poolSize + 90), `${scope}-tail`);
+  return diversifyMovies([...frontPool, ...middle, ...tail]);
 }
 
 function movieFromKey(list, key) {
@@ -1276,6 +1302,10 @@ function moodMismatch(movie) {
 
   if (activeMood === "intenso") {
     return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+  }
+
+  if (activeMood === "acao") {
+    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
   }
 
   return false;
@@ -1406,6 +1436,7 @@ function scoreMovie(movie) {
   let score = 0;
   const query = normalize(els.director.value);
   const minRating = Number(els.rating.value);
+  const profile = moodProfiles[activeMood] || {};
 
   score += moodScore(movie);
   score += moodCollectionScore(movie);
@@ -1417,10 +1448,14 @@ function scoreMovie(movie) {
   if (els.country.value === movie.country) score += 10;
   if (query && `${movie.director} ${movie.tags.join(" ")}`.toLowerCase().includes(query)) score += 24;
   if (ratingAverage(movie) >= minRating) score += 12;
+  if (activeMode === "mood" && profile.surpriseMode) {
+    score += seededUnit(movie, "surprise-score") * 38;
+    if (ratingAverage(movie) > 88) score -= 12;
+  }
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
   score -= freshnessPenalty(movie);
 
-  return score + shuffleNoise(movie) * 30;
+  return score + shuffleNoise(movie) * (profile.surpriseMode ? 48 : 34);
 }
 
 function filteredMovies() {
@@ -1761,6 +1796,8 @@ function inferVibes(genres, overview, year = 0) {
   if (hasHeavyGenre || text.includes("misterio")) vibes.add("intenso");
   if (text.includes("ficcao") || text.includes("science") || text.includes("misterio") || text.includes("memoria") || text.includes("tempo")) vibes.add("complexo");
   if (text.includes("familia") || text.includes("amizade") || text.includes("animacao") || text.includes("romance")) vibes.add("comfort");
+  if (text.includes("acao") || text.includes("aventura") || text.includes("faroeste") || text.includes("guerra")) vibes.add("acao");
+  if (text.includes("documentario") || text.includes("estranho") || text.includes("surreal") || text.includes("misterio") || text.includes("terror")) vibes.add("surpresa");
   if (Number(year) && Number(year) < 2005) vibes.add("nostalgia");
   return [...(vibes.size ? vibes : new Set(["comfort"]))];
 }
@@ -2077,8 +2114,13 @@ function renderHero(movie) {
     ...providers
   ].map(normalize);
   const visibleVibes = (movie.vibes || []).filter((vibe) => vibe === activeMood || (activeMood === "nostalgia" && vibe === "comfort"));
+  const hiddenForMood = new Set();
+  if (activeMood === "acao") ["Familia", "família", "comfort", "sensível"].forEach((tag) => hiddenForMood.add(normalize(tag)));
+  if (activeMood === "surpresa") ["Familia", "família", "comfort"].forEach((tag) => hiddenForMood.add(normalize(tag)));
+  if (activeMood === "leve" || activeMood === "comfort") ["crime", "intenso", "terror"].forEach((tag) => hiddenForMood.add(normalize(tag)));
   const displayTags = uniqueNormalized([...(movie.tags || []), ...visibleVibes])
     .filter((tag) => !blockedTagKeys.includes(normalize(tag)))
+    .filter((tag) => !hiddenForMood.has(normalize(tag)))
     .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
 
