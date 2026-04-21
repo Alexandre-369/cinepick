@@ -2158,7 +2158,7 @@ function renderHero(movie) {
       </div>
       <div class="score-row">
         <div class="score"><strong>${formatImdbScore(movie.imdb)}</strong><span>${hasOmdb || !hasTmdb ? "IMDb" : "TMDb"}</span></div>
-        <div class="score"><strong>${hasTmdb && !hasOmdb ? movie.tmdbVotes : `${movie.rt}%`}</strong><span>${hasTmdb && !hasOmdb ? "votos" : "Rotten Tomatoes"}</span></div>
+        <div class="score"><strong>${movie.rt}%</strong><span>Rotten Tomatoes</span></div>
       </div>
       <div class="rec-actions">
         <button type="button" data-next>
