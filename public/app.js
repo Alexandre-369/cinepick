@@ -77,7 +77,7 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 5,
+  cacheVersion: 6,
   limit: 420,
   batchSize: 14,
   omdbEnrichLimit: 24,
@@ -1767,6 +1767,8 @@ function inferVibes(genres, overview, year = 0) {
 
 async function loadTmdbCatalog({ auto = false } = {}) {
   if (tmdbLoadInProgress) return false;
+  const previousCatalog = [...tmdbMovies];
+  const canRenderProgressively = previousCatalog.length < 200;
 
   const token = els.tmdbToken.value.trim();
   if (token) {
@@ -1808,17 +1810,19 @@ async function loadTmdbCatalog({ auto = false } = {}) {
       }));
 
       detailed.push(...nextMovies);
-      tmdbMovies = detailed;
-      useTmdb = true;
-      els.useTmdb.checked = true;
-      localStorage.setItem("cinepick_use_tmdb", "true");
-      updateProviderFilter();
-      cacheTmdbCatalog();
-      els.tmdbStatus.textContent = `${tmdbMovies.length} de ${uniqueResults.length} filmes carregados com capas e streaming.`;
-      render();
+      if (canRenderProgressively) {
+        tmdbMovies = detailed;
+        useTmdb = true;
+        els.useTmdb.checked = true;
+        localStorage.setItem("cinepick_use_tmdb", "true");
+        updateProviderFilter();
+        cacheTmdbCatalog();
+        render();
+      }
+      els.tmdbStatus.textContent = `${detailed.length} de ${uniqueResults.length} filmes carregados com capas e streaming.`;
     }
 
-    tmdbMovies = detailed;
+    tmdbMovies = detailed.length >= previousCatalog.length ? detailed : previousCatalog;
     useTmdb = true;
     els.useTmdb.checked = true;
     localStorage.setItem("cinepick_use_tmdb", "true");
@@ -2295,10 +2299,12 @@ els.hero.addEventListener("click", (event) => {
   render();
 });
 
-restoreTmdbCatalogCache();
+const restoredInitialCatalog = restoreTmdbCatalogCache();
 updateProviderFilter();
 render();
 window.setTimeout(async () => {
   await restoreCatalogSeed();
-  loadTmdbCatalog({ auto: true });
+  if (!restoredInitialCatalog && tmdbMovies.length < 200) {
+    loadTmdbCatalog({ auto: true });
+  }
 }, 700);
