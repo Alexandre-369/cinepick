@@ -47,6 +47,7 @@ const tmdbGenres = {
 const countryCodes = {
   "Alemanha": "DE",
   "Africa do Sul": "ZA",
+  "Arabia Saudita": "SA",
   "Argentina": "AR",
   "Austria": "AT",
   "Australia": "AU",
@@ -54,32 +55,50 @@ const countryCodes = {
   "Canada": "CA",
   "Chile": "CL",
   "China": "CN",
+  "Costa do Marfim": "CI",
   "Dinamarca": "DK",
+  "Egito": "EG",
   "Espanha": "ES",
   "Estados Unidos": "US",
   "Hong Kong": "HK",
   "India": "IN",
   "Ira": "IR",
+  "Indonesia": "ID",
   "Irlanda": "IE",
   "Italia": "IT",
+  "Israel": "IL",
+  "Jordania": "JO",
+  "Lesoto": "LS",
+  "Libano": "LB",
   "Coreia do Sul": "KR",
   "Japao": "JP",
   "Franca": "FR",
+  "Macedonia": "MK",
+  "Mali": "ML",
+  "Marrocos": "MA",
+  "Mauritania": "MR",
   "Mexico": "MX",
   "Noruega": "NO",
+  "Palestina": "PS",
   "Paises Baixos": "NL",
+  "Peru": "PE",
   "Polonia": "PL",
   "Portugal": "PT",
+  "Quenia": "KE",
+  "Romenia": "RO",
   "Russia": "RU",
+  "Senegal": "SN",
   "Suecia": "SE",
   "Tailandia": "TH",
   "Taiwan": "TW",
+  "Tunisia": "TN",
   "Turquia": "TR",
+  "Vietna": "VN",
   "Reino Unido": "GB"
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 7,
+  cacheVersion: 8,
   limit: 420,
   batchSize: 14,
   omdbEnrichLimit: 24,
@@ -96,10 +115,13 @@ const displayNames = {
   Acao: "Ação",
   "Africa do Sul": "África do Sul",
   Animacao: "Animação",
+  "Arabia Saudita": "Arábia Saudita",
   AT: "Áustria",
   Austria: "Áustria",
   Comedia: "Comédia",
+  "Costa do Marfim": "Costa do Marfim",
   Documentario: "Documentário",
+  Egito: "Egito",
   Familia: "Família",
   Fantasia: "Fantasia",
   Ficcao: "Ficção",
@@ -110,37 +132,81 @@ const displayNames = {
   Australia: "Austrália",
   Canada: "Canadá",
   India: "Índia",
+  Indonesia: "Indonésia",
   Ira: "Irã",
   Italia: "Itália",
+  Israel: "Israel",
+  Jordania: "Jordânia",
+  Libano: "Líbano",
+  Lesoto: "Lesoto",
+  Macedonia: "Macedônia",
+  Mali: "Mali",
+  Marrocos: "Marrocos",
+  Mauritania: "Mauritânia",
   Mexico: "México",
+  Palestina: "Palestina",
   "Paises Baixos": "Países Baixos",
+  Peru: "Peru",
   Polonia: "Polônia",
+  Quenia: "Quênia",
+  Romenia: "Romênia",
   Russia: "Rússia",
+  Senegal: "Senegal",
   Suecia: "Suécia",
   Tailandia: "Tailândia",
+  Tunisia: "Tunísia",
+  Vietna: "Vietnã",
   ZA: "África do Sul",
   acao: "ação",
   adolescencia: "adolescência",
+  "animacao adulta": "animação adulta",
   acusacao: "acusação",
+  animacao: "animação",
+  classico: "clássico",
+  colonizacao: "colonização",
+  corrupcao: "corrupção",
   comedia: "comédia",
+  diaspora: "diáspora",
+  documentario: "documentário",
   doenca: "doença",
+  duvida: "dúvida",
+  epico: "épico",
+  estacao: "estação",
   familia: "família",
   ficcao: "ficção",
   "ficcao cientifica": "ficção científica",
+  infancia: "infância",
   imigracao: "imigração",
   injustica: "injustiça",
   investigacao: "investigação",
   mae: "mãe",
   "mae e filha": "mãe e filha",
   memoria: "memória",
+  migracao: "migração",
   Misterio: "Mistério",
   misterio: "mistério",
   Musica: "Música",
   musica: "música",
+  ocupacao: "ocupação",
+  operistico: "operístico",
+  politica: "política",
+  politico: "político",
+  "pos-colonial": "pós-colonial",
   perseguicao: "perseguição",
+  predio: "prédio",
   pressao: "pressão",
+  prisao: "prisão",
+  refugio: "refúgio",
+  revolucao: "revolução",
+  rapido: "rápido",
+  satira: "sátira",
+  sertao: "sertão",
+  silencio: "silêncio",
   solidao: "solidão",
+  sobrevivencia: "sobrevivência",
   tensao: "tensão",
+  tradicao: "tradição",
+  violencia: "violência",
   nostalgia: "nostalgia",
   comfort: "comfort",
   leve: "leve",
@@ -203,6 +269,63 @@ const moodProfiles = {
     keywords: ["estranho", "surreal", "cult", "identidade", "sonho", "metalinguagem", "sensorial", "politica", "obsessao"],
     surpriseMode: true
   }
+};
+
+const moodReasonPools = {
+  leve: [
+    ({ genre, tag }) => `Para rir sem virar tarefa, a escolha puxa ${genre.toLowerCase()} com ${tag}.`,
+    ({ director, tagPair }) => `${director} entra pelo lado mais solto, apoiado em ${tagPair}.`,
+    ({ decade, country, genre }) => `O clima leve vem de ${genre.toLowerCase()} dos ${decade}, com sabor de ${country}.`,
+    ({ tag, minutes }) => `Boa para uma sessão sem peso: ${tag}, ${minutes}, e pouca vontade de pausar para pesquisar contexto.`
+  ],
+  comfort: [
+    ({ genre, tag }) => `O conforto aqui nasce de ${genre.toLowerCase()} com ${tag}, mais acolhimento do que tensão.`,
+    ({ director, country }) => `${director} segura uma sessão de ${country} com jeito de filme para baixar a guarda.`,
+    ({ tagPair, decade }) => `Tem cara de reencontro: ${tagPair}, recorte dos ${decade}, e ritmo para ficar dentro da história.`,
+    ({ genre, minutes }) => `É uma aposta de ${genre.toLowerCase()} em ${minutes}, boa quando a noite pede menos atrito.`
+  ],
+  nostalgia: [
+    ({ decade, country, tag }) => `A nostalgia vem pelo recorte dos ${decade}, por ${country}, e por esse detalhe de ${tag}.`,
+    ({ director, decade }) => `${director} traz uma textura de ${decade} que ajuda o filme a parecer lembrança, não tendência.`,
+    ({ genre, tagPair }) => `Vai no passado sem museu: ${genre.toLowerCase()} com ${tagPair}.`,
+    ({ country, director }) => `A graça é voltar a outro tempo pelo olhar de ${director}, com origem em ${country}.`
+  ],
+  complexo: [
+    ({ director, tagPair }) => `Para pensar, a força está em ${director} cruzando ${tagPair}.`,
+    ({ genre, decade, scoreText }) => `A base é ${genre.toLowerCase()} dos ${decade}, ${scoreText}, com camadas suficientes para render conversa depois.`,
+    ({ country, tag }) => `A escolha abre uma porta menos óbvia: ${country}, ${tag}, e mais pergunta do que resposta pronta.`,
+    ({ director, genre }) => `${director} faz ${genre.toLowerCase()} com densidade, bom para quando a cabeça quer mastigar o filme.`
+  ],
+  intenso: [
+    ({ genre, tag }) => `Para tensão, a recomendação mira ${genre.toLowerCase()} com ${tag} no centro.`,
+    ({ director, minutes }) => `${director} entrega pressão em ${minutes}, sem depender só de barulho ou susto.`,
+    ({ country, decade, tagPair }) => `O peso vem de ${country}, dos ${decade}, misturando ${tagPair}.`,
+    ({ scoreText, genre }) => `É uma escolha ${scoreText} de ${genre.toLowerCase()}, boa para entrar em modo alerta.`
+  ],
+  sensivel: [
+    ({ tagPair, director }) => `Para um humor mais sensível, ${director} trabalha ${tagPair} sem pressa.`,
+    ({ genre, country }) => `A aposta é ${genre.toLowerCase()} de ${country}, com atenção ao humano antes do espetáculo.`,
+    ({ decade, tag }) => `O recorte dos ${decade} ajuda ${tag} a soar íntimo em vez de calculado.`,
+    ({ minutes, scoreText }) => `Cabe numa sessão de ${minutes} e chega ${scoreText}, com espaço para silêncio e afeto.`
+  ],
+  acao: [
+    ({ genre, tag }) => `Para ação, o impulso vem de ${genre.toLowerCase()} com ${tag} puxando o ritmo.`,
+    ({ director, minutes }) => `${director} aparece como boa escolha para energia em ${minutes}.`,
+    ({ country, tagPair }) => `A recomendação foge do piloto automático: ${country}, ${tagPair}, e movimento real.`,
+    ({ decade, scoreText }) => `Tem pulso de ${decade} e chega ${scoreText}, então a rotação não depende só de explosão.`
+  ],
+  surpresa: [
+    ({ country, director }) => `A surpresa está em sair da rota comum: ${country}, por ${director}.`,
+    ({ genre, tagPair }) => `Vai pelo desvio interessante: ${genre.toLowerCase()} com ${tagPair}.`,
+    ({ decade, tag }) => `O ponto fora da curva é esse encontro entre ${decade} e ${tag}.`,
+    ({ scoreText, director }) => `${director} entra como aposta menos previsível, mas ${scoreText}.`
+  ],
+  roulette: [
+    ({ genre, director, country }) => `A roleta puxou ${genre.toLowerCase()} de ${country}, dirigido por ${director}, sem consultar o humor do dia.`,
+    ({ decade, tagPair }) => `O giro caiu nos ${decade} e trouxe ${tagPair}; agora a graça é aceitar o desvio.`,
+    ({ director, scoreText }) => `Saiu uma escolha de ${director}, ${scoreText}, para cortar a indecisão pela raiz.`,
+    ({ country, tag }) => `A roleta foi buscar ${country} e ${tag}; é o tipo de acaso que ainda tem critério.`
+  ]
 };
 
 const curatedMovies = [
@@ -861,7 +984,67 @@ const extraCuratedMovies = [
   ["A Separation", 2011, "Drama", 123, "Ira", "Asghar Farhadi", 83, 99, ["complexo", "sensivel"], ["familia", "moral", "julgamento"], true],
   ["The Salesman", 2016, "Drama", 124, "Ira", "Asghar Farhadi", 77, 96, ["complexo", "intenso"], ["casal", "teatro", "culpa"], false],
   ["Capernaum", 2018, "Drama", 126, "Libano", "Nadine Labaki", 84, 90, ["sensivel", "intenso"], ["infancia", "sobrevivencia", "rua"], false],
-  ["The Lunchbox", 2013, "Romance", 104, "India", "Ritesh Batra", 78, 97, ["comfort", "sensivel"], ["comida", "cartas", "solidao"], false]
+  ["The Lunchbox", 2013, "Romance", 104, "India", "Ritesh Batra", 78, 97, ["comfort", "sensivel"], ["comida", "cartas", "solidao"], false],
+  ["Touki Bouki", 1973, "Drama", 95, "Senegal", "Djibril Diop Mambety", 70, 89, ["surpresa", "complexo", "nostalgia"], ["Senegal", "road movie", "rebeldia"], false],
+  ["Black Girl", 1966, "Drama", 65, "Senegal", "Ousmane Sembene", 74, 96, ["complexo", "sensivel", "nostalgia"], ["colonialismo", "diaspora", "curta"], true],
+  ["Xala", 1975, "Comedia", 123, "Senegal", "Ousmane Sembene", 72, 89, ["complexo", "leve", "nostalgia"], ["satira", "pos-colonial", "elite"], false],
+  ["Moolaade", 2004, "Drama", 124, "Senegal", "Ousmane Sembene", 77, 99, ["sensivel", "complexo"], ["comunidade", "mulheres", "tradicao"], false],
+  ["Yeelen", 1987, "Drama", 105, "Mali", "Souleymane Cisse", 69, 88, ["surpresa", "complexo", "nostalgia"], ["mito", "magia", "Mali"], false],
+  ["Timbuktu", 2014, "Drama", 96, "Mauritania", "Abderrahmane Sissako", 71, 99, ["sensivel", "complexo", "intenso"], ["ocupacao", "poesia", "Sahel"], false],
+  ["Bamako", 2006, "Drama", 115, "Mali", "Abderrahmane Sissako", 67, 81, ["complexo", "surpresa"], ["politica", "tribunal", "Africa"], false],
+  ["Atlantics", 2019, "Drama", 106, "Senegal", "Mati Diop", 67, 96, ["sensivel", "surpresa"], ["fantasma", "migracao", "romance"], false],
+  ["This Is Not a Burial, It's a Resurrection", 2019, "Drama", 120, "Lesoto", "Lemohang Jeremiah Mosese", 73, 100, ["sensivel", "complexo", "surpresa"], ["luto", "terra", "Lesoto"], false],
+  ["Night of the Kings", 2020, "Drama", 93, "Costa do Marfim", "Philippe Lacote", 65, 97, ["surpresa", "intenso"], ["prisao", "oralidade", "mito"], false],
+  ["Rafiki", 2018, "Romance", 83, "Quenia", "Wanuri Kahiu", 68, 94, ["sensivel", "leve"], ["amor", "Nairobi", "cor"], false],
+  ["Supa Modo", 2018, "Drama", 74, "Quenia", "Likarion Wainaina", 72, 100, ["sensivel", "comfort"], ["infancia", "super-heroina", "comunidade"], false],
+  ["Felicite", 2017, "Drama", 123, "Senegal", "Alain Gomis", 65, 97, ["sensivel", "complexo"], ["musica", "Kinshasa", "maternidade"], false],
+  ["Cairo Station", 1958, "Drama", 77, "Egito", "Youssef Chahine", 75, 100, ["intenso", "nostalgia", "surpresa"], ["obsessao", "estacao", "Egito"], false],
+  ["The Square", 2013, "Documentario", 108, "Egito", "Jehane Noujaim", 81, 100, ["complexo", "intenso"], ["documentario", "revolucao", "Egito"], false],
+  ["Honeyland", 2019, "Documentario", 89, "Macedonia", "Tamara Kotevska", 80, 100, ["sensivel", "complexo", "surpresa"], ["documentario", "natureza", "abelhas"], false],
+  ["Close-Up", 1990, "Documentario", 98, "Ira", "Abbas Kiarostami", 82, 89, ["complexo", "surpresa"], ["documentario", "identidade", "cinema"], true],
+  ["Taste of Cherry", 1997, "Drama", 95, "Ira", "Abbas Kiarostami", 77, 84, ["complexo", "sensivel"], ["existencial", "estrada", "silencio"], false],
+  ["Where Is the Friend's House?", 1987, "Drama", 83, "Ira", "Abbas Kiarostami", 81, 100, ["sensivel", "comfort", "nostalgia"], ["infancia", "amizade", "Iran"], false],
+  ["Persepolis", 2007, "Animacao", 96, "Franca", "Marjane Satrapi", 80, 96, ["complexo", "sensivel"], ["animacao adulta", "memoria", "Iran"], true],
+  ["Waltz with Bashir", 2008, "Animacao", 90, "Israel", "Ari Folman", 80, 96, ["complexo", "intenso"], ["animacao adulta", "memoria", "guerra"], true],
+  ["Theeb", 2014, "Drama", 100, "Jordania", "Naji Abu Nowar", 72, 97, ["intenso", "surpresa"], ["deserto", "sobrevivencia", "beduino"], false],
+  ["Wadjda", 2012, "Drama", 98, "Arabia Saudita", "Haifaa al-Mansour", 75, 99, ["sensivel", "leve"], ["infancia", "bicicleta", "Arabia"], false],
+  ["The Insult", 2017, "Drama", 113, "Libano", "Ziad Doueiri", 76, 86, ["intenso", "complexo"], ["tribunal", "memoria", "Libano"], false],
+  ["The Present", 2020, "Drama", 24, "Palestina", "Farah Nabulsi", 76, 100, ["sensivel", "intenso"], ["curta", "fronteira", "familia"], false],
+  ["Divine Intervention", 2002, "Comedia", 92, "Palestina", "Elia Suleiman", 66, 81, ["surpresa", "leve", "complexo"], ["absurdo", "politica", "Palestina"], false],
+  ["Paradise Now", 2005, "Drama", 90, "Palestina", "Hany Abu-Assad", 74, 89, ["intenso", "complexo"], ["politica", "amizade", "dilema"], false],
+  ["Foxtrot", 2017, "Drama", 113, "Israel", "Samuel Maoz", 72, 94, ["complexo", "intenso"], ["luto", "guerra", "absurdo"], false],
+  ["Uncle Boonmee Who Can Recall His Past Lives", 2010, "Fantasia", 114, "Tailandia", "Apichatpong Weerasethakul", 67, 89, ["surpresa", "complexo"], ["fantasma", "selva", "memoria"], true],
+  ["Tropical Malady", 2004, "Romance", 118, "Tailandia", "Apichatpong Weerasethakul", 71, 82, ["surpresa", "complexo", "sensivel"], ["selva", "desejo", "mito"], false],
+  ["Syndromes and a Century", 2006, "Drama", 105, "Tailandia", "Apichatpong Weerasethakul", 74, 87, ["surpresa", "sensivel"], ["memoria", "hospital", "Tailandia"], false],
+  ["Bad Genius", 2017, "Suspense", 130, "Tailandia", "Nattawut Poonpiriya", 76, 100, ["intenso", "acao"], ["prova", "golpe", "ritmo"], false],
+  ["Ong-Bak", 2003, "Acao", 105, "Tailandia", "Prachya Pinkaew", 71, 85, ["acao", "intenso"], ["luta", "muay thai", "energia"], false],
+  ["The Raid", 2011, "Acao", 101, "Indonesia", "Gareth Evans", 76, 87, ["acao", "intenso"], ["luta", "predio", "adrenalina"], true],
+  ["The Raid 2", 2014, "Acao", 150, "Indonesia", "Gareth Evans", 79, 82, ["acao", "intenso"], ["crime", "luta", "operistico"], false],
+  ["A Touch of Sin", 2013, "Drama", 130, "China", "Jia Zhangke", 71, 94, ["complexo", "intenso"], ["China", "violencia", "sociedade"], false],
+  ["Yi Yi", 2000, "Drama", 173, "Taiwan", "Edward Yang", 81, 96, ["sensivel", "complexo"], ["familia", "Taipei", "vida"], true],
+  ["A Brighter Summer Day", 1991, "Drama", 237, "Taiwan", "Edward Yang", 84, 100, ["complexo", "nostalgia"], ["juventude", "Taiwan", "epico"], false],
+  ["In the Mood for Love", 2000, "Romance", 98, "Hong Kong", "Wong Kar-wai", 81, 91, ["sensivel", "nostalgia"], ["desejo", "Hong Kong", "estilo"], true],
+  ["Chungking Express", 1994, "Romance", 102, "Hong Kong", "Wong Kar-wai", 80, 88, ["leve", "nostalgia", "surpresa"], ["noite", "pop", "Hong Kong"], true],
+  ["Deus e o Diabo na Terra do Sol", 1964, "Drama", 120, "Brasil", "Glauber Rocha", 72, 100, ["complexo", "nostalgia", "surpresa"], ["Cinema Novo", "sertao", "politico"], true],
+  ["Terra em Transe", 1967, "Drama", 106, "Brasil", "Glauber Rocha", 73, 95, ["complexo", "intenso", "nostalgia"], ["Cinema Novo", "politica", "poesia"], true],
+  ["Vidas Secas", 1963, "Drama", 103, "Brasil", "Nelson Pereira dos Santos", 75, 100, ["sensivel", "complexo", "nostalgia"], ["Cinema Novo", "sertao", "familia"], true],
+  ["Os Fuzis", 1964, "Drama", 80, "Brasil", "Ruy Guerra", 75, 95, ["intenso", "complexo", "nostalgia"], ["Cinema Novo", "fome", "militares"], false],
+  ["Macunaima", 1969, "Comedia", 108, "Brasil", "Joaquim Pedro de Andrade", 70, 90, ["surpresa", "leve", "nostalgia"], ["tropicalismo", "satira", "Brasil"], false],
+  ["Cabra Marcado para Morrer", 1984, "Documentario", 119, "Brasil", "Eduardo Coutinho", 84, 100, ["complexo", "sensivel"], ["documentario", "memoria", "politica"], true],
+  ["Edificio Master", 2002, "Documentario", 110, "Brasil", "Eduardo Coutinho", 79, 100, ["sensivel", "surpresa"], ["documentario", "conversa", "Rio"], false],
+  ["Santiago", 2007, "Documentario", 80, "Brasil", "Joao Moreira Salles", 79, 100, ["complexo", "sensivel"], ["documentario", "memoria", "arquivo"], false],
+  ["Ilha das Flores", 1989, "Documentario", 13, "Brasil", "Jorge Furtado", 85, 100, ["complexo", "surpresa"], ["curta", "satira", "capitalismo"], true],
+  ["Que Horas Ela Volta?", 2015, "Drama", 112, "Brasil", "Anna Muylaert", 77, 97, ["sensivel", "complexo"], ["classe", "familia", "Brasil"], false],
+  ["Anomalisa", 2015, "Animacao", 90, "Estados Unidos", "Charlie Kaufman", 72, 91, ["complexo", "sensivel", "surpresa"], ["animacao adulta", "solidao", "Kaufman"], true],
+  ["Waking Life", 2001, "Animacao", 99, "Estados Unidos", "Richard Linklater", 77, 81, ["complexo", "surpresa"], ["animacao adulta", "filosofia", "sonho"], false],
+  ["A Scanner Darkly", 2006, "Animacao", 100, "Estados Unidos", "Richard Linklater", 70, 68, ["complexo", "intenso"], ["animacao adulta", "paranoia", "droga"], false],
+  ["Mary and Max", 2009, "Animacao", 92, "Australia", "Adam Elliot", 81, 95, ["sensivel", "comfort"], ["animacao adulta", "amizade", "melancolia"], false],
+  ["I Lost My Body", 2019, "Animacao", 81, "Franca", "Jeremy Clapin", 75, 97, ["sensivel", "surpresa"], ["animacao adulta", "corpo", "memoria"], false],
+  ["Flee", 2021, "Documentario", 90, "Dinamarca", "Jonas Poher Rasmussen", 79, 98, ["sensivel", "complexo"], ["documentario", "animacao", "refugio"], true],
+  ["Tower", 2016, "Documentario", 82, "Estados Unidos", "Keith Maitland", 79, 99, ["intenso", "complexo"], ["documentario", "animacao", "memoria"], false],
+  ["Kedi", 2016, "Documentario", 79, "Turquia", "Ceyda Torun", 76, 98, ["comfort", "sensivel"], ["documentario", "Istambul", "cotidiano"], false],
+  ["The Act of Killing", 2012, "Documentario", 159, "Dinamarca", "Joshua Oppenheimer", 82, 95, ["complexo", "intenso"], ["documentario", "memoria", "Indonesia"], true],
+  ["Collective", 2019, "Documentario", 109, "Romenia", "Alexander Nanau", 81, 99, ["intenso", "complexo"], ["documentario", "jornalismo", "corrupcao"], false]
 ];
 
 function createCuratedMovie([title, year, genre, duration, country, director, imdb, rt, vibes, tags, favoriteSignal]) {
@@ -1425,7 +1608,7 @@ function wasWatched(movie) {
 }
 
 function activeCatalog() {
-  return useTmdb && tmdbMovies.length ? tmdbMovies : curatedMovies;
+  return useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
 }
 
 function movieDuration(movie) {
@@ -1477,14 +1660,81 @@ function filteredMovies() {
     .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a));
 }
 
+function pickBySeed(items, movie, scope) {
+  if (!items.length) return "";
+  const index = Math.floor(seededUnit(movie, scope) * items.length) % items.length;
+  return items[index];
+}
+
+function scoreDescriptor(movie) {
+  const average = ratingAverage(movie);
+  if (average >= 88) return "com reputação fortíssima";
+  if (average >= 80) return "com notas muito fortes";
+  if (average >= 72) return "com boas notas";
+  if (average >= 64) return "com notas sólidas e cara de descoberta";
+  return "mais arriscado nas notas, mas com personalidade";
+}
+
+function reasonTags(movie) {
+  const blocked = new Set([
+    normalize(movie.genre),
+    normalize(movie.country),
+    normalize(movie.director),
+    ...movieGenres(movie).map(normalize),
+    ...(movie.providers || []).map(normalize)
+  ]);
+
+  return uniqueNormalized([...(movie.tags || []), ...(movie.vibes || [])])
+    .filter((tag) => !blocked.has(normalize(tag)))
+    .map(displayText)
+    .slice(0, 3);
+}
+
+function movieReasonContext(movie) {
+  const tags = reasonTags(movie);
+  const genre = displayText(movie.genre || movieGenres(movie)[0] || "filme");
+  const country = displayText(movie.country || "origem indefinida");
+  const decade = movie.decade && movie.decade !== "qualquer" ? `${movie.decade}s` : `${movie.year || "sem década"}`;
+  const director = displayText(movie.director || "direção não informada");
+  const tag = tags[0] || displayText((movie.vibes || [])[0] || movie.genre || "vibe própria");
+  const tagPair = tags.length > 1 ? `${tags[0]} e ${tags[1]}` : tag;
+
+  return {
+    genre,
+    country,
+    decade,
+    director,
+    tag,
+    tagPair,
+    minutes: formatRuntime(movieDuration(movie)),
+    scoreText: scoreDescriptor(movie)
+  };
+}
+
+function buildReasonSentence(movie, poolId, scope) {
+  const pool = moodReasonPools[poolId] || moodReasonPools.surpresa;
+  const template = pickBySeed(pool, movie, scope);
+  return typeof template === "function" ? template(movieReasonContext(movie)) : template;
+}
+
 function reasonFor(movie) {
+  const context = movieReasonContext(movie);
+  const poolId = activeMode === "roulette" ? "roulette" : activeMood;
+  const opening = buildReasonSentence(movie, poolId, `reason-opening-${poolId}`);
+  const detailOptions = [
+    `O detalhe que diferencia a escolha é ${context.director}, ${context.country}, ${context.decade}, com ${context.tagPair}.`,
+    `Entra na fila por combinar ${context.genre.toLowerCase()}, ${context.tagPair}, ${context.country}, ${context.scoreText}.`,
+    `${context.director} dá a assinatura; ${context.decade}, ${context.minutes} e ${context.tag} ajudam a calibrar a sessão.`,
+    `A escolha fica mais específica pela mistura: ${context.genre.toLowerCase()}, ${context.country}, ${context.tagPair}, ${context.scoreText}.`
+  ];
+  const detail = pickBySeed(detailOptions, movie, `reason-detail-${poolId}`);
+  const profileText = profileLoaded && profileAffinity(movie) > 10 ? " Também conversa com sinais do seu perfil." : "";
+
   if (activeMode === "roulette") {
-    return "A roleta ignorou o humor e puxou uma opção forte dentro dos seus filtros. E pronto: agora é apertar play, não abrir mais quinze abas.";
+    return `${opening} ${detail}`;
   }
 
-  const mood = moods.find((item) => item.id === activeMood);
-  const profileText = profileLoaded && profileAffinity(movie) > 10 ? " Também conversa com sinais do seu perfil." : "";
-  return `A sugestão prioriza o clima "${mood.label.toLowerCase()}" sem transformar a noite em pesquisa.${profileText}`;
+  return `${opening} ${detail}${profileText}`;
 }
 
 function selectRouletteMovie(list) {
