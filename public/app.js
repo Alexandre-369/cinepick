@@ -1574,6 +1574,14 @@ function cacheMovieEnhancement(movie) {
     source: movie.source
   };
   localStorage.setItem("cinepick_poster_cache", JSON.stringify(posterCache));
+  syncMovieEnhancement(movie);
+}
+
+function syncMovieEnhancement(movie) {
+  const key = movieKey(movie.title, movie.year);
+  [...curatedMovies, ...tmdbMovies].forEach((target) => {
+    if (movieKey(target.title, target.year) === key) applyMovieEnhancements(target, movie);
+  });
 }
 
 function cacheTmdbCatalog() {
