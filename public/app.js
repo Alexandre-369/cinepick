@@ -122,7 +122,7 @@ const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc",
 const recommendationHistoryKey = "cinepick_recommendation_history_v1";
 const recommendationHistoryLimit = 90;
 const posterCacheKey = "cinepick_poster_cache_v2";
-const unavailableStreamingLabel = "Indisponível para streaming";
+const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 
 const displayNames = {
   Acao: "Ação",
@@ -365,9 +365,12 @@ const moodProfiles = {
     oldBonus: true
   },
   complexo: {
-    preferredGenres: ["Drama", "Ficcao cientifica", "Misterio", "Suspense", "Crime", "Documentario"],
-    avoidGenres: ["Familia", "Animacao"],
-    keywords: ["tempo", "memoria", "sonho", "identidade", "misterio", "obsessao", "politica"]
+    preferredGenres: ["Drama", "Ficcao cientifica", "Misterio", "Documentario"],
+    avoidGenres: ["Familia", "Animacao", "Comedia", "Acao", "Aventura"],
+    hardAvoidGenres: ["Familia", "Animacao"],
+    conflictingVibes: ["comfort", "leve"],
+    keywords: ["tempo", "memoria", "sonho", "identidade", "misterio", "obsessao", "politica", "conspiracao", "paranoia", "luto", "metafisica", "filosofia"],
+    requiredComplexity: true
   },
   intenso: {
     preferredGenres: ["Suspense", "Crime", "Terror", "Misterio", "Acao", "Guerra"],
@@ -1294,6 +1297,7 @@ const els = {
   hydratePosters: document.querySelector("#hydrate-posters"),
   useTmdb: document.querySelector("#use-tmdb"),
   tmdbStatus: document.querySelector("#tmdb-status"),
+  dataDiagnostics: document.querySelector("#data-diagnostics"),
   reroll: document.querySelector("#reroll"),
   spin: document.querySelector("#spin"),
   rouletteWheel: document.querySelector("#roulette-wheel")
@@ -1375,6 +1379,11 @@ function formatImdbScore(score) {
 function secondaryScoreLabel(movie) {
   if (movie.rtSource === "omdb" || movie.rtSource === "curated") return "Rotten Tomatoes";
   return "TMDb";
+}
+
+function formatSecondaryScore(movie) {
+  if (movie.rtSource === "omdb" || movie.rtSource === "curated") return `${movie.rt}%`;
+  return formatImdbScore(movie.rt);
 }
 
 function formatRuntime(minutes) {
@@ -1474,6 +1483,54 @@ function movieSearchText(movie) {
   ].join(" "));
 }
 
+function hasGenre(movie, genres) {
+  const movieGenreKeys = movieGenres(movie).map(normalize);
+  return genres.some((genre) => movieGenreKeys.includes(normalize(genre)));
+}
+
+function hasAnyText(text, terms) {
+  return terms.some((term) => text.includes(normalize(term)));
+}
+
+function complexityEvidence(movie) {
+  const text = movieSearchText(movie);
+  const genres = movieGenres(movie);
+  const director = normalize(movie.director);
+  const auteurDirectors = [
+    "charlie kaufman", "christopher nolan", "david lynch", "andrei tarkovsky", "stanley kubrick",
+    "paul thomas anderson", "denis villeneuve", "yorgos lanthimos", "bong joon", "park chan",
+    "edward yang", "glauber rocha", "eduardo coutinho", "michel gondry", "lynne ramsay"
+  ];
+  const headyTerms = [
+    "tempo", "memoria", "memória", "sonho", "identidade", "obsessao", "obsessão", "politica",
+    "política", "paranoia", "filosofia", "metafisica", "metafísica", "luto", "culpa",
+    "fragmentado", "existencial", "surreal", "ambiguidade", "arquivo", "ditadura"
+  ];
+  const hasHeadyGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica"]);
+  const hasMystery = hasGenre(movie, ["Misterio", "Suspense", "Crime"]);
+  const hasPlainHorror = hasGenre(movie, ["Terror"]) && !hasGenre(movie, ["Drama", "Ficcao cientifica", "Documentario"]);
+  const hasLightEscape = hasGenre(movie, ["Acao", "Comedia", "Familia", "Aventura", "Animacao"]);
+  const hasAuteur = auteurDirectors.some((name) => director.includes(name));
+  const hasHeadyText = hasAnyText(text, headyTerms);
+  const hasHighCriticalSignal = ratingAverage(movie) >= 82 && Number(movie.tmdbVotes || 0) < 8000;
+  const hasOlderOrGlobalSignal = Number(movie.year) < 2005 && movie.country !== "Estados Unidos";
+
+  if (hasAuteur) return true;
+  if (hasPlainHorror) return false;
+  if (hasHeadyText) return true;
+  if (hasHeadyGenre && !hasLightEscape) return true;
+  if (hasMystery && !hasLightEscape && (hasHighCriticalSignal || hasOlderOrGlobalSignal)) return true;
+  return false;
+}
+
+function escapistMismatch(movie) {
+  const genres = movieGenres(movie);
+  const actionComedy = genres.includes("Acao") && genres.includes("Comedia");
+  const familyAdventure = genres.includes("Familia") && (genres.includes("Aventura") || genres.includes("Animacao"));
+  const lightFranchise = genres.includes("Acao") && genres.includes("Aventura") && ratingAverage(movie) < 78;
+  return actionComedy || familyAdventure || lightFranchise;
+}
+
 function moodScore(movie) {
   if (activeMode !== "mood") return 0;
 
@@ -1495,6 +1552,8 @@ function moodScore(movie) {
   score -= hardAvoidMatches * 34;
 
   if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
+  if (profile.requiredComplexity && !complexityEvidence(movie)) score -= 92;
+  if (activeMood === "complexo" && escapistMismatch(movie)) score -= 68;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "nostalgia" && Number(movie.year) && Number(movie.year) >= 2020) score -= 10;
@@ -1519,6 +1578,7 @@ function moodCollectionScore(movie) {
   const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
   const keywordMatches = (profile.keywords || []).filter((keyword) => movieSearchText(movie).includes(normalize(keyword))).length;
 
+  if (profile.requiredComplexity && !complexityEvidence(movie)) return -28;
   if (hasVibe) return 28;
   if (preferredMatches || keywordMatches) return 12;
   return -18;
@@ -1786,6 +1846,10 @@ function moodMismatch(movie) {
   const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
   const hasVibe = (movie.vibes || []).includes(activeMood);
   const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
+
+  if (activeMood === "complexo") {
+    return hardAvoidMatches > 0 || !complexityEvidence(movie) || escapistMismatch(movie);
+  }
 
   if (activeMood === "leve") {
     return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
@@ -2388,10 +2452,15 @@ function inferVibes(genres, overview, year = 0) {
   const vibes = new Set();
   const hasGentleGenre = text.includes("comedia") || text.includes("familia") || text.includes("animacao") || text.includes("romance") || text.includes("musica");
   const hasHeavyGenre = text.includes("crime") || text.includes("suspense") || text.includes("thriller") || text.includes("terror") || text.includes("guerra");
+  const hasEscapistMix = (text.includes("acao") && text.includes("comedia")) || (text.includes("familia") && text.includes("aventura"));
+  const hasComplexSignal = hasAnyText(text, [
+    "ficcao cientifica", "documentario", "memoria", "tempo", "identidade", "sonho", "obsessao",
+    "politica", "paranoia", "filosofia", "metafisica", "existencial", "surreal"
+  ]);
   if (hasGentleGenre || (text.includes("aventura") && !hasHeavyGenre)) vibes.add("leve");
   if (text.includes("romance") || text.includes("drama") || text.includes("familia")) vibes.add("sensivel");
   if (hasHeavyGenre || text.includes("misterio")) vibes.add("intenso");
-  if (text.includes("ficcao") || text.includes("science") || text.includes("misterio") || text.includes("memoria") || text.includes("tempo")) vibes.add("complexo");
+  if (hasComplexSignal && !hasEscapistMix) vibes.add("complexo");
   if (text.includes("familia") || text.includes("amizade") || text.includes("animacao") || text.includes("romance")) vibes.add("comfort");
   if (text.includes("acao") || text.includes("aventura") || text.includes("faroeste") || text.includes("guerra")) vibes.add("acao");
   if (text.includes("documentario") || text.includes("estranho") || text.includes("surreal") || text.includes("misterio") || text.includes("terror")) vibes.add("surpresa");
@@ -2783,6 +2852,26 @@ function renderMoods() {
   `).join("");
 }
 
+function renderDataDiagnostics() {
+  if (!els.dataDiagnostics) return;
+  const catalog = activeCatalog();
+  const total = catalog.length || 1;
+  const posterCount = catalog.filter((movie) => movie.posterUrl).length;
+  const officialRatings = catalog.filter((movie) => movie.rtSource === "omdb" || movie.rtSource === "curated").length;
+  const tmdbRatings = catalog.filter((movie) => movie.rtSource === "tmdb").length;
+  const streamingCount = catalog.filter((movie) => (movie.providers || []).length).length;
+  const cachedPosters = Object.keys(posterCache).length;
+
+  els.dataDiagnostics.innerHTML = `
+    <div><strong>${posterCount}/${catalog.length}</strong><span>capas</span></div>
+    <div><strong>${officialRatings}</strong><span>RT/curadoria</span></div>
+    <div><strong>${tmdbRatings}</strong><span>TMDb</span></div>
+    <div><strong>${streamingCount}/${catalog.length}</strong><span>streaming BR</span></div>
+    <div><strong>${Math.round((posterCount / total) * 100)}%</strong><span>cobertura</span></div>
+    <div><strong>${cachedPosters}</strong><span>cache local</span></div>
+  `;
+}
+
 function renderHero(movie) {
   if (!movie) {
     els.hero.innerHTML = `
@@ -2833,7 +2922,7 @@ function renderHero(movie) {
         <div class="fact-item"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
         <div class="fact-item"><span>Período</span><strong>${movie.decade}s</strong></div>
       </div>
-      <div class="watch-strip">
+      <div class="watch-strip ${providers.length ? "" : "is-unavailable"}">
         <span>Onde assistir</span>
         <strong>${providers.length ? providers.join(" / ") : unavailableStreamingLabel}</strong>
       </div>
@@ -2846,7 +2935,7 @@ function renderHero(movie) {
       </div>
       <div class="score-row">
         <div class="score"><strong>${formatImdbScore(movie.imdb)}</strong><span>${hasOmdb || !hasTmdb ? "IMDb" : "TMDb"}</span></div>
-        <div class="score"><strong>${movie.rt}%</strong><span>${secondaryScoreLabel(movie)}</span></div>
+        <div class="score"><strong>${formatSecondaryScore(movie)}</strong><span>${secondaryScoreLabel(movie)}</span></div>
       </div>
       <div class="rec-actions">
         <button type="button" data-next>
@@ -2907,6 +2996,7 @@ function render() {
 
 function renderWithAdvance(advance) {
   renderMoods();
+  renderDataDiagnostics();
   const list = recommendationListForRender(advance);
   if (activeMode === "roulette") {
     const selected = list.find((movie) => movie.title === roulettePick) || list[0];
