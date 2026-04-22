@@ -216,6 +216,81 @@ const displayNames = {
   surpresa: "surpresa"
 };
 
+const posterTitleAliases = {
+  "About Time": ["Questão de Tempo"],
+  "A Brighter Summer Day": ["Um Dia Quente de Verão"],
+  "A Scanner Darkly": ["O Homem Duplo"],
+  "Atlantics": ["Atlantique"],
+  "Before Sunrise": ["Antes do Amanhecer"],
+  "Black Girl": ["La noire de...", "A Negra de..."],
+  "Booksmart": ["Fora de Série"],
+  "Cabra Marcado para Morrer": ["Twenty Years Later"],
+  "Cairo Station": ["Bab el Hadid", "Cairo Central"],
+  "Chungking Express": ["Amores Expressos"],
+  "Decision to Leave": ["Decisão de Partir"],
+  "Divine Intervention": ["Intervenção Divina"],
+  "Drive My Car": ["Doraibu mai ka"],
+  "Edificio Master": ["Edifício Master"],
+  "Felicite": ["Félicité"],
+  "Flee": ["Fuga"],
+  "Force Majeure": ["Força Maior"],
+  "Honeyland": ["Terra do Mel"],
+  "I Lost My Body": ["Perdi Meu Corpo"],
+  "If Beale Street Could Talk": ["Se a Rua Beale Falasse"],
+  "In Bruges": ["Na Mira do Chefe"],
+  "In the Mood for Love": ["Amor à Flor da Pele"],
+  "Little Miss Sunshine": ["Pequena Miss Sunshine"],
+  "Macunaima": ["Macunaíma"],
+  "Mary and Max": ["Mary e Max"],
+  "Minari": ["Minari: Em Busca da Felicidade"],
+  "Moonrise Kingdom": ["Moonrise Kingdom: Amor Sublime"],
+  "My Neighbor Totoro": ["Meu Amigo Totoro"],
+  "Night of the Kings": ["La Nuit des rois", "Noite dos Reis"],
+  "No Country for Old Men": ["Onde os Fracos Não Têm Vez"],
+  "Once": ["Apenas Uma Vez"],
+  "Ong-Bak": ["Ong-Bak: Guerreiro Sagrado"],
+  "Paddington 2": ["As Aventuras de Paddington 2"],
+  "Palm Springs": ["Palm Springs: O Filme"],
+  "Pan's Labyrinth": ["O Labirinto do Fauno"],
+  "Paradise Now": ["Paradise Now: Paraíso Agora"],
+  "Past Lives": ["Vidas Passadas"],
+  "Persepolis": ["Persépolis"],
+  "Punch-Drunk Love": ["Embriagado de Amor"],
+  "Rafiki": ["Rafiki: Amigas para Sempre"],
+  "Santiago": ["Santiago: Uma Reflexão Sobre o Material Bruto"],
+  "Sing Street": ["Sing Street: Música e Sonho"],
+  "Supa Modo": ["Supa Modo: O Filme"],
+  "Taste of Cherry": ["Gosto de Cereja"],
+  "The Act of Killing": ["O Ato de Matar"],
+  "The Banshees of Inisherin": ["Os Banshees de Inisherin"],
+  "The Big Lebowski": ["O Grande Lebowski"],
+  "The Big Sick": ["Doentes de Amor"],
+  "The Farewell": ["A Despedida"],
+  "The Favourite": ["A Favorita"],
+  "The Grand Budapest Hotel": ["O Grande Hotel Budapeste"],
+  "The Hunt": ["A Caça"],
+  "The Insult": ["O Insulto"],
+  "The Lobster": ["O Lagosta"],
+  "The Lunchbox": ["A Lancheira"],
+  "The Present": ["O Presente"],
+  "The Raid": ["Operação Invasão", "Serbuan maut"],
+  "The Raid 2": ["Operação Invasão 2"],
+  "The Royal Tenenbaums": ["Os Excêntricos Tenenbaums"],
+  "The Salesman": ["O Apartamento"],
+  "The Shape of Water": ["A Forma da Água"],
+  "The Square": ["A Praça"],
+  "The Worst Person in the World": ["A Pior Pessoa do Mundo"],
+  "This Is Not a Burial, It's a Resurrection": ["This Is Not a Burial Its a Resurrection"],
+  "Touki Bouki": ["A Viagem da Hiena"],
+  "Uncle Boonmee Who Can Recall His Past Lives": ["Tio Boonmee, Que Pode Recordar Suas Vidas Passadas"],
+  "Wadjda": ["O Sonho de Wadjda"],
+  "Waltz with Bashir": ["Valsa com Bashir"],
+  "Where Is the Friend's House?": ["Onde Fica a Casa do Meu Amigo?"],
+  "Xala": ["A Maldição"],
+  "Y Tu Mama Tambien": ["E Sua Mãe Também"],
+  "Yi Yi": ["Yi Yi: Um e Dois"]
+};
+
 const moodProfiles = {
   leve: {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Musica"],
@@ -1155,6 +1230,41 @@ function displayText(value) {
   if (displayNames[text]) return displayNames[text];
   const normalizedMatch = Object.keys(displayNames).find((key) => normalize(key) === normalize(text));
   return normalizedMatch ? displayNames[normalizedMatch] : text;
+}
+
+function posterQueriesForMovie(movie) {
+  const aliases = Object.entries(posterTitleAliases).find(([title]) => normalize(title) === normalize(movie.title))?.[1] || [];
+  const simpleTitle = String(movie.title || "").replace(/\s*[:–-]\s*(o filme|the movie)$/i, "");
+  return uniqueNormalized([movie.title, simpleTitle, ...aliases]).slice(0, 8);
+}
+
+function posterMatchScore(item, movie, queries) {
+  if (!item.poster_path) return -Infinity;
+  const releaseYear = Number((item.release_date || "").slice(0, 4)) || 0;
+  const yearDelta = releaseYear ? Math.abs(releaseYear - Number(movie.year)) : 99;
+  const acceptedTitles = uniqueNormalized([...queries, movie.title]).map(normalize);
+  const candidateTitles = uniqueNormalized([item.title, item.original_title]).map(normalize);
+  let score = 0;
+
+  if (yearDelta === 0) score += 90;
+  else if (yearDelta === 1) score += 35;
+  else score -= Math.min(60, yearDelta * 8);
+
+  candidateTitles.forEach((candidate) => {
+    if (acceptedTitles.includes(candidate)) score += 60;
+    else if (acceptedTitles.some((title) => title.includes(candidate) || candidate.includes(title))) score += 24;
+  });
+
+  score += Math.min(18, Number(item.vote_count || 0) / 450);
+  score += Math.min(12, Number(item.popularity || 0) / 18);
+  return score;
+}
+
+function bestPosterMatch(results, movie, queries) {
+  return (results || [])
+    .map((item) => ({ item, score: posterMatchScore(item, movie, queries) }))
+    .filter(({ score }) => score > 15)
+    .sort((a, b) => b.score - a.score)[0]?.item || null;
 }
 
 function ratingAverage(movie) {
@@ -2220,15 +2330,23 @@ async function searchTmdbAndHydrate() {
 }
 
 async function findPosterForMovie(movie) {
-  const params = new URLSearchParams({
-    query: movie.title,
-    language: "pt-BR",
-    include_adult: "false",
-    year: String(movie.year)
-  });
-  const result = await tmdbFetch("/search/movie", params);
-  const match = (result.results || []).find((item) => item.poster_path && Number((item.release_date || "").slice(0, 4)) === Number(movie.year))
-    || (result.results || []).find((item) => item.poster_path);
+  const queries = posterQueriesForMovie(movie);
+  let match = null;
+
+  for (const query of queries) {
+    for (const language of ["pt-BR", "en-US"]) {
+      const params = new URLSearchParams({
+        query,
+        language,
+        include_adult: "false",
+        year: String(movie.year)
+      });
+      const result = await tmdbFetch("/search/movie", params);
+      match = bestPosterMatch(result.results, movie, queries);
+      if (match) break;
+    }
+    if (match) break;
+  }
 
   if (!match) return false;
   const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids,watch/providers", language: "pt-BR" }));
@@ -2287,7 +2405,7 @@ async function hydratePriorityPosters() {
 
   const candidates = filteredMovies()
     .filter((movie) => !movie.posterUrl)
-    .slice(0, 24);
+    .slice(0, 48);
   if (!candidates.length) return;
 
   const previousStatus = els.tmdbStatus.textContent;
