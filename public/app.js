@@ -1245,7 +1245,9 @@ let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
 let priorityPosterHydrationStarted = false;
+let catalogPosterHydrationStarted = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
+const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
 const profileData = {
@@ -1321,7 +1323,7 @@ function displayText(value) {
 }
 
 function posterQueriesForMovie(movie) {
-  const aliases = Object.entries(posterTitleAliases).find(([title]) => normalize(title) === normalize(movie.title))?.[1] || [];
+  const aliases = titleAliasesFor(movie.title);
   const simpleTitle = String(movie.title || "").replace(/\s*[:–-]\s*(o filme|the movie)$/i, "");
   return uniqueNormalized([movie.title, simpleTitle, ...aliases]).slice(0, 8);
 }
@@ -1396,6 +1398,38 @@ function movieKey(title, year) {
 
 function movieTitleKey(movie) {
   return normalize(movie.title);
+}
+
+function titleAliasesFor(title) {
+  const normalizedTitle = normalize(title);
+  const direct = Object.entries(posterTitleAliases).find(([key]) => normalize(key) === normalizedTitle);
+  if (direct) return direct[1];
+
+  const reverse = Object.entries(posterTitleAliases).find(([, aliases]) => (
+    aliases.some((alias) => normalize(alias) === normalizedTitle)
+  ));
+  if (!reverse) return [];
+
+  const [canonical, aliases] = reverse;
+  return uniqueNormalized([canonical, ...aliases.filter((alias) => normalize(alias) !== normalizedTitle)]);
+}
+
+function movieTitleKeys(movie) {
+  return uniqueNormalized([movie.title, ...titleAliasesFor(movie.title)]).map(normalize);
+}
+
+function movieCacheKeys(movie) {
+  const year = String(movie.year || "").trim();
+  return movieTitleKeys(movie).map((title) => `${title}|${year}`);
+}
+
+function moviesShareTitle(movie, other) {
+  const movieYear = String(movie.year || "").trim();
+  const otherYear = String(other.year || "").trim();
+  if (movieYear && otherYear && movieYear !== otherYear) return false;
+
+  const keys = new Set(movieTitleKeys(movie));
+  return movieTitleKeys(other).some((key) => keys.has(key));
 }
 
 function hashString(value) {
@@ -1484,9 +1518,11 @@ function moodCollectionScore(movie) {
 }
 
 function recentRecommendationIndex(movie) {
-  const exactKey = movieKey(movie.title, movie.year);
-  const titleKey = movieTitleKey(movie);
-  return recommendationHistory.findIndex((item) => item === exactKey || item.startsWith(`${titleKey}|`));
+  const keys = movieCacheKeys(movie);
+  const titleKeys = movieTitleKeys(movie);
+  return recommendationHistory.findIndex((item) => (
+    keys.includes(item) || titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
+  ));
 }
 
 function isRecentlyRecommended(movie, limit = 28) {
@@ -1510,8 +1546,11 @@ function rememberRecommendation(movie) {
   if (key === lastRenderedHeroKey) return;
 
   lastRenderedHeroKey = key;
-  const titleKey = movieTitleKey(movie);
-  recommendationHistory = [key, ...recommendationHistory.filter((item) => item !== key && !item.startsWith(`${titleKey}|`))].slice(0, recommendationHistoryLimit);
+  const keys = movieCacheKeys(movie);
+  const titleKeys = movieTitleKeys(movie);
+  recommendationHistory = [key, ...recommendationHistory.filter((item) => (
+    !keys.includes(item) && !titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
+  ))].slice(0, recommendationHistoryLimit);
   localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
 }
 
@@ -1587,15 +1626,16 @@ function mergeCatalogEnhancements(list) {
   const byTitle = new Map();
 
   list.forEach((movie) => {
-    const key = movieTitleKey(movie);
-    const current = byTitle.get(key);
+    const keys = movieCacheKeys(movie);
+    const current = keys.map((key) => byTitle.get(key)).find(Boolean);
     if (!current) {
-      byTitle.set(key, movie);
+      keys.forEach((key) => byTitle.set(key, movie));
       return;
     }
 
     applyMovieEnhancements(current, mergeMovieEnhancements(current, movie));
     applyMovieEnhancements(movie, mergeMovieEnhancements(movie, current));
+    uniqueNormalized([...keys, ...movieCacheKeys(current)]).forEach((key) => byTitle.set(key, current));
   });
 }
 
@@ -1603,19 +1643,20 @@ function dedupeByTitle(list) {
   const byTitle = new Map();
 
   list.forEach((movie) => {
-    const key = movieTitleKey(movie);
-    const current = byTitle.get(key);
+    const keys = movieCacheKeys(movie);
+    const current = keys.map((key) => byTitle.get(key)).find(Boolean);
     if (!current) {
-      byTitle.set(key, movie);
+      keys.forEach((key) => byTitle.set(key, movie));
       return;
     }
 
     const winner = movie.score > current.score ? movie : current;
     const detailsSource = movie.score > current.score ? current : movie;
-    byTitle.set(key, mergeMovieEnhancements(winner, detailsSource));
+    const merged = mergeMovieEnhancements(winner, detailsSource);
+    uniqueNormalized([...keys, ...movieCacheKeys(current)]).forEach((key) => byTitle.set(key, merged));
   });
 
-  return [...byTitle.values()];
+  return [...new Set(byTitle.values())];
 }
 
 function diversifyMovies(list, anchors = []) {
@@ -1760,22 +1801,33 @@ function moodMismatch(movie) {
 
 function applyPosterCache() {
   curatedMovies.forEach((movie) => {
-    const cached = posterCache[movieKey(movie.title, movie.year)];
-    if (!cached) return;
-    movie.posterUrl = cached.posterUrl || movie.posterUrl;
-    movie.backdropUrl = cached.backdropUrl || movie.backdropUrl;
-    movie.imdb = cached.imdb || movie.imdb;
-    movie.rt = cached.rt || movie.rt;
-    movie.rtSource = cached.rtSource || movie.rtSource;
-    movie.tmdbVotes = cached.tmdbVotes || movie.tmdbVotes;
-    movie.imdbId = cached.imdbId || movie.imdbId;
-    movie.providers = cached.providers || movie.providers;
-    movie.source = cached.source || movie.source || "curated-tmdb-poster";
+    const keys = movieCacheKeys(movie);
+    const cached = keys.map((key) => posterCache[key]).find(Boolean);
+    const legacyCached = keys.map((key) => legacyPosterCache[key]).find(Boolean);
+    const enhancement = cached || legacyCached;
+    if (!enhancement) return;
+
+    movie.posterUrl = enhancement.posterUrl || movie.posterUrl;
+    movie.backdropUrl = enhancement.backdropUrl || movie.backdropUrl;
+    movie.imdb = enhancement.imdb || movie.imdb;
+    movie.tmdbVotes = enhancement.tmdbVotes || movie.tmdbVotes;
+    movie.imdbId = enhancement.imdbId || movie.imdbId;
+    movie.providers = enhancement.providers || movie.providers;
+    movie.source = enhancement.source || movie.source || "curated-tmdb-poster";
+
+    if (cached) {
+      movie.rt = cached.rt || movie.rt;
+      movie.rtSource = cached.rtSource || movie.rtSource;
+    }
+
+    if (!cached && legacyCached?.posterUrl) {
+      cacheMovieEnhancement(movie);
+    }
   });
 }
 
 function cacheMovieEnhancement(movie) {
-  posterCache[movieKey(movie.title, movie.year)] = {
+  const enhancement = {
     posterUrl: movie.posterUrl,
     backdropUrl: movie.backdropUrl,
     imdb: movie.imdb,
@@ -1786,14 +1838,16 @@ function cacheMovieEnhancement(movie) {
     providers: movie.providers,
     source: movie.source
   };
+  movieCacheKeys(movie).forEach((key) => {
+    posterCache[key] = enhancement;
+  });
   localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
   syncMovieEnhancement(movie);
 }
 
 function syncMovieEnhancement(movie) {
-  const key = movieKey(movie.title, movie.year);
   [...curatedMovies, ...tmdbMovies].forEach((target) => {
-    if (movieKey(target.title, target.year) === key) applyMovieEnhancements(target, movie);
+    if (moviesShareTitle(target, movie)) applyMovieEnhancements(target, movie);
   });
 }
 
@@ -2560,6 +2614,40 @@ async function hydratePriorityPosters() {
   }
 }
 
+async function hydrateCatalogPostersInBackground() {
+  if (catalogPosterHydrationStarted) return;
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  if (staticLocalhost) return;
+  catalogPosterHydrationStarted = true;
+
+  const missingPosters = activeCatalog()
+    .filter((movie) => !movie.posterUrl)
+    .slice(0, 96);
+  if (!missingPosters.length) return;
+
+  const previousStatus = els.tmdbStatus.textContent;
+  let found = 0;
+
+  try {
+    for (let index = 0; index < missingPosters.length; index += 4) {
+      const batch = missingPosters.slice(index, index + 4);
+      const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
+      const batchFound = results.filter(Boolean).length;
+      found += batchFound;
+
+      if (batchFound) {
+        updateProviderFilter();
+        els.tmdbStatus.textContent = `${found} capas recuperadas no catálogo expandido.`;
+        render();
+      }
+    }
+
+    if (!found) els.tmdbStatus.textContent = previousStatus;
+  } catch {
+    els.tmdbStatus.textContent = previousStatus;
+  }
+}
+
 function setMode(mode) {
   activeMode = mode;
   rerollOffset = 0;
@@ -2939,5 +3027,5 @@ window.setTimeout(async () => {
   if (!restoredInitialCatalog && tmdbMovies.length < 200) {
     loadTmdbCatalog({ auto: true });
   }
-  hydratePriorityPosters();
+  hydratePriorityPosters().then(hydrateCatalogPostersInBackground);
 }, 700);
