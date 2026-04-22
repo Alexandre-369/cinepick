@@ -2574,7 +2574,6 @@ function renderHero(movie) {
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
   const providers = (movie.providers || []).slice(0, 3);
-  const providerPills = providers.map((provider) => `<span class="pill provider-pill">${displayText(provider)}</span>`).join("");
   const blockedTagKeys = [
     ...movieGenres(movie),
     movie.country,
@@ -2621,7 +2620,6 @@ function renderHero(movie) {
         <div class="meta-line">
           <span class="pill">${displayText(movie.genre)}</span>
           ${tagPills}
-          ${providerPills}
         </div>
       </div>
       <div class="score-row">
