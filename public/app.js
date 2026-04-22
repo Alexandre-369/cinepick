@@ -1,12 +1,12 @@
 const moods = [
-  { id: "leve", label: "Quero rir", hint: "leve, rápido, sem dever de casa" },
-  { id: "comfort", label: "Comfort movie", hint: "aconchego, seguro, caloroso" },
-  { id: "nostalgia", label: "Nostalgia", hint: "cara de outra época" },
-  { id: "complexo", label: "Reflexivos", hint: "Nolan, Kaufman, quebra-cabeça" },
-  { id: "intenso", label: "Algo tenso", hint: "suspense, crime, pressão" },
-  { id: "sensivel", label: "Sensível", hint: "humano, bonito, melancólico" },
-  { id: "acao", label: "Quero ação", hint: "ritmo, aventura, adrenalina" },
-  { id: "surpresa", label: "Surpreenda-se", hint: "cult, estranho, fora da bolha" }
+  { id: "leve", label: "Rir sem culpa", hint: "leve, rápido, sem boleto emocional" },
+  { id: "comfort", label: "Cobertor cinematográfico", hint: "aconchego, reprise afetiva, zero susto" },
+  { id: "nostalgia", label: "Saudade em 24 fps", hint: "cara de outro tempo, cheiro de locadora" },
+  { id: "complexo", label: "Cabeça acesa", hint: "quebra-cabeça, teoria no banho" },
+  { id: "intenso", label: "Unhas em risco", hint: "pressão, crime, respira fundo" },
+  { id: "sensivel", label: "Coração mole", hint: "bonito, humano, talvez um cisco" },
+  { id: "acao", label: "Pipoca voando", hint: "ritmo, fuga, soco coreografado" },
+  { id: "surpresa", label: "Roleta cult", hint: "fora da bolha, estranho do bem" }
 ];
 
 const genreIds = {
@@ -51,15 +51,24 @@ const countryCodes = {
   "Argentina": "AR",
   "Austria": "AT",
   "Australia": "AU",
+  "Belgica": "BE",
   "Brasil": "BR",
   "Canada": "CA",
   "Chile": "CL",
   "China": "CN",
+  "Colombia": "CO",
   "Costa do Marfim": "CI",
   "Dinamarca": "DK",
   "Egito": "EG",
   "Espanha": "ES",
+  "Estonia": "EE",
+  "Etiopia": "ET",
+  "Filipinas": "PH",
   "Estados Unidos": "US",
+  "Georgia": "GE",
+  "Grecia": "GR",
+  "Guatemala": "GT",
+  "Hungria": "HU",
   "Hong Kong": "HK",
   "India": "IN",
   "Ira": "IR",
@@ -79,6 +88,7 @@ const countryCodes = {
   "Mauritania": "MR",
   "Mexico": "MX",
   "Noruega": "NO",
+  "Nova Zelandia": "NZ",
   "Palestina": "PS",
   "Paises Baixos": "NL",
   "Peru": "PE",
@@ -93,12 +103,13 @@ const countryCodes = {
   "Taiwan": "TW",
   "Tunisia": "TN",
   "Turquia": "TR",
+  "Uruguai": "UY",
   "Vietna": "VN",
   "Reino Unido": "GB"
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 8,
+  cacheVersion: 9,
   limit: 420,
   batchSize: 14,
   omdbEnrichLimit: 24,
@@ -110,6 +121,8 @@ const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", 
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
 const recommendationHistoryKey = "cinepick_recommendation_history_v1";
 const recommendationHistoryLimit = 90;
+const posterCacheKey = "cinepick_poster_cache_v2";
+const unavailableStreamingLabel = "Indisponível para streaming";
 
 const displayNames = {
   Acao: "Ação",
@@ -118,17 +131,26 @@ const displayNames = {
   "Arabia Saudita": "Arábia Saudita",
   AT: "Áustria",
   Austria: "Áustria",
+  Belgica: "Bélgica",
   Comedia: "Comédia",
+  Colombia: "Colômbia",
   "Costa do Marfim": "Costa do Marfim",
   Documentario: "Documentário",
   Egito: "Egito",
+  Estonia: "Estônia",
+  Etiopia: "Etiópia",
   Familia: "Família",
   Fantasia: "Fantasia",
+  Filipinas: "Filipinas",
   Ficcao: "Ficção",
   "Ficcao cientifica": "Ficção científica",
   Historia: "História",
   Japao: "Japão",
   Franca: "França",
+  Georgia: "Geórgia",
+  Grecia: "Grécia",
+  Guatemala: "Guatemala",
+  Hungria: "Hungria",
   Australia: "Austrália",
   Canada: "Canadá",
   India: "Índia",
@@ -144,6 +166,7 @@ const displayNames = {
   Marrocos: "Marrocos",
   Mauritania: "Mauritânia",
   Mexico: "México",
+  "Nova Zelandia": "Nova Zelândia",
   Palestina: "Palestina",
   "Paises Baixos": "Países Baixos",
   Peru: "Peru",
@@ -155,6 +178,7 @@ const displayNames = {
   Suecia: "Suécia",
   Tailandia: "Tailândia",
   Tunisia: "Tunísia",
+  Uruguai: "Uruguai",
   Vietna: "Vietnã",
   ZA: "África do Sul",
   acao: "ação",
@@ -226,7 +250,9 @@ const posterTitleAliases = {
   "Booksmart": ["Fora de Série"],
   "Cabra Marcado para Morrer": ["Twenty Years Later"],
   "Cairo Station": ["Bab el Hadid", "Cairo Central"],
+  "Central Station": ["Central do Brasil"],
   "Chungking Express": ["Amores Expressos"],
+  "City of God": ["Cidade de Deus"],
   "Decision to Leave": ["Decisão de Partir"],
   "Divine Intervention": ["Intervenção Divina"],
   "Drive My Car": ["Doraibu mai ka"],
@@ -239,14 +265,19 @@ const posterTitleAliases = {
   "If Beale Street Could Talk": ["Se a Rua Beale Falasse"],
   "In Bruges": ["Na Mira do Chefe"],
   "In the Mood for Love": ["Amor à Flor da Pele"],
+  "Ida": ["Ida"],
   "Little Miss Sunshine": ["Pequena Miss Sunshine"],
   "Macunaima": ["Macunaíma"],
   "Mary and Max": ["Mary e Max"],
   "Minari": ["Minari: Em Busca da Felicidade"],
+  "Monos": ["Monos: Entre o Céu e o Inferno"],
+  "Mother": ["Madeo"],
   "Moonrise Kingdom": ["Moonrise Kingdom: Amor Sublime"],
   "My Neighbor Totoro": ["Meu Amigo Totoro"],
+  "Neighboring Sounds": ["O Som ao Redor"],
   "Night of the Kings": ["La Nuit des rois", "Noite dos Reis"],
   "No Country for Old Men": ["Onde os Fracos Não Têm Vez"],
+  "Oldboy": ["Oldeuboi"],
   "Once": ["Apenas Uma Vez"],
   "Ong-Bak": ["Ong-Bak: Guerreiro Sagrado"],
   "Paddington 2": ["As Aventuras de Paddington 2"],
@@ -255,37 +286,50 @@ const posterTitleAliases = {
   "Paradise Now": ["Paradise Now: Paraíso Agora"],
   "Past Lives": ["Vidas Passadas"],
   "Persepolis": ["Persépolis"],
+  "Portrait of a Lady on Fire": ["Retrato de uma Jovem em Chamas"],
   "Punch-Drunk Love": ["Embriagado de Amor"],
   "Rafiki": ["Rafiki: Amigas para Sempre"],
   "Santiago": ["Santiago: Uma Reflexão Sobre o Material Bruto"],
+  "Shoplifters": ["Assunto de Família"],
   "Sing Street": ["Sing Street: Música e Sonho"],
+  "Spirited Away": ["A Viagem de Chihiro"],
   "Supa Modo": ["Supa Modo: O Filme"],
   "Taste of Cherry": ["Gosto de Cereja"],
   "The Act of Killing": ["O Ato de Matar"],
+  "The Babadook": ["O Babadook"],
   "The Banshees of Inisherin": ["Os Banshees de Inisherin"],
   "The Big Lebowski": ["O Grande Lebowski"],
   "The Big Sick": ["Doentes de Amor"],
+  "The Castle": ["Um Sonho Quase Perfeito"],
   "The Farewell": ["A Despedida"],
   "The Favourite": ["A Favorita"],
   "The Grand Budapest Hotel": ["O Grande Hotel Budapeste"],
+  "The Given Word": ["O Pagador de Promessas"],
+  "The Handmaiden": ["A Criada"],
   "The Hunt": ["A Caça"],
   "The Insult": ["O Insulto"],
+  "The Intouchables": ["Intocáveis"],
   "The Lobster": ["O Lagosta"],
   "The Lunchbox": ["A Lancheira"],
+  "The Milk of Sorrow": ["A Teta Assustada"],
   "The Present": ["O Presente"],
   "The Raid": ["Operação Invasão", "Serbuan maut"],
   "The Raid 2": ["Operação Invasão 2"],
   "The Royal Tenenbaums": ["Os Excêntricos Tenenbaums"],
   "The Salesman": ["O Apartamento"],
+  "The Secret in Their Eyes": ["O Segredo dos Seus Olhos"],
   "The Shape of Water": ["A Forma da Água"],
   "The Square": ["A Praça"],
+  "The Tale of the Princess Kaguya": ["O Conto da Princesa Kaguya"],
   "The Worst Person in the World": ["A Pior Pessoa do Mundo"],
   "This Is Not a Burial, It's a Resurrection": ["This Is Not a Burial Its a Resurrection"],
   "Touki Bouki": ["A Viagem da Hiena"],
   "Uncle Boonmee Who Can Recall His Past Lives": ["Tio Boonmee, Que Pode Recordar Suas Vidas Passadas"],
   "Wadjda": ["O Sonho de Wadjda"],
   "Waltz with Bashir": ["Valsa com Bashir"],
+  "Whale Rider": ["Encantadora de Baleias"],
   "Where Is the Friend's House?": ["Onde Fica a Casa do Meu Amigo?"],
+  "Wild Tales": ["Relatos Selvagens"],
   "Xala": ["A Maldição"],
   "Y Tu Mama Tambien": ["E Sua Mãe Também"],
   "Yi Yi": ["Yi Yi: Um e Dois"]
@@ -1119,6 +1163,45 @@ const extraCuratedMovies = [
   ["Tower", 2016, "Documentario", 82, "Estados Unidos", "Keith Maitland", 79, 99, ["intenso", "complexo"], ["documentario", "animacao", "memoria"], false],
   ["Kedi", 2016, "Documentario", 79, "Turquia", "Ceyda Torun", 76, 98, ["comfort", "sensivel"], ["documentario", "Istambul", "cotidiano"], false],
   ["The Act of Killing", 2012, "Documentario", 159, "Dinamarca", "Joshua Oppenheimer", 82, 95, ["complexo", "intenso"], ["documentario", "memoria", "Indonesia"], true],
+  ["City of God", 2002, "Crime", 130, "Brasil", "Fernando Meirelles", 86, 91, ["intenso", "complexo"], ["favela", "crime", "Brasil"], true],
+  ["Central Station", 1998, "Drama", 113, "Brasil", "Walter Salles", 80, 94, ["sensivel", "nostalgia"], ["estrada", "familia", "Brasil"], true],
+  ["Pixote", 1980, "Drama", 128, "Brasil", "Hector Babenco", 79, 94, ["intenso", "complexo"], ["infancia", "rua", "Brasil"], false],
+  ["Aquarius", 2016, "Drama", 146, "Brasil", "Kleber Mendonca Filho", 74, 97, ["sensivel", "complexo"], ["memoria", "casa", "resistencia"], true],
+  ["Neighboring Sounds", 2012, "Drama", 131, "Brasil", "Kleber Mendonca Filho", 71, 92, ["complexo", "surpresa"], ["classe", "bairro", "tensao"], false],
+  ["The Given Word", 1962, "Drama", 98, "Brasil", "Anselmo Duarte", 82, 95, ["nostalgia", "complexo"], ["promessa", "religiao", "Brasil"], false],
+  ["Black Orpheus", 1959, "Romance", 100, "Brasil", "Marcel Camus", 74, 87, ["nostalgia", "sensivel"], ["musica", "mito", "Rio"], false],
+  ["Wild Tales", 2014, "Comedia", 122, "Argentina", "Damian Szifron", 81, 94, ["leve", "intenso", "surpresa"], ["vinganca", "absurdo", "antologia"], true],
+  ["The Secret in Their Eyes", 2009, "Crime", 129, "Argentina", "Juan Jose Campanella", 82, 89, ["intenso", "sensivel"], ["memoria", "investigacao", "amor"], true],
+  ["La Cienaga", 2001, "Drama", 103, "Argentina", "Lucrecia Martel", 71, 86, ["complexo", "surpresa"], ["familia", "calor", "Argentina"], false],
+  ["Nostalgia for the Light", 2010, "Documentario", 90, "Chile", "Patricio Guzman", 76, 100, ["complexo", "sensivel"], ["documentario", "memoria", "deserto"], true],
+  ["A Fantastic Woman", 2017, "Drama", 104, "Chile", "Sebastian Lelio", 72, 94, ["sensivel", "complexo"], ["luto", "identidade", "Chile"], false],
+  ["Embrace of the Serpent", 2015, "Drama", 125, "Colombia", "Ciro Guerra", 78, 96, ["complexo", "surpresa"], ["Amazonia", "memoria", "colonizacao"], true],
+  ["Monos", 2019, "Drama", 103, "Colombia", "Alejandro Landes", 69, 92, ["intenso", "surpresa"], ["selva", "guerra", "juventude"], false],
+  ["The Milk of Sorrow", 2009, "Drama", 94, "Peru", "Claudia Llosa", 67, 78, ["sensivel", "complexo"], ["trauma", "musica", "Peru"], false],
+  ["The Wolf House", 2018, "Animacao", 75, "Chile", "Cristobal Leon", 75, 96, ["surpresa", "complexo"], ["animacao adulta", "conto", "pesadelo"], false],
+  ["Shoplifters", 2018, "Drama", 121, "Japao", "Hirokazu Kore-eda", 79, 99, ["sensivel", "comfort"], ["familia", "crime", "afeto"], true],
+  ["Still Walking", 2008, "Drama", 114, "Japao", "Hirokazu Kore-eda", 79, 100, ["sensivel", "comfort"], ["familia", "luto", "cotidiano"], false],
+  ["Nobody Knows", 2004, "Drama", 141, "Japao", "Hirokazu Kore-eda", 80, 93, ["sensivel", "intenso"], ["infancia", "abandono", "Japao"], false],
+  ["Perfect Days", 2023, "Drama", 124, "Japao", "Wim Wenders", 78, 96, ["sensivel", "comfort"], ["cotidiano", "silencio", "Tokyo"], true],
+  ["Spirited Away", 2001, "Animacao", 125, "Japao", "Hayao Miyazaki", 86, 96, ["comfort", "nostalgia", "surpresa"], ["Ghibli", "fantasia", "infancia"], true],
+  ["The Tale of the Princess Kaguya", 2013, "Animacao", 137, "Japao", "Isao Takahata", 80, 100, ["sensivel", "complexo"], ["Ghibli", "conto", "melancolia"], false],
+  ["The Handmaiden", 2016, "Suspense", 145, "Coreia do Sul", "Park Chan-wook", 81, 95, ["intenso", "complexo"], ["desejo", "golpe", "Coreia"], true],
+  ["Memories of Murder", 2003, "Crime", 131, "Coreia do Sul", "Bong Joon-ho", 81, 95, ["intenso", "complexo"], ["investigacao", "crime", "obsessao"], true],
+  ["Poetry", 2010, "Drama", 139, "Coreia do Sul", "Lee Chang-dong", 78, 100, ["sensivel", "complexo"], ["poesia", "culpa", "memoria"], false],
+  ["Mother", 2009, "Crime", 129, "Coreia do Sul", "Bong Joon-ho", 77, 96, ["intenso", "sensivel"], ["mae", "investigacao", "culpa"], false],
+  ["Oldboy", 2003, "Suspense", 120, "Coreia do Sul", "Park Chan-wook", 84, 82, ["intenso", "complexo"], ["vinganca", "cult", "violencia"], true],
+  ["A Sun", 2019, "Drama", 156, "Taiwan", "Chung Mong-hong", 76, 96, ["sensivel", "complexo"], ["familia", "culpa", "Taiwan"], false],
+  ["The Assassin", 2015, "Acao", 105, "Taiwan", "Hou Hsiao-hsien", 63, 80, ["surpresa", "acao"], ["wuxia", "silencio", "estilo"], false],
+  ["Ida", 2013, "Drama", 82, "Polonia", "Pawel Pawlikowski", 74, 96, ["complexo", "sensivel"], ["memoria", "religiao", "preto e branco"], false],
+  ["Portrait of a Lady on Fire", 2019, "Romance", 122, "Franca", "Celine Sciamma", 81, 97, ["sensivel", "complexo"], ["desejo", "arte", "memoria"], true],
+  ["Petite Maman", 2021, "Drama", 72, "Franca", "Celine Sciamma", 74, 97, ["sensivel", "comfort"], ["infancia", "luto", "fantasia"], false],
+  ["The Intouchables", 2011, "Comedia", 113, "Franca", "Olivier Nakache", 85, 76, ["comfort", "leve"], ["amizade", "humor", "Franca"], false],
+  ["Raw", 2016, "Terror", 99, "Franca", "Julia Ducournau", 70, 93, ["intenso", "surpresa"], ["corpo", "desejo", "canibalismo"], false],
+  ["The Babadook", 2014, "Terror", 94, "Australia", "Jennifer Kent", 68, 98, ["intenso", "complexo"], ["luto", "maternidade", "terror"], false],
+  ["The Castle", 1997, "Comedia", 85, "Australia", "Rob Sitch", 76, 87, ["leve", "comfort"], ["familia", "casa", "Australia"], false],
+  ["Whale Rider", 2002, "Drama", 101, "Nova Zelandia", "Niki Caro", 75, 91, ["sensivel", "comfort"], ["familia", "tradicao", "lideranca"], false],
+  ["Hunt for the Wilderpeople", 2016, "Comedia", 101, "Nova Zelandia", "Taika Waititi", 78, 97, ["leve", "comfort"], ["aventura", "familia", "fuga"], false],
+  ["Once Were Warriors", 1994, "Drama", 99, "Nova Zelandia", "Lee Tamahori", 79, 93, ["intenso", "sensivel"], ["familia", "violencia", "Maori"], false],
   ["Collective", 2019, "Documentario", 109, "Romenia", "Alexander Nanau", 81, 99, ["intenso", "complexo"], ["documentario", "jornalismo", "corrupcao"], false]
 ];
 
@@ -1133,6 +1216,7 @@ function createCuratedMovie([title, year, genre, duration, country, director, im
     director,
     imdb,
     rt,
+    rtSource: "curated",
     vibes,
     tags,
     seen: false,
@@ -1142,6 +1226,10 @@ function createCuratedMovie([title, year, genre, duration, country, director, im
 }
 
 curatedMovies.push(...extraCuratedMovies.map(createCuratedMovie));
+curatedMovies.forEach((movie) => {
+  movie.source = movie.source || "curated";
+  movie.rtSource = movie.rtSource || "curated";
+});
 
 let activeMood = "comfort";
 let activeMode = "mood";
@@ -1158,7 +1246,7 @@ let recommendationQueue = [];
 let recommendationSignature = "";
 let priorityPosterHydrationStarted = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
-const posterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
+const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
 const profileData = {
   watched: new Set(),
@@ -1273,6 +1361,11 @@ function ratingAverage(movie) {
 
 function formatImdbScore(score) {
   return (Number(score || 0) / 10).toFixed(1).replace(".", ",");
+}
+
+function secondaryScoreLabel(movie) {
+  if (movie.rtSource === "omdb" || movie.rtSource === "curated") return "Rotten Tomatoes";
+  return "TMDb";
 }
 
 function formatRuntime(minutes) {
@@ -1456,6 +1549,9 @@ function weightedShuffle(list, scope = "weighted") {
 function mergeMovieEnhancements(primary, candidate) {
   return {
     ...primary,
+    imdb: primary.imdb || candidate.imdb || 0,
+    rt: primary.rtSource === "omdb" || primary.rtSource === "curated" ? primary.rt : candidate.rt || primary.rt || 0,
+    rtSource: primary.rtSource === "omdb" || primary.rtSource === "curated" ? primary.rtSource : candidate.rtSource || primary.rtSource || "",
     posterUrl: primary.posterUrl || candidate.posterUrl || "",
     backdropUrl: primary.backdropUrl || candidate.backdropUrl || "",
     imdbId: primary.imdbId || candidate.imdbId || "",
@@ -1470,6 +1566,11 @@ function mergeMovieEnhancements(primary, candidate) {
 }
 
 function applyMovieEnhancements(target, enhanced) {
+  target.imdb = target.imdb || enhanced.imdb || 0;
+  if ((target.rtSource !== "omdb" && target.rtSource !== "curated") || !target.rt) {
+    target.rt = enhanced.rt || target.rt || 0;
+    target.rtSource = enhanced.rtSource || target.rtSource || "";
+  }
   target.posterUrl = target.posterUrl || enhanced.posterUrl || "";
   target.backdropUrl = target.backdropUrl || enhanced.backdropUrl || "";
   target.imdbId = target.imdbId || enhanced.imdbId || "";
@@ -1665,6 +1766,7 @@ function applyPosterCache() {
     movie.backdropUrl = cached.backdropUrl || movie.backdropUrl;
     movie.imdb = cached.imdb || movie.imdb;
     movie.rt = cached.rt || movie.rt;
+    movie.rtSource = cached.rtSource || movie.rtSource;
     movie.tmdbVotes = cached.tmdbVotes || movie.tmdbVotes;
     movie.imdbId = cached.imdbId || movie.imdbId;
     movie.providers = cached.providers || movie.providers;
@@ -1678,12 +1780,13 @@ function cacheMovieEnhancement(movie) {
     backdropUrl: movie.backdropUrl,
     imdb: movie.imdb,
     rt: movie.rt,
+    rtSource: movie.rtSource,
     tmdbVotes: movie.tmdbVotes,
     imdbId: movie.imdbId,
     providers: movie.providers,
     source: movie.source
   };
-  localStorage.setItem("cinepick_poster_cache", JSON.stringify(posterCache));
+  localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
   syncMovieEnhancement(movie);
 }
 
@@ -1709,7 +1812,10 @@ function restoreTmdbCatalogCache() {
   if (cached.version !== tmdbCatalogConfig.cacheVersion) return false;
   if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
 
-  tmdbMovies = cached.movies;
+    tmdbMovies = cached.movies;
+    tmdbMovies.forEach((movie) => {
+      movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
+    });
   useTmdb = true;
   els.useTmdb.checked = true;
   localStorage.setItem("cinepick_use_tmdb", "true");
@@ -1727,7 +1833,10 @@ async function restoreCatalogSeed() {
     const seed = await response.json();
     if (!seed?.movies?.length) return false;
 
-    tmdbMovies = seed.movies;
+    tmdbMovies = seed.movies.map((movie) => ({
+      ...movie,
+      rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb")
+    }));
     useTmdb = true;
     els.useTmdb.checked = true;
     localStorage.setItem("cinepick_use_tmdb", "true");
@@ -2111,7 +2220,10 @@ async function enrichRatingsFromOmdb(movie) {
   const imdb = Math.round((Number(payload.imdbRating) || 0) * 10);
   const rt = rottenTomatoesFromOmdb(payload);
   if (imdb) movie.imdb = imdb;
-  if (rt) movie.rt = rt;
+  if (rt) {
+    movie.rt = rt;
+    movie.rtSource = "omdb";
+  }
   movie.imdbId = payload.imdbID || movie.imdbId || "";
   movie.source = movie.source && movie.source.includes("tmdb") ? "tmdb-omdb" : "curated-omdb";
   cacheMovieEnhancement(movie);
@@ -2181,7 +2293,8 @@ function mapTmdbMovie(movie, details) {
     genres,
     overview: movie.overview || "",
     imdb: vote,
-    rt: Math.min(100, Math.round((movie.popularity || 0) / 2) + 50),
+    rt: vote,
+    rtSource: "tmdb",
     tmdbVotes: movie.vote_count || 0,
     imdbId: details.external_ids?.imdb_id || "",
     providers: providersFromDetails(details),
@@ -2353,7 +2466,10 @@ async function findPosterForMovie(movie) {
   movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
   if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
   movie.imdb = Math.round((match.vote_average || movie.imdb / 10) * 10);
-  movie.rt = Math.max(movie.rt || 0, Math.min(100, Math.round((match.vote_average || 0) * 10)));
+  if (!movie.rt || movie.rtSource === "tmdb") {
+    movie.rt = Math.min(100, Math.round((match.vote_average || 0) * 10));
+    movie.rtSource = "tmdb";
+  }
   movie.tmdbVotes = match.vote_count || movie.tmdbVotes || 0;
   movie.imdbId = details.external_ids?.imdb_id || movie.imdbId || "";
   movie.providers = providersFromDetails(details);
@@ -2403,15 +2519,25 @@ async function hydratePriorityPosters() {
   if (staticLocalhost) return;
   priorityPosterHydrationStarted = true;
 
-  const candidates = filteredMovies()
+  const visibleMovies = filteredMovies();
+  const ratingCandidates = visibleMovies
+    .filter((movie) => movie.rtSource !== "omdb" && movie.imdbId)
+    .slice(0, 32);
+  const candidates = visibleMovies
     .filter((movie) => !movie.posterUrl)
     .slice(0, 48);
-  if (!candidates.length) return;
+  if (!candidates.length && !ratingCandidates.length) return;
 
   const previousStatus = els.tmdbStatus.textContent;
   let found = 0;
 
   try {
+    if (ratingCandidates.length) {
+      const ratingResults = await Promise.all(ratingCandidates.map((movie) => enrichRatingsFromOmdb(movie).catch(() => false)));
+      found += ratingResults.filter(Boolean).length;
+      if (found) render();
+    }
+
     for (let index = 0; index < candidates.length; index += 4) {
       const batch = candidates.slice(index, index + 4);
       const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
@@ -2423,7 +2549,7 @@ async function hydratePriorityPosters() {
     }
 
     if (found) {
-      els.tmdbStatus.textContent = `${found} capas oficiais adicionadas automaticamente aos filmes em destaque.`;
+      els.tmdbStatus.textContent = `${found} capas e notas oficiais adicionadas automaticamente aos filmes em destaque.`;
       render();
       return;
     }
@@ -2609,12 +2735,10 @@ function renderHero(movie) {
         <div class="fact-item"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
         <div class="fact-item"><span>Período</span><strong>${movie.decade}s</strong></div>
       </div>
-      ${providers.length ? `
-        <div class="watch-strip">
-          <span>Onde assistir</span>
-          <strong>${providers.join(" / ")}</strong>
-        </div>
-      ` : ""}
+      <div class="watch-strip">
+        <span>Onde assistir</span>
+        <strong>${providers.length ? providers.join(" / ") : unavailableStreamingLabel}</strong>
+      </div>
       <div class="meta-block">
         <span class="section-label">Vibe</span>
         <div class="meta-line">
@@ -2624,7 +2748,7 @@ function renderHero(movie) {
       </div>
       <div class="score-row">
         <div class="score"><strong>${formatImdbScore(movie.imdb)}</strong><span>${hasOmdb || !hasTmdb ? "IMDb" : "TMDb"}</span></div>
-        <div class="score"><strong>${movie.rt}%</strong><span>Rotten Tomatoes</span></div>
+        <div class="score"><strong>${movie.rt}%</strong><span>${secondaryScoreLabel(movie)}</span></div>
       </div>
       <div class="rec-actions">
         <button type="button" data-next>
@@ -2643,7 +2767,7 @@ function renderHero(movie) {
 function renderShortlist(list) {
   els.matchCount.textContent = `${list.length} opções`;
   els.shortlist.innerHTML = list.slice(1, 5).map((movie) => {
-    const providerLine = movie.providers?.length ? `<br>${movie.providers.slice(0, 2).join(" / ")}` : "";
+    const providerLine = `<br>${movie.providers?.length ? movie.providers.slice(0, 2).join(" / ") : unavailableStreamingLabel}`;
     return `
     <article class="mini-card">
       <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
@@ -2663,7 +2787,7 @@ function renderMoreOptions(list) {
   const extra = list.slice(5, 29);
   els.moreCount.textContent = extra.length ? `${extra.length} filmes` : "sem extras";
   els.moreGrid.innerHTML = extra.map((movie) => {
-    const providerLine = movie.providers?.length ? `<br>${movie.providers.slice(0, 2).join(" / ")}` : "";
+    const providerLine = `<br>${movie.providers?.length ? movie.providers.slice(0, 2).join(" / ") : unavailableStreamingLabel}`;
     return `
     <article class="more-card">
       <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
