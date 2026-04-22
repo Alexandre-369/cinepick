@@ -242,13 +242,13 @@ const displayNames = {
 
 const posterTitleAliases = {
   "About Time": ["Questão de Tempo"],
-  "A Brighter Summer Day": ["Um Dia Quente de Verão"],
-  "A Scanner Darkly": ["O Homem Duplo"],
+  "A Brighter Summer Day": ["Um Dia Quente de Verão", "Guling jie shaonian sha ren shijian", "Gu ling jie shao nian sha ren shi jian"],
+  "A Scanner Darkly": ["O Homem Duplo", "A Scanner Darkly: O Homem Duplo"],
   "Atlantics": ["Atlantique"],
   "Before Sunrise": ["Antes do Amanhecer"],
   "Black Girl": ["La noire de...", "A Negra de..."],
   "Booksmart": ["Fora de Série"],
-  "Cabra Marcado para Morrer": ["Twenty Years Later"],
+  "Cabra Marcado para Morrer": ["Twenty Years Later", "Cabra marcado para morrer"],
   "Cairo Station": ["Bab el Hadid", "Cairo Central"],
   "Central Station": ["Central do Brasil"],
   "Chungking Express": ["Amores Expressos"],
@@ -256,9 +256,10 @@ const posterTitleAliases = {
   "Decision to Leave": ["Decisão de Partir"],
   "Divine Intervention": ["Intervenção Divina"],
   "Drive My Car": ["Doraibu mai ka"],
-  "Edificio Master": ["Edifício Master"],
+  "Deus e o Diabo na Terra do Sol": ["Black God, White Devil"],
+  "Edificio Master": ["Edifício Master", "Edifício Master: Uma obra sobre pessoas como você e eu"],
   "Felicite": ["Félicité"],
-  "Flee": ["Fuga"],
+  "Flee": ["Fuga", "Flugt"],
   "Force Majeure": ["Força Maior"],
   "Honeyland": ["Terra do Mel"],
   "I Lost My Body": ["Perdi Meu Corpo"],
@@ -274,12 +275,14 @@ const posterTitleAliases = {
   "Mother": ["Madeo"],
   "Moonrise Kingdom": ["Moonrise Kingdom: Amor Sublime"],
   "My Neighbor Totoro": ["Meu Amigo Totoro"],
-  "Neighboring Sounds": ["O Som ao Redor"],
+  "Ilha das Flores": ["Isle of Flowers"],
+  "Neighboring Sounds": ["O Som ao Redor", "Neighbouring Sounds"],
   "Night of the Kings": ["La Nuit des rois", "Noite dos Reis"],
   "No Country for Old Men": ["Onde os Fracos Não Têm Vez"],
   "Oldboy": ["Oldeuboi"],
   "Once": ["Apenas Uma Vez"],
   "Ong-Bak": ["Ong-Bak: Guerreiro Sagrado"],
+  "Os Fuzis": ["The Guns"],
   "Paddington 2": ["As Aventuras de Paddington 2"],
   "Palm Springs": ["Palm Springs: O Filme"],
   "Pan's Labyrinth": ["O Labirinto do Fauno"],
@@ -289,13 +292,15 @@ const posterTitleAliases = {
   "Portrait of a Lady on Fire": ["Retrato de uma Jovem em Chamas"],
   "Punch-Drunk Love": ["Embriagado de Amor"],
   "Rafiki": ["Rafiki: Amigas para Sempre"],
+  "Pixote": ["Pixote: A Lei do Mais Fraco"],
   "Santiago": ["Santiago: Uma Reflexão Sobre o Material Bruto"],
   "Shoplifters": ["Assunto de Família"],
   "Sing Street": ["Sing Street: Música e Sonho"],
   "Spirited Away": ["A Viagem de Chihiro"],
   "Supa Modo": ["Supa Modo: O Filme"],
   "Taste of Cherry": ["Gosto de Cereja"],
-  "The Act of Killing": ["O Ato de Matar"],
+  "Terra em Transe": ["Entranced Earth", "Land in Anguish"],
+  "The Act of Killing": ["O Ato de Matar", "Jagal"],
   "The Babadook": ["O Babadook"],
   "The Banshees of Inisherin": ["Os Banshees de Inisherin"],
   "The Big Lebowski": ["O Grande Lebowski"],
@@ -304,7 +309,7 @@ const posterTitleAliases = {
   "The Farewell": ["A Despedida"],
   "The Favourite": ["A Favorita"],
   "The Grand Budapest Hotel": ["O Grande Hotel Budapeste"],
-  "The Given Word": ["O Pagador de Promessas"],
+  "The Given Word": ["O Pagador de Promessas", "Keeper of Promises"],
   "The Handmaiden": ["A Criada"],
   "The Hunt": ["A Caça"],
   "The Insult": ["O Insulto"],
@@ -332,7 +337,9 @@ const posterTitleAliases = {
   "Wild Tales": ["Relatos Selvagens"],
   "Xala": ["A Maldição"],
   "Y Tu Mama Tambien": ["E Sua Mãe Também"],
-  "Yi Yi": ["Yi Yi: Um e Dois"]
+  "Vidas Secas": ["Barren Lives"],
+  "Waking Life": ["Waking Life: O Despertar da Vida"],
+  "Yi Yi": ["Yi Yi: Um e Dois", "A One and a Two", "Yi Yi: A One and a Two"]
 };
 
 const moodProfiles = {
@@ -2502,14 +2509,17 @@ async function findPosterForMovie(movie) {
 
   for (const query of queries) {
     for (const language of ["pt-BR", "en-US"]) {
-      const params = new URLSearchParams({
-        query,
-        language,
-        include_adult: "false",
-        year: String(movie.year)
-      });
-      const result = await tmdbFetch("/search/movie", params);
-      match = bestPosterMatch(result.results, movie, queries);
+      for (const yearMode of ["year", "primary_release_year", "loose"]) {
+        const params = new URLSearchParams({
+          query,
+          language,
+          include_adult: "false"
+        });
+        if (yearMode !== "loose") params.set(yearMode, String(movie.year));
+        const result = await tmdbFetch("/search/movie", params);
+        match = bestPosterMatch(result.results, movie, queries);
+        if (match) break;
+      }
       if (match) break;
     }
     if (match) break;
@@ -2622,7 +2632,7 @@ async function hydrateCatalogPostersInBackground() {
 
   const missingPosters = activeCatalog()
     .filter((movie) => !movie.posterUrl)
-    .slice(0, 96);
+    .slice(0, 180);
   if (!missingPosters.length) return;
 
   const previousStatus = els.tmdbStatus.textContent;
