@@ -349,12 +349,13 @@ const posterTitleAliases = {
 
 const moodProfiles = {
   leve: {
-    preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Romance", "Musica"],
-    avoidGenres: ["Crime", "Terror", "Suspense", "Guerra", "Misterio"],
+    preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Musica"],
+    avoidGenres: ["Drama", "Crime", "Terror", "Suspense", "Guerra", "Misterio"],
     hardAvoidGenres: ["Crime", "Terror", "Guerra"],
     conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
-    longMoviePenalty: 145
+    keywords: ["rapido", "rápido", "fofo", "aventura", "amizade", "musica", "música", "bondade", "pop"],
+    longMoviePenalty: 130
   },
   comfort: {
     preferredGenres: ["Comedia", "Animacao", "Familia", "Romance", "Musica", "Fantasia"],
@@ -1360,6 +1361,10 @@ const els = {
   useTmdb: document.querySelector("#use-tmdb"),
   tmdbStatus: document.querySelector("#tmdb-status"),
   dataDiagnostics: document.querySelector("#data-diagnostics"),
+  drawerToggle: document.querySelector("#drawer-toggle"),
+  drawerClose: document.querySelector("#drawer-close"),
+  drawer: document.querySelector("#side-drawer"),
+  drawerBackdrop: document.querySelector("#drawer-backdrop"),
   reroll: document.querySelector("#reroll"),
   spin: document.querySelector("#spin"),
   rouletteWheel: document.querySelector("#roulette-wheel"),
@@ -1598,6 +1603,23 @@ function escapistMismatch(movie) {
   const familyAdventure = hasGenre(movie, ["Familia"]) && hasGenre(movie, ["Aventura", "Animacao"]);
   const lightFranchise = hasGenre(movie, ["Acao"]) && hasGenre(movie, ["Aventura"]) && ratingAverage(movie) < 78;
   return actionComedy || familyAdventure || lightFranchise;
+}
+
+function lightMoodMismatch(movie) {
+  const text = movieSearchText(movie);
+  const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
+  const isMostlyDrama = hasGenre(movie, ["Drama"]) && !hasLightGenre;
+  const isBroodingRomance = hasGenre(movie, ["Romance"]) && hasAnyText(text, [
+    "luto", "melancolia", "melancólico", "melancolico", "tragico", "trágico", "obsessao", "obsessão",
+    "culpa", "trauma", "vinganca", "vingança", "sombrio", "gótico", "gotico", "depressao", "depressão"
+  ]);
+  const hasHeavyTerms = hasAnyText(text, [
+    "luto", "melancolia", "melancólico", "melancolico", "tragedia", "tragédia", "obsessao", "obsessão",
+    "culpa", "trauma", "violencia", "violência", "abuso", "sombrio", "morte", "depressao", "depressão"
+  ]);
+  const tooLongWithoutRelief = movieDuration(movie) > 132 && !hasLightGenre;
+  const hasMismatchVibe = (movie.vibes || []).some((vibe) => ["complexo", "intenso", "sensivel"].includes(vibe)) && !(movie.vibes || []).includes("leve");
+  return isMostlyDrama || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
 }
 
 function moodScore(movie) {
@@ -1932,7 +1954,7 @@ function moodMismatch(movie) {
   }
 
   if (activeMood === "leve") {
-    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hasConflictingVibe || hardAvoidMatches > 0 || lightMoodMismatch(movie) || (!preferredMatches && !hasVibe);
   }
 
   if (activeMood === "comfort") {
@@ -3136,6 +3158,7 @@ function renderHero(movie) {
     .filter((tag) => !hiddenForMood.has(normalize(tag)))
     .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
+  const heroTitleClass = movie.title.length > 30 ? "hero-title is-long" : movie.title.length > 20 ? "hero-title is-medium" : "hero-title";
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
@@ -3147,7 +3170,7 @@ function renderHero(movie) {
     </div>
     <div class="rec-copy">
       <span class="kicker">${activeMode === "roulette" ? "Roleta escolheu" : "Melhor escolha agora"}</span>
-      <h2>${movie.title}</h2>
+      <h2 class="${heroTitleClass}">${movie.title}</h2>
       <div class="movie-info-grid">
         <div class="info-tile info-wide"><span>Direção</span><strong>${movie.director}</strong></div>
         <div class="info-tile"><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
@@ -3191,6 +3214,14 @@ function renderMoreOptions(list) {
 
 function render() {
   renderWithAdvance(false);
+}
+
+function setDrawerOpen(open) {
+  if (!els.drawer || !els.drawerBackdrop) return;
+  els.drawer.classList.toggle("is-open", open);
+  els.drawer.setAttribute("aria-hidden", String(!open));
+  els.drawerBackdrop.hidden = !open;
+  document.body.classList.toggle("drawer-open", open);
 }
 
 function renderWithAdvance(advance) {
@@ -3259,6 +3290,18 @@ document.querySelectorAll(".settings-panel").forEach((panel) => {
   });
 });
 
+els.drawerToggle?.addEventListener("click", () => {
+  setDrawerOpen(true);
+});
+
+els.drawerClose?.addEventListener("click", () => {
+  setDrawerOpen(false);
+});
+
+els.drawerBackdrop?.addEventListener("click", () => {
+  setDrawerOpen(false);
+});
+
 document.addEventListener("click", (event) => {
   if (event.target.closest(".streaming-link")) return;
   const trigger = event.target.closest("[data-open-details]");
@@ -3268,6 +3311,10 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && els.drawer?.classList.contains("is-open")) {
+    setDrawerOpen(false);
+    return;
+  }
   if (event.key !== "Enter" && event.key !== " ") return;
   if (event.target.closest?.(".streaming-link")) return;
   const trigger = event.target.closest?.("[data-open-details]");

@@ -14,9 +14,14 @@
             <p class="eyebrow">CinePick</p>
             <h1 id="app-title">Menos busca. Mais filme.</h1>
           </div>
-          <button class="icon-button" id="reroll" type="button" aria-label="Gerar outra sugestão" title="Gerar outra sugestão">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2v4h-4M7 22v-4h4M19 9a7 7 0 0 0-11.9-4.9L5 6M5 15a7 7 0 0 0 11.9 4.9L19 18"/></svg>
-          </button>
+          <div class="brand-actions">
+            <button class="icon-button" id="drawer-toggle" type="button" aria-label="Abrir painel lateral" title="Abrir painel lateral">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="13" cy="18" r="2"/></svg>
+            </button>
+            <button class="icon-button" id="reroll" type="button" aria-label="Gerar outra sugestão" title="Gerar outra sugestão">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2v4h-4M7 22v-4h4M19 9a7 7 0 0 0-11.9-4.9L5 6M5 15a7 7 0 0 0 11.9 4.9L19 18"/></svg>
+            </button>
+          </div>
         </div>
 
         <div class="mode-tabs" role="tablist" aria-label="Modo de escolha">
@@ -50,175 +55,191 @@
             Girar roleta
           </button>
         </div>
-
-        <details class="settings-panel">
-          <summary>
-            <span>Ajustes finos</span>
-            <small>gênero, tempo, nota e streaming</small>
-          </summary>
-          <div class="filter-grid">
-            <label>
-              Gênero
-              <select id="genre">
-                <option value="qualquer">Qualquer</option>
-                <option value="Comedia">Comédia</option>
-                <option>Drama</option>
-                <option value="Ficcao cientifica">Ficção científica</option>
-                <option>Suspense</option>
-                <option>Romance</option>
-                <option>Crime</option>
-                <option value="Acao">Ação</option>
-                <option value="Animacao">Animação</option>
-                <option value="Familia">Família</option>
-                <option value="Terror">Terror</option>
-                <option value="Misterio">Mistério</option>
-              </select>
-            </label>
-            <label>
-              Duração
-              <select id="duration">
-                <option value="qualquer">Qualquer</option>
-                <option value="ate90">Até 90 min</option>
-                <option value="curto">Até 100 min</option>
-                <option value="medio">100 a 130 min</option>
-                <option value="longo">Mais de 130 min</option>
-              </select>
-            </label>
-            <label>
-              Década
-              <select id="decade">
-                <option value="qualquer">Qualquer</option>
-                <option value="1970">1970s</option>
-                <option value="1980">1980s</option>
-                <option value="1990">1990s</option>
-                <option value="2000">2000s</option>
-                <option value="2010">2010s</option>
-                <option value="2020">2020s</option>
-              </select>
-            </label>
-            <label>
-              Nacionalidade
-              <select id="country">
-                <option value="qualquer">Qualquer</option>
-                <option value="Africa do Sul">África do Sul</option>
-                <option>Brasil</option>
-                <option>Estados Unidos</option>
-                <option>Coreia do Sul</option>
-                <option value="Austria">Áustria</option>
-                <option value="Japao">Japão</option>
-                <option value="Franca">França</option>
-                <option>Reino Unido</option>
-                <option>Alemanha</option>
-                <option>Argentina</option>
-                <option value="Australia">Austrália</option>
-                <option value="Canada">Canadá</option>
-                <option>Chile</option>
-                <option>China</option>
-                <option>Dinamarca</option>
-                <option>Espanha</option>
-                <option value="India">Índia</option>
-                <option value="Ira">Irã</option>
-                <option>Irlanda</option>
-                <option value="Italia">Itália</option>
-                <option value="Mexico">México</option>
-                <option>Noruega</option>
-                <option value="Paises Baixos">Países Baixos</option>
-                <option value="Polonia">Polônia</option>
-                <option>Portugal</option>
-                <option value="Russia">Rússia</option>
-                <option value="Suecia">Suécia</option>
-                <option value="Tailandia">Tailândia</option>
-                <option>Taiwan</option>
-                <option>Turquia</option>
-              </select>
-            </label>
-            <label class="wide-field">
-              Diretor ou vibe
-              <input id="director" type="text" placeholder="Nolan, Kaufman, nostalgia...">
-            </label>
-            <label>
-              Nota mínima
-              <input id="rating" type="range" min="0" max="95" value="72">
-              <span id="rating-value">72</span>
-            </label>
-            <label>
-              Streaming
-              <select id="provider">
-                <option value="qualquer">Qualquer</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="toggle-row">
-            <label class="switch">
-              <input id="hide-watched" type="checkbox" checked>
-              <span></span>
-            </label>
-            <span>Evitar filmes que eu já vi</span>
-          </div>
-        </details>
-
-        <details class="settings-panel profile-panel">
-          <summary>
-            <span>Perfil</span>
-            <small>Filmow ou Letterboxd</small>
-          </summary>
-          <div class="profile-sync">
-            <label for="profile">Usuário ou fonte</label>
-            <div class="sync-row">
-              <input id="profile" type="text" placeholder="@seuusuario">
-              <button id="sync-demo" type="button">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>
-                Simular
-              </button>
-            </div>
-            <label class="file-drop" for="profile-files">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
-              <span>Importar CSV do Letterboxd ou Filmow</span>
-              <input id="profile-files" type="file" accept=".csv,text/csv" multiple>
-            </label>
-            <p id="sync-status" class="microcopy">Importe watched.csv, ratings.csv, diary.csv ou uma planilha com titulo e ano. Sem senha, tudo local.</p>
-            <div class="profile-stats" id="profile-stats" hidden></div>
-          </div>
-        </details>
-
-        <details class="settings-panel data-panel">
-          <summary>
-            <span>TMDb / IMDb</span>
-            <small>catálogo, capas e notas</small>
-          </summary>
-          <div class="profile-sync">
-            <label for="tmdb-token">Token de leitura da API</label>
-            <div class="sync-row">
-              <input id="tmdb-token" type="password" placeholder="Opcional se a Vercel tiver TMDB_READ_TOKEN">
-              <button id="load-tmdb" type="button">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0 0 19 5M19 5v5h-5"/></svg>
-                Atualizar
-              </button>
-            </div>
-            <label for="omdb-key">Chave OMDb</label>
-            <input id="omdb-key" type="password" placeholder="Opcional se a Vercel tiver OMDB_API_KEY">
-            <button class="wide-action" id="hydrate-posters" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 13l2.2-2.2a1 1 0 0 1 1.4 0L18 17M8 9h.01"/></svg>
-              Buscar capas e notas da curadoria
-            </button>
-            <div class="toggle-row">
-              <label class="switch">
-                <input id="use-tmdb" type="checkbox">
-                <span></span>
-              </label>
-              <span>Usar catálogo TMDb quando disponível</span>
-            </div>
-            <p id="tmdb-status" class="microcopy">O catálogo expandido carrega sozinho; Atualizar renova capas, notas e streaming em lotes.</p>
-            <div class="data-diagnostics" id="data-diagnostics" aria-live="polite"></div>
-          </div>
-        </details>
       </section>
 
       <section class="result-panel" aria-live="polite">
         <article class="hero-rec" id="hero-rec"></article>
       </section>
     </main>
+
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="side-drawer" id="side-drawer" aria-hidden="true">
+      <div class="drawer-shell">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Painel lateral</p>
+            <h2>Afine a sessão</h2>
+          </div>
+          <button class="icon-button" id="drawer-close" type="button" aria-label="Fechar painel lateral" title="Fechar painel lateral">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <details class="settings-panel" open>
+            <summary>
+              <span>Ajustes finos</span>
+              <small>gênero, tempo, nota e streaming</small>
+            </summary>
+            <div class="filter-grid">
+              <label>
+                Gênero
+                <select id="genre">
+                  <option value="qualquer">Qualquer</option>
+                  <option value="Comedia">Comédia</option>
+                  <option>Drama</option>
+                  <option value="Ficcao cientifica">Ficção científica</option>
+                  <option>Suspense</option>
+                  <option>Romance</option>
+                  <option>Crime</option>
+                  <option value="Acao">Ação</option>
+                  <option value="Animacao">Animação</option>
+                  <option value="Familia">Família</option>
+                  <option value="Terror">Terror</option>
+                  <option value="Misterio">Mistério</option>
+                </select>
+              </label>
+              <label>
+                Duração
+                <select id="duration">
+                  <option value="qualquer">Qualquer</option>
+                  <option value="ate90">Até 90 min</option>
+                  <option value="curto">Até 100 min</option>
+                  <option value="medio">100 a 130 min</option>
+                  <option value="longo">Mais de 130 min</option>
+                </select>
+              </label>
+              <label>
+                Década
+                <select id="decade">
+                  <option value="qualquer">Qualquer</option>
+                  <option value="1970">1970s</option>
+                  <option value="1980">1980s</option>
+                  <option value="1990">1990s</option>
+                  <option value="2000">2000s</option>
+                  <option value="2010">2010s</option>
+                  <option value="2020">2020s</option>
+                </select>
+              </label>
+              <label>
+                Nacionalidade
+                <select id="country">
+                  <option value="qualquer">Qualquer</option>
+                  <option value="Africa do Sul">África do Sul</option>
+                  <option>Brasil</option>
+                  <option>Estados Unidos</option>
+                  <option>Coreia do Sul</option>
+                  <option value="Austria">Áustria</option>
+                  <option value="Japao">Japão</option>
+                  <option value="Franca">França</option>
+                  <option>Reino Unido</option>
+                  <option>Alemanha</option>
+                  <option>Argentina</option>
+                  <option value="Australia">Austrália</option>
+                  <option value="Canada">Canadá</option>
+                  <option>Chile</option>
+                  <option>China</option>
+                  <option>Dinamarca</option>
+                  <option>Espanha</option>
+                  <option value="India">Índia</option>
+                  <option value="Ira">Irã</option>
+                  <option>Irlanda</option>
+                  <option value="Italia">Itália</option>
+                  <option value="Mexico">México</option>
+                  <option>Noruega</option>
+                  <option value="Paises Baixos">Países Baixos</option>
+                  <option value="Polonia">Polônia</option>
+                  <option>Portugal</option>
+                  <option value="Russia">Rússia</option>
+                  <option value="Suecia">Suécia</option>
+                  <option value="Tailandia">Tailândia</option>
+                  <option>Taiwan</option>
+                  <option>Turquia</option>
+                </select>
+              </label>
+              <label class="wide-field">
+                Diretor ou vibe
+                <input id="director" type="text" placeholder="Nolan, Kaufman, nostalgia...">
+              </label>
+              <label>
+                Nota mínima
+                <input id="rating" type="range" min="0" max="95" value="72">
+                <span id="rating-value">72</span>
+              </label>
+              <label>
+                Streaming
+                <select id="provider">
+                  <option value="qualquer">Qualquer</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <label class="switch">
+                <input id="hide-watched" type="checkbox" checked>
+                <span></span>
+              </label>
+              <span>Evitar filmes que eu já vi</span>
+            </div>
+          </details>
+
+          <details class="settings-panel profile-panel">
+            <summary>
+              <span>Perfil</span>
+              <small>Filmow ou Letterboxd</small>
+            </summary>
+            <div class="profile-sync">
+              <label for="profile">Usuário ou fonte</label>
+              <div class="sync-row">
+                <input id="profile" type="text" placeholder="@seuusuario">
+                <button id="sync-demo" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>
+                  Simular
+                </button>
+              </div>
+              <label class="file-drop" for="profile-files">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+                <span>Importar CSV do Letterboxd ou Filmow</span>
+                <input id="profile-files" type="file" accept=".csv,text/csv" multiple>
+              </label>
+              <p id="sync-status" class="microcopy">Importe watched.csv, ratings.csv, diary.csv ou uma planilha com titulo e ano. Sem senha, tudo local.</p>
+              <div class="profile-stats" id="profile-stats" hidden></div>
+            </div>
+          </details>
+
+          <details class="settings-panel data-panel">
+            <summary>
+              <span>TMDb / IMDb</span>
+              <small>catálogo, capas e notas</small>
+            </summary>
+            <div class="profile-sync">
+              <label for="tmdb-token">Token de leitura da API</label>
+              <div class="sync-row">
+                <input id="tmdb-token" type="password" placeholder="Opcional se a Vercel tiver TMDB_READ_TOKEN">
+                <button id="load-tmdb" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0 0 19 5M19 5v5h-5"/></svg>
+                  Atualizar
+                </button>
+              </div>
+              <label for="omdb-key">Chave OMDb</label>
+              <input id="omdb-key" type="password" placeholder="Opcional se a Vercel tiver OMDB_API_KEY">
+              <button class="wide-action" id="hydrate-posters" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 13l2.2-2.2a1 1 0 0 1 1.4 0L18 17M8 9h.01"/></svg>
+                Buscar capas e notas da curadoria
+              </button>
+              <div class="toggle-row">
+                <label class="switch">
+                  <input id="use-tmdb" type="checkbox">
+                  <span></span>
+                </label>
+                <span>Usar catálogo TMDb quando disponível</span>
+              </div>
+              <p id="tmdb-status" class="microcopy">O catálogo expandido carrega sozinho; Atualizar renova capas, notas e streaming em lotes.</p>
+              <div class="data-diagnostics" id="data-diagnostics" aria-live="polite"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </aside>
 
     <dialog class="movie-dialog" id="movie-dialog">
       <div class="dialog-shell">
