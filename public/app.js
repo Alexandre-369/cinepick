@@ -66,6 +66,7 @@ const countryCodes = {
   "Filipinas": "PH",
   "Estados Unidos": "US",
   "Georgia": "GE",
+  "Gana": "GH",
   "Grecia": "GR",
   "Guatemala": "GT",
   "Hungria": "HU",
@@ -105,22 +106,23 @@ const countryCodes = {
   "Turquia": "TR",
   "Uruguai": "UY",
   "Vietna": "VN",
+  "Zambia": "ZM",
   "Reino Unido": "GB"
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 9,
-  limit: 420,
+  cacheVersion: 10,
+  limit: 560,
   batchSize: 14,
-  omdbEnrichLimit: 24,
+  omdbEnrichLimit: 36,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
 
 const catalogDecades = [1970, 1980, 1990, 2000, 2010, 2020];
-const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR"];
+const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG"];
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
 const recommendationHistoryKey = "cinepick_recommendation_history_v1";
-const recommendationHistoryLimit = 90;
+const recommendationHistoryLimit = 160;
 const posterCacheKey = "cinepick_poster_cache_v2";
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 
@@ -148,6 +150,7 @@ const displayNames = {
   Japao: "Japão",
   Franca: "França",
   Georgia: "Geórgia",
+  Gana: "Gana",
   Grecia: "Grécia",
   Guatemala: "Guatemala",
   Hungria: "Hungria",
@@ -180,6 +183,7 @@ const displayNames = {
   Tunisia: "Tunísia",
   Uruguai: "Uruguai",
   Vietna: "Vietnã",
+  Zambia: "Zâmbia",
   ZA: "África do Sul",
   acao: "ação",
   adolescencia: "adolescência",
@@ -1212,6 +1216,63 @@ const extraCuratedMovies = [
   ["Whale Rider", 2002, "Drama", 101, "Nova Zelandia", "Niki Caro", 75, 91, ["sensivel", "comfort"], ["familia", "tradicao", "lideranca"], false],
   ["Hunt for the Wilderpeople", 2016, "Comedia", 101, "Nova Zelandia", "Taika Waititi", 78, 97, ["leve", "comfort"], ["aventura", "familia", "fuga"], false],
   ["Once Were Warriors", 1994, "Drama", 99, "Nova Zelandia", "Lee Tamahori", 79, 93, ["intenso", "sensivel"], ["familia", "violencia", "Maori"], false],
+  ["Aftersun", 2022, "Drama", 102, "Reino Unido", "Charlotte Wells", 77, 95, ["sensivel", "complexo"], ["memoria", "pai e filha", "ferias"], true],
+  ["All of Us Strangers", 2023, "Romance", 105, "Reino Unido", "Andrew Haigh", 77, 96, ["sensivel", "complexo"], ["fantasma", "luto", "amor"], false],
+  ["Weekend", 2011, "Romance", 97, "Reino Unido", "Andrew Haigh", 76, 95, ["sensivel", "leve"], ["intimidade", "conversa", "romance"], false],
+  ["The Rider", 2017, "Drama", 104, "Estados Unidos", "Chloe Zhao", 74, 97, ["sensivel", "comfort"], ["faroeste", "cura", "familia"], false],
+  ["First Reformed", 2017, "Drama", 113, "Estados Unidos", "Paul Schrader", 71, 94, ["complexo", "intenso"], ["culpa", "fé", "crise"], false],
+  ["Paterson", 2016, "Drama", 118, "Estados Unidos", "Jim Jarmusch", 73, 96, ["comfort", "sensivel"], ["poesia", "cotidiano", "silencio"], false],
+  ["Frances Ha", 2012, "Comedia", 86, "Estados Unidos", "Noah Baumbach", 74, 92, ["leve", "nostalgia"], ["amizade", "Nova York", "juventude"], false],
+  ["The Florida Project", 2017, "Drama", 112, "Estados Unidos", "Sean Baker", 76, 96, ["sensivel", "intenso"], ["infancia", "motel", "Estados Unidos"], true],
+  ["Leave No Trace", 2018, "Drama", 109, "Estados Unidos", "Debra Granik", 71, 100, ["sensivel", "comfort"], ["pai e filha", "floresta", "silencio"], false],
+  ["Sound of Metal", 2019, "Drama", 120, "Estados Unidos", "Darius Marder", 77, 97, ["sensivel", "complexo"], ["som", "perda", "musica"], false],
+  ["Her", 2013, "Romance", 126, "Estados Unidos", "Spike Jonze", 80, 95, ["sensivel", "complexo"], ["IA", "solidão", "futuro"], true],
+  ["A Ghost Story", 2017, "Drama", 92, "Estados Unidos", "David Lowery", 68, 91, ["complexo", "sensivel"], ["tempo", "luto", "fantasma"], false],
+  ["The Green Knight", 2021, "Fantasia", 130, "Estados Unidos", "David Lowery", 66, 89, ["surpresa", "complexo"], ["mito", "honra", "medieval"], false],
+  ["The Souvenir", 2019, "Drama", 120, "Reino Unido", "Joanna Hogg", 64, 90, ["sensivel", "complexo"], ["memoria", "arte", "relacao"], false],
+  ["The Father", 2020, "Drama", 97, "Reino Unido", "Florian Zeller", 82, 98, ["sensivel", "complexo"], ["memoria", "velhice", "familia"], true],
+  ["Toni Erdmann", 2016, "Comedia", 162, "Alemanha", "Maren Ade", 73, 93, ["leve", "complexo"], ["familia", "constrangimento", "trabalho"], false],
+  ["The Lives of Others", 2006, "Drama", 137, "Alemanha", "Florian Henckel von Donnersmarck", 84, 93, ["complexo", "intenso"], ["vigilancia", "politica", "arte"], true],
+  ["Victoria", 2015, "Crime", 138, "Alemanha", "Sebastian Schipper", 76, 82, ["intenso", "surpresa"], ["plano-sequencia", "noite", "Berlim"], false],
+  ["Afire", 2023, "Drama", 103, "Alemanha", "Christian Petzold", 70, 88, ["sensivel", "complexo"], ["verao", "escritor", "desejo"], false],
+  ["Phoenix", 2014, "Drama", 98, "Alemanha", "Christian Petzold", 73, 98, ["complexo", "sensivel"], ["identidade", "pos-guerra", "memoria"], false],
+  ["Beau Travail", 1999, "Drama", 93, "Franca", "Claire Denis", 74, 86, ["complexo", "surpresa"], ["corpo", "legiao", "silencio"], false],
+  ["Cleo from 5 to 7", 1962, "Drama", 90, "Franca", "Agnes Varda", 79, 92, ["sensivel", "nostalgia"], ["tempo real", "Paris", "morte"], true],
+  ["The 400 Blows", 1959, "Drama", 99, "Franca", "Francois Truffaut", 81, 99, ["sensivel", "nostalgia"], ["infancia", "rebeldia", "Nouvelle Vague"], true],
+  ["Hiroshima Mon Amour", 1959, "Romance", 90, "Franca", "Alain Resnais", 79, 97, ["complexo", "sensivel"], ["memoria", "guerra", "amor"], false],
+  ["Persona", 1966, "Drama", 83, "Suecia", "Ingmar Bergman", 81, 91, ["complexo", "surpresa"], ["identidade", "silencio", "rosto"], false],
+  ["Stalker", 1979, "Ficcao cientifica", 162, "Russia", "Andrei Tarkovsky", 81, 100, ["complexo", "surpresa"], ["zona", "fé", "desejo"], true],
+  ["Solaris", 1972, "Ficcao cientifica", 167, "Russia", "Andrei Tarkovsky", 80, 92, ["complexo", "sensivel"], ["memoria", "espaco", "luto"], false],
+  ["Come and See", 1985, "Guerra", 142, "Russia", "Elem Klimov", 84, 90, ["intenso", "complexo"], ["guerra", "trauma", "infancia"], true],
+  ["Zama", 2017, "Drama", 115, "Argentina", "Lucrecia Martel", 67, 96, ["complexo", "surpresa"], ["colonialismo", "espera", "absurdo"], false],
+  ["The Headless Woman", 2008, "Drama", 87, "Argentina", "Lucrecia Martel", 66, 79, ["complexo", "surpresa"], ["culpa", "classe", "ambiguidade"], false],
+  ["Argentina, 1985", 2022, "Drama", 141, "Argentina", "Santiago Mitre", 76, 96, ["complexo", "intenso"], ["ditadura", "tribunal", "historia"], false],
+  ["Ixcanul", 2015, "Drama", 91, "Guatemala", "Jayro Bustamante", 71, 100, ["sensivel", "complexo"], ["indigena", "familia", "vulcao"], false],
+  ["La Llorona", 2019, "Terror", 97, "Guatemala", "Jayro Bustamante", 66, 97, ["intenso", "complexo"], ["ditadura", "fantasma", "culpa"], false],
+  ["I Am Not a Witch", 2017, "Drama", 93, "Zambia", "Rungano Nyoni", 69, 96, ["surpresa", "complexo"], ["satira", "mulheres", "mito"], false],
+  ["The Burial of Kojo", 2018, "Drama", 80, "Gana", "Blitz Bazawule", 65, 100, ["surpresa", "sensivel"], ["fantasia", "familia", "Gana"], false],
+  ["Daughters of the Dust", 1991, "Drama", 112, "Estados Unidos", "Julie Dash", 66, 94, ["sensivel", "nostalgia"], ["memoria", "familia", "ancestralidade"], false],
+  ["A Girl Walks Home Alone at Night", 2014, "Terror", 101, "Estados Unidos", "Ana Lily Amirpour", 69, 96, ["surpresa", "intenso"], ["vampiro", "noir", "Iran"], false],
+  ["No Bears", 2022, "Drama", 107, "Ira", "Jafar Panahi", 73, 99, ["complexo", "surpresa"], ["cinema", "fronteira", "politica"], false],
+  ["Taxi Tehran", 2015, "Documentario", 82, "Ira", "Jafar Panahi", 73, 96, ["complexo", "leve"], ["taxi", "cinema", "cidade"], false],
+  ["Omar", 2013, "Drama", 96, "Palestina", "Hany Abu-Assad", 75, 90, ["intenso", "sensivel"], ["ocupacao", "amizade", "traicao"], false],
+  ["Cure", 1997, "Suspense", 111, "Japao", "Kiyoshi Kurosawa", 75, 93, ["intenso", "complexo"], ["hipnose", "investigacao", "terror"], false],
+  ["Perfect Blue", 1997, "Animacao", 81, "Japao", "Satoshi Kon", 80, 83, ["intenso", "complexo"], ["identidade", "pop", "paranoia"], true],
+  ["Paprika", 2006, "Animacao", 90, "Japao", "Satoshi Kon", 77, 86, ["complexo", "surpresa"], ["sonho", "psique", "animacao adulta"], false],
+  ["Millennium Actress", 2001, "Animacao", 87, "Japao", "Satoshi Kon", 78, 93, ["sensivel", "complexo"], ["memoria", "cinema", "amor"], false],
+  ["Akira", 1988, "Animacao", 124, "Japao", "Katsuhiro Otomo", 80, 91, ["intenso", "complexo"], ["cyberpunk", "cidade", "poder"], true],
+  ["Ghost in the Shell", 1995, "Animacao", 83, "Japao", "Mamoru Oshii", 79, 95, ["complexo", "intenso"], ["identidade", "cyberpunk", "corpo"], true],
+  ["Millennium Mambo", 2001, "Drama", 106, "Taiwan", "Hou Hsiao-hsien", 70, 84, ["nostalgia", "sensivel"], ["noite", "juventude", "Taipei"], false],
+  ["Rebels of the Neon God", 1992, "Drama", 106, "Taiwan", "Tsai Ming-liang", 74, 100, ["nostalgia", "surpresa"], ["cidade", "juventude", "alienacao"], false],
+  ["The Mission", 1999, "Crime", 84, "Hong Kong", "Johnnie To", 71, 90, ["intenso", "acao"], ["tríade", "estilo", "silencio"], false],
+  ["Man on Wire", 2008, "Documentario", 94, "Reino Unido", "James Marsh", 77, 100, ["surpresa", "leve"], ["documentario", "risco", "arte"], false],
+  ["Stories We Tell", 2012, "Documentario", 108, "Canada", "Sarah Polley", 75, 94, ["complexo", "sensivel"], ["familia", "memoria", "verdade"], false],
+  ["Cameraperson", 2016, "Documentario", 102, "Estados Unidos", "Kirsten Johnson", 74, 99, ["complexo", "sensivel"], ["arquivo", "imagem", "memoria"], false],
+  ["Minding the Gap", 2018, "Documentario", 93, "Estados Unidos", "Bing Liu", 81, 100, ["sensivel", "complexo"], ["skate", "amizade", "trauma"], true],
+  ["Fire of Love", 2022, "Documentario", 93, "Estados Unidos", "Sara Dosa", 76, 98, ["sensivel", "surpresa"], ["vulcoes", "amor", "arquivo"], false],
+  ["All That Breathes", 2022, "Documentario", 97, "India", "Shaunak Sen", 70, 99, ["sensivel", "complexo"], ["aves", "cidade", "ecologia"], false],
+  ["Hoop Dreams", 1994, "Documentario", 171, "Estados Unidos", "Steve James", 83, 98, ["sensivel", "complexo"], ["basquete", "juventude", "Estados Unidos"], false],
+  ["Grizzly Man", 2005, "Documentario", 103, "Estados Unidos", "Werner Herzog", 78, 92, ["surpresa", "complexo"], ["natureza", "obsessao", "arquivo"], false],
   ["Collective", 2019, "Documentario", 109, "Romenia", "Alexander Nanau", 81, 99, ["intenso", "complexo"], ["documentario", "jornalismo", "corrupcao"], false]
 ];
 
@@ -1458,12 +1519,12 @@ function hashString(value) {
 }
 
 function shuffleNoise(movie) {
-  const key = `${sessionSeed}|${shuffleSalt}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
+  const key = `${sessionSeed}|${shuffleSalt}|${rerollOffset}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
   return (hashString(key) % 1000) / 1000;
 }
 
 function seededUnit(movie, scope = "pick") {
-  const key = `${sessionSeed}|${shuffleSalt}|${scope}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
+  const key = `${sessionSeed}|${shuffleSalt}|${rerollOffset}|${scope}|${movieKey(movie.title, movie.year)}|${activeMode}|${activeMood}`;
   return ((hashString(key) % 9999) + 1) / 10000;
 }
 
@@ -1600,11 +1661,12 @@ function isRecentlyRecommended(movie, limit = 28) {
 function freshnessPenalty(movie) {
   const index = recentRecommendationIndex(movie);
   if (index < 0) return 0;
-  if (index < 3) return 140;
-  if (index < 10) return 82;
-  if (index < 25) return 42;
-  if (index < 45) return 18;
-  return 8;
+  if (index < 4) return 220;
+  if (index < 12) return 132;
+  if (index < 32) return 72;
+  if (index < 70) return 34;
+  if (index < 120) return 14;
+  return 6;
 }
 
 function rememberRecommendation(movie) {
@@ -1641,7 +1703,7 @@ function weightedShuffle(list, scope = "weighted") {
   return list
     .map((movie) => {
       const normalizedScore = Math.max(1, movie.score - minScore + 12);
-      const weight = Math.pow(normalizedScore, 1.18);
+      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.78 : 0.92);
       const random = Math.max(0.0001, seededUnit(movie, scope));
       return {
         movie,
@@ -1778,18 +1840,18 @@ function recommendationStateSignature() {
 }
 
 function buildRecommendationQueue(rankedAll, scope = "queue") {
-  const veryFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 28));
-  const moderatelyFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 12));
+  const veryFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 45));
+  const moderatelyFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 20));
   const ranked = veryFresh.length ? veryFresh : (moderatelyFresh.length ? moderatelyFresh : rankedAll);
   if (!ranked.length) return [];
 
   const profile = moodProfiles[activeMood] || {};
-  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.68 : 0.48;
-  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 90 : 58;
+  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.86 : 0.64;
+  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 150 : 96;
   const poolSize = Math.min(Math.max(minimumPool, Math.ceil(ranked.length * spread)), ranked.length);
-  const frontPool = weightedShuffle(ranked.slice(0, poolSize), `${scope}-front`);
-  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 90)), `${scope}-middle`);
-  const tail = weightedShuffle(ranked.slice(poolSize + 90), `${scope}-tail`);
+  const frontPool = weightedShuffle(ranked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
+  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 140)), `${scope}-middle-${recommendationHistory.length}`);
+  const tail = weightedShuffle(ranked.slice(poolSize + 140), `${scope}-tail-${recommendationHistory.length}`);
   return diversifyMovies([...frontPool, ...middle, ...tail]);
 }
 
@@ -2872,6 +2934,38 @@ function renderDataDiagnostics() {
   `;
 }
 
+function streamingSearchUrl(provider, movie) {
+  const providerKey = normalize(provider);
+  const query = encodeURIComponent(movie.title);
+  const justWatch = `https://www.justwatch.com/br/busca?q=${query}`;
+
+  if (providerKey.includes("netflix")) return `https://www.netflix.com/search?q=${query}`;
+  if (providerKey.includes("amazon") || providerKey.includes("prime")) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${query}`;
+  if (providerKey.includes("disney")) return `https://www.disneyplus.com/search?q=${query}`;
+  if (providerKey.includes("hbo") || providerKey.includes("max")) return `https://www.max.com/search?q=${query}`;
+  if (providerKey.includes("globoplay")) return `https://globoplay.globo.com/busca/?q=${query}`;
+  if (providerKey.includes("mubi")) return `https://mubi.com/pt/search/films?query=${query}`;
+  if (providerKey.includes("apple")) return `https://tv.apple.com/search?term=${query}`;
+  if (providerKey.includes("google play")) return `https://play.google.com/store/search?q=${query}&c=movies`;
+  if (providerKey.includes("claro")) return `https://www.clarotvmais.com.br/busca?q=${query}`;
+  if (providerKey.includes("paramount")) return `https://www.paramountplus.com/br/search/?query=${query}`;
+  if (providerKey.includes("crunchyroll")) return `https://www.crunchyroll.com/search?q=${query}`;
+  if (providerKey.includes("telecine")) return `https://www.telecine.com.br/busca?q=${query}`;
+  if (providerKey.includes("looke")) return `https://www.looke.com.br/search/${query}`;
+  if (providerKey.includes("youtube")) return `https://www.youtube.com/results?search_query=${query}%20filme`;
+  return justWatch;
+}
+
+function providerLinksForMovie(movie, limit = 3) {
+  const providers = (movie.providers || []).slice(0, limit);
+  if (!providers.length) return "";
+  return providers.map((provider) => `
+    <a class="streaming-link" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Abrir ${provider}">
+      ${displayText(provider)}
+    </a>
+  `).join("");
+}
+
 function renderHero(movie) {
   if (!movie) {
     els.hero.innerHTML = `
@@ -2887,6 +2981,11 @@ function renderHero(movie) {
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
   const providers = (movie.providers || []).slice(0, 3);
+  const providerLinks = providerLinksForMovie(movie, 3);
+  const primaryScoreLabel = hasOmdb || !hasTmdb ? "IMDb" : "TMDb";
+  const primaryScoreValue = formatImdbScore(movie.imdb);
+  const secondaryScoreValue = formatSecondaryScore(movie);
+  const secondaryLabel = secondaryScoreLabel(movie);
   const blockedTagKeys = [
     ...movieGenres(movie),
     movie.country,
@@ -2915,27 +3014,17 @@ function renderHero(movie) {
     <div class="rec-copy">
       <span class="kicker">${activeMode === "roulette" ? "Roleta escolheu" : "Melhor escolha agora"}</span>
       <h2>${movie.title}</h2>
-      <p class="reason">${reasonFor(movie)}</p>
-      <div class="fact-grid">
-        <div class="fact-item"><span>Direção</span><strong>${movie.director}</strong></div>
-        <div class="fact-item"><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
-        <div class="fact-item"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
-        <div class="fact-item"><span>Período</span><strong>${movie.decade}s</strong></div>
+      <div class="movie-info-grid">
+        <div class="info-tile info-wide"><span>Direção</span><strong>${movie.director}</strong></div>
+        <div class="info-tile"><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
+        <div class="info-tile"><span>Origem</span><strong>${displayText(movie.country)}</strong></div>
+        <div class="info-tile"><span>Período</span><strong>${movie.decade}s</strong></div>
+        <div class="info-tile score-tile"><span>${primaryScoreLabel}</span><strong>${primaryScoreValue}</strong></div>
+        <div class="info-tile score-tile"><span>${secondaryLabel}</span><strong>${secondaryScoreValue}</strong></div>
       </div>
       <div class="watch-strip ${providers.length ? "" : "is-unavailable"}">
         <span>Onde assistir</span>
-        <strong>${providers.length ? providers.join(" / ") : unavailableStreamingLabel}</strong>
-      </div>
-      <div class="meta-block">
-        <span class="section-label">Vibe</span>
-        <div class="meta-line">
-          <span class="pill">${displayText(movie.genre)}</span>
-          ${tagPills}
-        </div>
-      </div>
-      <div class="score-row">
-        <div class="score"><strong>${formatImdbScore(movie.imdb)}</strong><span>${hasOmdb || !hasTmdb ? "IMDb" : "TMDb"}</span></div>
-        <div class="score"><strong>${formatSecondaryScore(movie)}</strong><span>${secondaryScoreLabel(movie)}</span></div>
+        ${providers.length ? `<div class="provider-links">${providerLinks}</div>` : `<strong>${unavailableStreamingLabel}</strong>`}
       </div>
       <div class="rec-actions">
         <button type="button" data-next>
@@ -2947,6 +3036,13 @@ function renderHero(movie) {
           Já vi
         </button>
       </div>
+      <div class="meta-block">
+        <span class="section-label">Vibe</span>
+        <div class="meta-line">
+          <span class="pill">${displayText(movie.genre)}</span>
+          ${tagPills}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -2954,7 +3050,9 @@ function renderHero(movie) {
 function renderShortlist(list) {
   els.matchCount.textContent = `${list.length} opções`;
   els.shortlist.innerHTML = list.slice(1, 5).map((movie) => {
-    const providerLine = `<br>${movie.providers?.length ? movie.providers.slice(0, 2).join(" / ") : unavailableStreamingLabel}`;
+    const providerLine = movie.providers?.length
+      ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
+      : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
     return `
     <article class="mini-card">
       <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
@@ -2963,7 +3061,8 @@ function renderShortlist(list) {
         <strong>${movie.title}</strong>
       </div>
       <h3>${movie.title}</h3>
-      <p>${displayText(movie.genre)} | ${movie.duration ? `${movie.duration} min` : "duração n/d"}<br>${movie.director}${providerLine}</p>
+      <p>${displayText(movie.genre)} | ${movie.duration ? `${movie.duration} min` : "duração n/d"}<br>${movie.director}</p>
+      ${providerLine}
     </article>
   `;
   }).join("");
@@ -2974,7 +3073,9 @@ function renderMoreOptions(list) {
   const extra = list.slice(5, 29);
   els.moreCount.textContent = extra.length ? `${extra.length} filmes` : "sem extras";
   els.moreGrid.innerHTML = extra.map((movie) => {
-    const providerLine = `<br>${movie.providers?.length ? movie.providers.slice(0, 2).join(" / ") : unavailableStreamingLabel}`;
+    const providerLine = movie.providers?.length
+      ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
+      : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
     return `
     <article class="more-card">
       <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
@@ -2983,7 +3084,8 @@ function renderMoreOptions(list) {
       </div>
       <div>
         <h3>${movie.title}</h3>
-        <p>${displayText(movie.genre)} | ${displayText(movie.country)}<br>${movie.director}${providerLine}</p>
+        <p>${displayText(movie.genre)} | ${displayText(movie.country)}<br>${movie.director}</p>
+        ${providerLine}
       </div>
     </article>
   `;
@@ -3116,7 +3218,10 @@ els.hero.addEventListener("click", (event) => {
   profileLoaded = true;
   renderProfileStats();
   els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
-  render();
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  rerollOffset += 1 + Math.floor(Math.random() * Math.max(12, filteredMovies().length));
+  resetRecommendationFlow({ keepCurrent: true });
+  renderWithAdvance(true);
 });
 
 const restoredInitialCatalog = restoreTmdbCatalogCache();
@@ -3124,7 +3229,7 @@ updateProviderFilter();
 render();
 window.setTimeout(async () => {
   await restoreCatalogSeed();
-  if (!restoredInitialCatalog && tmdbMovies.length < 200) {
+  if (!restoredInitialCatalog && tmdbMovies.length < Math.min(520, tmdbCatalogConfig.limit)) {
     loadTmdbCatalog({ auto: true });
   }
   hydratePriorityPosters().then(hydrateCatalogPostersInBackground);
