@@ -363,6 +363,7 @@ const moodProfiles = {
     hardAvoidGenres: ["Terror", "Crime", "Guerra", "Suspense"],
     conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
+    keywords: ["fofo", "familia", "família", "amizade", "musica", "música", "bondade", "acolhedor", "aconchego"],
     longMoviePenalty: 155
   },
   nostalgia: {
@@ -1375,6 +1376,7 @@ const els = {
 
 els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
 els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
+els.ratingValue.textContent = formatRatingControlValue(els.rating.value);
 const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
 els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
 useTmdb = els.useTmdb.checked;
@@ -1445,6 +1447,14 @@ function ratingAverage(movie) {
 
 function formatImdbScore(score) {
   return (Number(score || 0) / 10).toFixed(1).replace(".", ",");
+}
+
+function formatRatingControlValue(score) {
+  return Number(score || 0).toFixed(1).replace(".", ",");
+}
+
+function minimumRatingScore() {
+  return Math.round(Number(els.rating.value || 0) * 10);
 }
 
 function secondaryScoreLabel(movie) {
@@ -1620,6 +1630,19 @@ function lightMoodMismatch(movie) {
   const tooLongWithoutRelief = movieDuration(movie) > 132 && !hasLightGenre;
   const hasMismatchVibe = (movie.vibes || []).some((vibe) => ["complexo", "intenso", "sensivel"].includes(vibe)) && !(movie.vibes || []).includes("leve");
   return isMostlyDrama || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
+}
+
+function comfortMoodMismatch(movie) {
+  const text = movieSearchText(movie);
+  const hasComfortGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Romance", "Musica", "Fantasia"]);
+  const grimDrama = hasGenre(movie, ["Drama"]) && !hasComfortGenre;
+  const hasHarshTerms = hasAnyText(text, [
+    "serial killer", "assassinato", "vinganca", "vingança", "guerra", "massacre", "abuso",
+    "trauma", "colapso", "hostil", "apostas", "ansiedade", "sequestro", "prisao", "prisão"
+  ]);
+  const isTooLong = movieDuration(movie) > 155 && !(movie.vibes || []).includes("comfort");
+  const conflictVibe = (movie.vibes || []).some((vibe) => ["intenso", "complexo"].includes(vibe)) && !(movie.vibes || []).includes("comfort");
+  return grimDrama || hasHarshTerms || isTooLong || conflictVibe;
 }
 
 function moodScore(movie) {
@@ -1958,7 +1981,7 @@ function moodMismatch(movie) {
   }
 
   if (activeMood === "comfort") {
-    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hasConflictingVibe || hardAvoidMatches > 0 || comfortMoodMismatch(movie) || (!preferredMatches && !hasVibe);
   }
 
   if (activeMood === "intenso") {
@@ -2124,7 +2147,7 @@ function movieDuration(movie) {
 function scoreMovie(movie) {
   let score = 0;
   const query = normalize(els.director.value);
-  const minRating = Number(els.rating.value);
+  const minRating = minimumRatingScore();
   const profile = moodProfiles[activeMood] || {};
 
   score += moodScore(movie);
@@ -2157,7 +2180,7 @@ function filteredMovies() {
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
       if (els.provider.value !== "qualquer" && !dedupeProviders(movie.providers || []).includes(els.provider.value)) return false;
-      if (ratingAverage(movie) < Number(els.rating.value)) return false;
+      if (ratingAverage(movie) < minimumRatingScore()) return false;
       if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
       return true;
     });
@@ -2277,7 +2300,7 @@ function tmdbParams() {
     language: "pt-BR",
     sort_by: activeMode === "roulette" ? "popularity.desc" : "vote_count.desc",
     "vote_count.gte": "80",
-    "vote_average.gte": String(Math.max(0, Number(els.rating.value) / 10)),
+    "vote_average.gte": String(Math.max(0, Number(els.rating.value))),
     page: "1"
   });
 
@@ -3159,6 +3182,7 @@ function renderHero(movie) {
     .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
   const heroTitleClass = movie.title.length > 30 ? "hero-title is-long" : movie.title.length > 20 ? "hero-title is-medium" : "hero-title";
+  const posterTitleClass = movie.title.length > 28 ? "poster-title is-long" : movie.title.length > 18 ? "poster-title is-medium" : "poster-title";
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
@@ -3166,7 +3190,7 @@ function renderHero(movie) {
       <span class="poster-badge">${displayText(movie.genre)}</span>
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
-      <h2 class="poster-title">${movie.title}</h2>
+      <h2 class="${posterTitleClass}">${movie.title}</h2>
     </div>
     <div class="rec-copy">
       <span class="kicker">${activeMode === "roulette" ? "Roleta escolheu" : "Melhor escolha agora"}</span>
@@ -3218,10 +3242,16 @@ function render() {
 
 function setDrawerOpen(open) {
   if (!els.drawer || !els.drawerBackdrop) return;
+  els.drawer.classList.remove("is-peeking");
   els.drawer.classList.toggle("is-open", open);
   els.drawer.setAttribute("aria-hidden", String(!open));
   els.drawerBackdrop.hidden = !open;
   document.body.classList.toggle("drawer-open", open);
+}
+
+function setDrawerPeek(peek) {
+  if (!els.drawer || els.drawer.classList.contains("is-open")) return;
+  els.drawer.classList.toggle("is-peeking", peek);
 }
 
 function renderWithAdvance(advance) {
@@ -3259,7 +3289,7 @@ els.moods.addEventListener("click", (event) => {
 
 document.querySelectorAll("select, input").forEach((input) => {
   input.addEventListener("input", () => {
-    if (input === els.rating) els.ratingValue.textContent = els.rating.value;
+    if (input === els.rating) els.ratingValue.textContent = formatRatingControlValue(els.rating.value);
     rerollOffset = 0;
     shuffleSalt = Math.floor(Math.random() * 100000);
     resetRecommendationFlow();
@@ -3292,6 +3322,22 @@ document.querySelectorAll(".settings-panel").forEach((panel) => {
 
 els.drawerToggle?.addEventListener("click", () => {
   setDrawerOpen(true);
+});
+
+els.drawerToggle?.addEventListener("mouseenter", () => {
+  setDrawerPeek(true);
+});
+
+els.drawerToggle?.addEventListener("mouseleave", () => {
+  setDrawerPeek(false);
+});
+
+els.drawerToggle?.addEventListener("focus", () => {
+  setDrawerPeek(true);
+});
+
+els.drawerToggle?.addEventListener("blur", () => {
+  setDrawerPeek(false);
 });
 
 els.drawerClose?.addEventListener("click", () => {
