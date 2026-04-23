@@ -111,7 +111,7 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 10,
+  cacheVersion: 11,
   limit: 560,
   batchSize: 14,
   omdbEnrichLimit: 36,
@@ -1361,7 +1361,10 @@ const els = {
   dataDiagnostics: document.querySelector("#data-diagnostics"),
   reroll: document.querySelector("#reroll"),
   spin: document.querySelector("#spin"),
-  rouletteWheel: document.querySelector("#roulette-wheel")
+  rouletteWheel: document.querySelector("#roulette-wheel"),
+  dialog: document.querySelector("#movie-dialog"),
+  dialogClose: document.querySelector("#dialog-close"),
+  dialogContent: document.querySelector("#movie-dialog-content")
 };
 
 els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
@@ -1549,6 +1552,10 @@ function hasGenre(movie, genres) {
   return genres.some((genre) => movieGenreKeys.includes(normalize(genre)));
 }
 
+function genreMatchCount(movie, genres = []) {
+  return genres.filter((genre) => hasGenre(movie, [genre])).length;
+}
+
 function hasAnyText(text, terms) {
   return terms.some((term) => text.includes(normalize(term)));
 }
@@ -1585,10 +1592,9 @@ function complexityEvidence(movie) {
 }
 
 function escapistMismatch(movie) {
-  const genres = movieGenres(movie);
-  const actionComedy = genres.includes("Acao") && genres.includes("Comedia");
-  const familyAdventure = genres.includes("Familia") && (genres.includes("Aventura") || genres.includes("Animacao"));
-  const lightFranchise = genres.includes("Acao") && genres.includes("Aventura") && ratingAverage(movie) < 78;
+  const actionComedy = hasGenre(movie, ["Acao"]) && hasGenre(movie, ["Comedia"]);
+  const familyAdventure = hasGenre(movie, ["Familia"]) && hasGenre(movie, ["Aventura", "Animacao"]);
+  const lightFranchise = hasGenre(movie, ["Acao"]) && hasGenre(movie, ["Aventura"]) && ratingAverage(movie) < 78;
   return actionComedy || familyAdventure || lightFranchise;
 }
 
@@ -1596,12 +1602,11 @@ function moodScore(movie) {
   if (activeMode !== "mood") return 0;
 
   const profile = moodProfiles[activeMood] || {};
-  const genres = movieGenres(movie);
   const text = movieSearchText(movie);
   const hasVibe = (movie.vibes || []).includes(activeMood);
-  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
-  const avoidMatches = genres.filter((genre) => (profile.avoidGenres || []).includes(genre)).length;
-  const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
+  const preferredMatches = genreMatchCount(movie, profile.preferredGenres);
+  const avoidMatches = genreMatchCount(movie, profile.avoidGenres);
+  const hardAvoidMatches = genreMatchCount(movie, profile.hardAvoidGenres);
   const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
   let score = 0;
 
@@ -1634,9 +1639,8 @@ function moodCollectionScore(movie) {
   if (activeMode !== "mood") return 0;
 
   const profile = moodProfiles[activeMood] || {};
-  const genres = movieGenres(movie);
   const hasVibe = (movie.vibes || []).includes(activeMood);
-  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
+  const preferredMatches = genreMatchCount(movie, profile.preferredGenres);
   const keywordMatches = (profile.keywords || []).filter((keyword) => movieSearchText(movie).includes(normalize(keyword))).length;
 
   if (profile.requiredComplexity && !complexityEvidence(movie)) return -28;
@@ -1686,7 +1690,7 @@ function rememberRecommendation(movie) {
 function diversityPenalty(movie, selected) {
   return selected.slice(0, 10).reduce((penalty, item, index) => {
     const distance = Math.max(1, index + 1);
-    const sameGenre = movie.genre === item.genre || movieGenres(movie).some((genre) => movieGenres(item).includes(genre));
+    const sameGenre = movieGenres(movie).some((genre) => hasGenre(item, [genre]));
     const sameCountry = movie.country === item.country;
     const sameDecade = movie.decade === item.decade;
     return penalty
@@ -1724,7 +1728,8 @@ function mergeMovieEnhancements(primary, candidate) {
     backdropUrl: primary.backdropUrl || candidate.backdropUrl || "",
     imdbId: primary.imdbId || candidate.imdbId || "",
     tmdbVotes: primary.tmdbVotes || candidate.tmdbVotes || 0,
-    providers: primary.providers?.length ? primary.providers : candidate.providers || [],
+    providers: dedupeProviders(primary.providers?.length ? primary.providers : candidate.providers || []),
+    watchUrl: primary.watchUrl || candidate.watchUrl || "",
     source: primary.source || candidate.source || "",
     genres: uniqueNormalized([...(primary.genres || []), ...(candidate.genres || [])]),
     overview: primary.overview || candidate.overview || "",
@@ -1743,7 +1748,8 @@ function applyMovieEnhancements(target, enhanced) {
   target.backdropUrl = target.backdropUrl || enhanced.backdropUrl || "";
   target.imdbId = target.imdbId || enhanced.imdbId || "";
   target.tmdbVotes = target.tmdbVotes || enhanced.tmdbVotes || 0;
-  target.providers = target.providers?.length ? target.providers : enhanced.providers || [];
+  target.providers = dedupeProviders(target.providers?.length ? target.providers : enhanced.providers || []);
+  target.watchUrl = target.watchUrl || enhanced.watchUrl || "";
   target.source = target.source || enhanced.source || "";
   target.genres = uniqueNormalized([...(target.genres || []), ...(enhanced.genres || [])]);
   target.overview = target.overview || enhanced.overview || "";
@@ -1903,14 +1909,18 @@ function moodMismatch(movie) {
   if (activeMode !== "mood") return false;
 
   const profile = moodProfiles[activeMood] || {};
-  const genres = movieGenres(movie);
-  const preferredMatches = genres.filter((genre) => (profile.preferredGenres || []).includes(genre)).length;
-  const hardAvoidMatches = genres.filter((genre) => (profile.hardAvoidGenres || []).includes(genre)).length;
+  const preferredMatches = genreMatchCount(movie, profile.preferredGenres);
+  const hardAvoidMatches = genreMatchCount(movie, profile.hardAvoidGenres);
   const hasVibe = (movie.vibes || []).includes(activeMood);
   const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
 
   if (activeMood === "complexo") {
-    return hardAvoidMatches > 0 || !complexityEvidence(movie) || escapistMismatch(movie);
+    const hasLightGenre = hasGenre(movie, ["Acao", "Aventura", "Comedia", "Familia", "Animacao"]);
+    const hasHeavyThinkingGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica", "Misterio", "Suspense"]);
+    return hardAvoidMatches > 0
+      || !complexityEvidence(movie)
+      || escapistMismatch(movie)
+      || (hasLightGenre && !hasHeavyThinkingGenre);
   }
 
   if (activeMood === "leve") {
@@ -1945,7 +1955,8 @@ function applyPosterCache() {
     movie.imdb = enhancement.imdb || movie.imdb;
     movie.tmdbVotes = enhancement.tmdbVotes || movie.tmdbVotes;
     movie.imdbId = enhancement.imdbId || movie.imdbId;
-    movie.providers = enhancement.providers || movie.providers;
+    movie.providers = dedupeProviders(enhancement.providers || movie.providers);
+    movie.watchUrl = enhancement.watchUrl || movie.watchUrl || "";
     movie.source = enhancement.source || movie.source || "curated-tmdb-poster";
 
     if (cached) {
@@ -1968,7 +1979,8 @@ function cacheMovieEnhancement(movie) {
     rtSource: movie.rtSource,
     tmdbVotes: movie.tmdbVotes,
     imdbId: movie.imdbId,
-    providers: movie.providers,
+    providers: dedupeProviders(movie.providers || []),
+    watchUrl: movie.watchUrl,
     source: movie.source
   };
   movieCacheKeys(movie).forEach((key) => {
@@ -2002,6 +2014,7 @@ function restoreTmdbCatalogCache() {
     tmdbMovies = cached.movies;
     tmdbMovies.forEach((movie) => {
       movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
+      movie.providers = dedupeProviders(movie.providers || []);
     });
   useTmdb = true;
   els.useTmdb.checked = true;
@@ -2022,6 +2035,7 @@ async function restoreCatalogSeed() {
 
     tmdbMovies = seed.movies.map((movie) => ({
       ...movie,
+      providers: dedupeProviders(movie.providers || []),
       rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb")
     }));
     useTmdb = true;
@@ -2039,7 +2053,7 @@ async function restoreCatalogSeed() {
 
 function updateProviderFilter() {
   const current = els.provider.value;
-  const providers = [...new Set(activeCatalog().flatMap((movie) => movie.providers || []))]
+  const providers = [...new Set(activeCatalog().flatMap((movie) => dedupeProviders(movie.providers || [])))]
     .sort((a, b) => a.localeCompare(b));
 
   els.provider.innerHTML = [
@@ -2094,7 +2108,7 @@ function scoreMovie(movie) {
   score += moodCollectionScore(movie);
   if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
   if (profileLoaded) score += profileAffinity(movie);
-  if (movieGenres(movie).includes(els.genre.value)) score += 15;
+  if (hasGenre(movie, [els.genre.value])) score += 15;
   if (movieDuration(movie) && durationMatches(els.duration.value, movieDuration(movie)) && els.duration.value !== "qualquer") score += 10;
   if (els.decade.value === movie.decade) score += 10;
   if (els.country.value === movie.country) score += 10;
@@ -2115,11 +2129,11 @@ function filteredMovies() {
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .filter((movie) => {
       if (activeMode === "mood" && moodMismatch(movie)) return false;
-      if (els.genre.value !== "qualquer" && !movieGenres(movie).includes(els.genre.value)) return false;
+      if (els.genre.value !== "qualquer" && !hasGenre(movie, [els.genre.value])) return false;
       if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
       if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
       if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
-      if (els.provider.value !== "qualquer" && !(movie.providers || []).includes(els.provider.value)) return false;
+      if (els.provider.value !== "qualquer" && !dedupeProviders(movie.providers || []).includes(els.provider.value)) return false;
       if (ratingAverage(movie) < Number(els.rating.value)) return false;
       if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
       return true;
@@ -2437,12 +2451,48 @@ function genreNamesFromDetails(movie, details) {
   return uniqueNormalized([...mapped, ...detailNames]);
 }
 
+function canonicalProviderName(provider) {
+  const key = normalize(provider);
+  if (!key) return "";
+  if (key.includes("telecine")) return "Telecine";
+  if (key.includes("globoplay")) return "Globoplay";
+  if (key.includes("paramount")) return "Paramount+";
+  if (key.includes("disney")) return "Disney+";
+  if (key.includes("netflix")) return "Netflix";
+  if (key.includes("hbo") || key === "max" || key.includes(" max")) return "Max";
+  if (key.includes("mubi")) return "MUBI";
+  if (key.includes("apple")) return "Apple TV";
+  if (key.includes("google")) return "Google Play";
+  if (key.includes("claro")) return "Claro tv+";
+  if (key.includes("crunchyroll")) return "Crunchyroll";
+  if (key.includes("looke")) return "Looke";
+  if (key.includes("youtube")) return "YouTube";
+  if (key.includes("amazon") || key.includes("prime")) return "Prime Video";
+  return displayText(provider);
+}
+
+function dedupeProviders(providers = []) {
+  const seen = new Set();
+  return providers
+    .map(canonicalProviderName)
+    .filter((provider) => {
+      const key = normalize(provider);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function watchUrlFromDetails(details) {
+  return details["watch/providers"]?.results?.BR?.link || "";
+}
+
 function providersFromDetails(details) {
   const br = details["watch/providers"]?.results?.BR || {};
   const providers = [...(br.flatrate || []), ...(br.rent || []), ...(br.buy || [])]
     .map((provider) => provider.provider_name)
     .filter(Boolean);
-  return [...new Set(providers)].slice(0, 4);
+  return dedupeProviders(providers).slice(0, 4);
 }
 
 function tagsForMovie(movie, details, genre, director, country) {
@@ -2485,6 +2535,7 @@ function mapTmdbMovie(movie, details) {
     tmdbVotes: movie.vote_count || 0,
     imdbId: details.external_ids?.imdb_id || "",
     providers: providersFromDetails(details),
+    watchUrl: watchUrlFromDetails(details),
     vibes: inferVibes(genres, movie.overview || "", releaseYear),
     tags: tagsForMovie(movie, details, genre, director, country),
     seen: false,
@@ -2533,7 +2584,7 @@ function inferVibes(genres, overview, year = 0) {
 async function loadTmdbCatalog({ auto = false } = {}) {
   if (tmdbLoadInProgress) return false;
   const previousCatalog = [...tmdbMovies];
-  const canRenderProgressively = previousCatalog.length < 200;
+  const canRenderProgressively = !auto && previousCatalog.length < 200;
 
   const token = els.tmdbToken.value.trim();
   if (token) {
@@ -2541,7 +2592,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
   }
 
   tmdbLoadInProgress = true;
-  els.tmdbStatus.textContent = auto ? "Carregando catálogo expandido automaticamente..." : "Buscando catálogo expandido no TMDb...";
+  els.tmdbStatus.textContent = auto ? "Atualizando uma fatia leve do catálogo em segundo plano..." : "Buscando catálogo expandido no TMDb...";
   els.loadTmdb.disabled = true;
 
   try {
@@ -2552,7 +2603,8 @@ async function loadTmdbCatalog({ auto = false } = {}) {
       if (directorId) params.set("with_crew", directorId);
     }
 
-    const catalogRequests = catalogDiscoveryGroups().map((requestParams) => {
+    const discoveryGroups = catalogDiscoveryGroups();
+    const catalogRequests = (auto ? discoveryGroups.slice(0, 8) : discoveryGroups).map((requestParams) => {
       const nextParams = new URLSearchParams(requestParams);
       params.forEach((value, key) => {
         if (key === "with_crew") nextParams.set(key, value);
@@ -2560,7 +2612,8 @@ async function loadTmdbCatalog({ auto = false } = {}) {
       return nextParams;
     });
     const pages = await fetchCatalogPages(catalogRequests);
-    const uniqueResults = interleaveUniqueMovies(pages.map((page) => page.results || []));
+    const uniqueResults = interleaveUniqueMovies(pages.map((page) => page.results || []))
+      .slice(0, auto ? 80 : tmdbCatalogConfig.limit);
     const detailed = [];
 
     for (let index = 0; index < uniqueResults.length; index += tmdbCatalogConfig.batchSize) {
@@ -2668,6 +2721,7 @@ async function findPosterForMovie(movie) {
   movie.tmdbVotes = match.vote_count || movie.tmdbVotes || 0;
   movie.imdbId = details.external_ids?.imdb_id || movie.imdbId || "";
   movie.providers = providersFromDetails(details);
+  movie.watchUrl = watchUrlFromDetails(details) || movie.watchUrl || "";
   movie.source = movie.source || "curated-tmdb-poster";
   await enrichRatingsFromOmdb(movie).catch(() => false);
   cacheMovieEnhancement(movie);
@@ -2717,10 +2771,10 @@ async function hydratePriorityPosters() {
   const visibleMovies = filteredMovies();
   const ratingCandidates = visibleMovies
     .filter((movie) => movie.rtSource !== "omdb" && movie.imdbId)
-    .slice(0, 32);
+    .slice(0, 10);
   const candidates = visibleMovies
     .filter((movie) => !movie.posterUrl)
-    .slice(0, 48);
+    .slice(0, 18);
   if (!candidates.length && !ratingCandidates.length) return;
 
   const previousStatus = els.tmdbStatus.textContent;
@@ -2733,8 +2787,8 @@ async function hydratePriorityPosters() {
       if (found) render();
     }
 
-    for (let index = 0; index < candidates.length; index += 4) {
-      const batch = candidates.slice(index, index + 4);
+    for (let index = 0; index < candidates.length; index += 3) {
+      const batch = candidates.slice(index, index + 3);
       const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
       found += results.filter(Boolean).length;
       if (found) {
@@ -2787,6 +2841,14 @@ async function hydrateCatalogPostersInBackground() {
   } catch {
     els.tmdbStatus.textContent = previousStatus;
   }
+}
+
+function runWhenIdle(callback, timeout = 1600) {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(callback, { timeout });
+    return;
+  }
+  window.setTimeout(callback, timeout);
 }
 
 function setMode(mode) {
@@ -2934,36 +2996,68 @@ function renderDataDiagnostics() {
   `;
 }
 
-function streamingSearchUrl(provider, movie) {
-  const providerKey = normalize(provider);
-  const query = encodeURIComponent(movie.title);
-  const justWatch = `https://www.justwatch.com/br/busca?q=${query}`;
+function movieDomKey(movie) {
+  return encodeURIComponent(movieKey(movie.title, movie.year));
+}
 
-  if (providerKey.includes("netflix")) return `https://www.netflix.com/search?q=${query}`;
-  if (providerKey.includes("amazon") || providerKey.includes("prime")) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${query}`;
-  if (providerKey.includes("disney")) return `https://www.disneyplus.com/search?q=${query}`;
-  if (providerKey.includes("hbo") || providerKey.includes("max")) return `https://www.max.com/search?q=${query}`;
-  if (providerKey.includes("globoplay")) return `https://globoplay.globo.com/busca/?q=${query}`;
-  if (providerKey.includes("mubi")) return `https://mubi.com/pt/search/films?query=${query}`;
-  if (providerKey.includes("apple")) return `https://tv.apple.com/search?term=${query}`;
-  if (providerKey.includes("google play")) return `https://play.google.com/store/search?q=${query}&c=movies`;
-  if (providerKey.includes("claro")) return `https://www.clarotvmais.com.br/busca?q=${query}`;
-  if (providerKey.includes("paramount")) return `https://www.paramountplus.com/br/search/?query=${query}`;
-  if (providerKey.includes("crunchyroll")) return `https://www.crunchyroll.com/search?q=${query}`;
-  if (providerKey.includes("telecine")) return `https://www.telecine.com.br/busca?q=${query}`;
-  if (providerKey.includes("looke")) return `https://www.looke.com.br/search/${query}`;
-  if (providerKey.includes("youtube")) return `https://www.youtube.com/results?search_query=${query}%20filme`;
-  return justWatch;
+function movieFromDomKey(value) {
+  const key = decodeURIComponent(value || "");
+  return activeCatalog().find((movie) => movieKey(movie.title, movie.year) === key);
+}
+
+function streamingSearchUrl(provider, movie) {
+  const query = encodeURIComponent(movie.title);
+  return movie.watchUrl || `https://www.justwatch.com/br/busca?q=${query}`;
 }
 
 function providerLinksForMovie(movie, limit = 3) {
-  const providers = (movie.providers || []).slice(0, limit);
+  const providers = dedupeProviders(movie.providers || []).slice(0, limit);
   if (!providers.length) return "";
   return providers.map((provider) => `
-    <a class="streaming-link" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Abrir ${provider}">
+    <a class="streaming-link" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Ver ${movie.title} em ${provider}">
       ${displayText(provider)}
     </a>
   `).join("");
+}
+
+function renderMovieDialog(movie) {
+  if (!movie || !els.dialog || !els.dialogContent) return;
+  const providers = dedupeProviders(movie.providers || []);
+  const providerLinks = providerLinksForMovie(movie, 6);
+  const tags = uniqueNormalized([...(movie.genres || []), ...(movie.tags || []), ...(movie.vibes || [])])
+    .filter((tag) => ![movie.genre, movie.country, movie.director, ...providers].map(normalize).includes(normalize(tag)))
+    .slice(0, 8)
+    .map((tag) => `<span class="pill">${displayText(tag)}</span>`)
+    .join("");
+  const overview = movie.overview
+    ? `<p class="dialog-overview">${movie.overview}</p>`
+    : `<p class="dialog-overview">Sem sinopse oficial por enquanto, mas os sinais principais já estão no painel: gênero, período, origem, notas e disponibilidade no Brasil.</p>`;
+
+  els.dialogContent.innerHTML = `
+    <div class="dialog-grid">
+      <div class="dialog-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
+        <span>${movie.year}</span>
+      </div>
+      <div class="dialog-copy">
+        <span class="kicker">${displayText(movie.genre)} | ${displayText(movie.country)}</span>
+        <h2>${movie.title}</h2>
+        ${overview}
+        <div class="dialog-facts">
+          <div><span>Direção</span><strong>${movie.director}</strong></div>
+          <div><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
+          <div><span>IMDb/TMDb</span><strong>${formatImdbScore(movie.imdb)}</strong></div>
+          <div><span>${secondaryScoreLabel(movie)}</span><strong>${formatSecondaryScore(movie)}</strong></div>
+        </div>
+        <div class="dialog-watch ${providers.length ? "" : "is-unavailable"}">
+          <span>Onde assistir</span>
+          ${providers.length ? `<div class="provider-links">${providerLinks}</div>` : `<strong>${unavailableStreamingLabel}</strong>`}
+        </div>
+        <div class="meta-line">${tags}</div>
+      </div>
+    </div>
+  `;
+  els.dialog.showModal();
 }
 
 function renderHero(movie) {
@@ -2980,7 +3074,7 @@ function renderHero(movie) {
 
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
-  const providers = (movie.providers || []).slice(0, 3);
+  const providers = dedupeProviders(movie.providers || []).slice(0, 3);
   const providerLinks = providerLinksForMovie(movie, 3);
   const primaryScoreLabel = hasOmdb || !hasTmdb ? "IMDb" : "TMDb";
   const primaryScoreValue = formatImdbScore(movie.imdb);
@@ -3004,7 +3098,7 @@ function renderHero(movie) {
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
 
   els.hero.innerHTML = `
-    <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+    <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
       ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
       <span class="poster-badge">${displayText(movie.genre)}</span>
       <span class="poster-director">${movie.director}</span>
@@ -3054,7 +3148,7 @@ function renderShortlist(list) {
       ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
       : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
     return `
-    <article class="mini-card">
+    <article class="mini-card" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
       <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
         ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
         <span>${movie.year}</span>
@@ -3077,7 +3171,7 @@ function renderMoreOptions(list) {
       ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
       : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
     return `
-    <article class="more-card">
+    <article class="more-card" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
       <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
         ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="">` : ""}
         <span>${movie.year}</span>
@@ -3158,6 +3252,31 @@ els.profileFiles.addEventListener("change", (event) => {
   importProfileFiles(event.target.files);
 });
 
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".streaming-link")) return;
+  const trigger = event.target.closest("[data-open-details]");
+  if (!trigger) return;
+  const movie = movieFromDomKey(trigger.dataset.openDetails);
+  renderMovieDialog(movie);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  if (event.target.closest?.(".streaming-link")) return;
+  const trigger = event.target.closest?.("[data-open-details]");
+  if (!trigger) return;
+  event.preventDefault();
+  renderMovieDialog(movieFromDomKey(trigger.dataset.openDetails));
+});
+
+els.dialogClose?.addEventListener("click", () => {
+  els.dialog.close();
+});
+
+els.dialog?.addEventListener("click", (event) => {
+  if (event.target === els.dialog) els.dialog.close();
+});
+
 els.loadTmdb.addEventListener("click", () => {
   searchTmdbAndHydrate();
 });
@@ -3228,9 +3347,11 @@ const restoredInitialCatalog = restoreTmdbCatalogCache();
 updateProviderFilter();
 render();
 window.setTimeout(async () => {
-  await restoreCatalogSeed();
-  if (!restoredInitialCatalog && tmdbMovies.length < Math.min(520, tmdbCatalogConfig.limit)) {
-    loadTmdbCatalog({ auto: true });
+  const restoredSeed = await restoreCatalogSeed();
+  if (restoredSeed || restoredInitialCatalog) {
+    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
   }
-  hydratePriorityPosters().then(hydrateCatalogPostersInBackground);
-}, 700);
+  runWhenIdle(() => {
+    hydratePriorityPosters();
+  }, 2200);
+}, 250);
