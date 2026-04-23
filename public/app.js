@@ -2978,6 +2978,8 @@ function renderMoods() {
 
 function renderDataDiagnostics() {
   if (!els.dataDiagnostics) return;
+  const detailsPanel = els.dataDiagnostics.closest("details");
+  if (detailsPanel && !detailsPanel.open) return;
   const catalog = activeCatalog();
   const total = catalog.length || 1;
   const posterCount = catalog.filter((movie) => movie.posterUrl).length;
@@ -3006,8 +3008,22 @@ function movieFromDomKey(value) {
 }
 
 function streamingSearchUrl(provider, movie) {
-  const query = encodeURIComponent(movie.title);
-  return movie.watchUrl || `https://www.justwatch.com/br/busca?q=${query}`;
+  const providerKey = normalize(provider);
+  if (providerKey.includes("netflix")) return "https://www.netflix.com/browse";
+  if (providerKey.includes("prime") || providerKey.includes("amazon")) return "https://www.primevideo.com/storefront/home/";
+  if (providerKey.includes("disney")) return "https://www.disneyplus.com/pt-br/home";
+  if (providerKey.includes("max") || providerKey.includes("hbo")) return "https://www.max.com/br/pt";
+  if (providerKey.includes("globoplay")) return "https://globoplay.globo.com/";
+  if (providerKey.includes("apple")) return "https://tv.apple.com/br";
+  if (providerKey.includes("claro")) return "https://www.clarotvmais.com.br/";
+  if (providerKey.includes("paramount")) return "https://www.paramountplus.com/br/";
+  if (providerKey.includes("telecine")) return "https://www.telecine.com.br/";
+  if (providerKey.includes("mubi")) return "https://mubi.com/pt/br";
+  if (providerKey.includes("crunchyroll")) return "https://www.crunchyroll.com/pt-br/";
+  if (providerKey.includes("looke")) return "https://www.looke.com.br/";
+  if (providerKey.includes("youtube")) return `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title)}%20filme`;
+  if (providerKey.includes("google")) return "https://play.google.com/store/movies?hl=pt_BR";
+  return movie.watchUrl || `https://www.justwatch.com/br/busca?q=${encodeURIComponent(movie.title)}`;
 }
 
 function providerLinksForMovie(movie, limit = 3) {
@@ -3052,6 +3068,7 @@ function renderMovieDialog(movie) {
         <div class="dialog-watch ${providers.length ? "" : "is-unavailable"}">
           <span>Onde assistir</span>
           ${providers.length ? `<div class="provider-links">${providerLinks}</div>` : `<strong>${unavailableStreamingLabel}</strong>`}
+          ${movie.watchUrl ? `<a class="dialog-helper-link" href="${movie.watchUrl}" target="_blank" rel="noopener noreferrer">Ver disponibilidade completa</a>` : ""}
         </div>
         <div class="meta-line">${tags}</div>
       </div>
@@ -3142,48 +3159,11 @@ function renderHero(movie) {
 }
 
 function renderShortlist(list) {
-  els.matchCount.textContent = `${list.length} opções`;
-  els.shortlist.innerHTML = list.slice(1, 5).map((movie) => {
-    const providerLine = movie.providers?.length
-      ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
-      : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
-    return `
-    <article class="mini-card" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
-      <div class="mini-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
-        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
-        <span>${movie.year}</span>
-        <strong>${movie.title}</strong>
-      </div>
-      <h3>${movie.title}</h3>
-      <p>${displayText(movie.genre)} | ${movie.duration ? `${movie.duration} min` : "duração n/d"}<br>${movie.director}</p>
-      ${providerLine}
-    </article>
-  `;
-  }).join("");
-  renderMoreOptions(list);
+  void list;
 }
 
 function renderMoreOptions(list) {
-  const extra = list.slice(5, 29);
-  els.moreCount.textContent = extra.length ? `${extra.length} filmes` : "sem extras";
-  els.moreGrid.innerHTML = extra.map((movie) => {
-    const providerLine = movie.providers?.length
-      ? `<span class="mini-provider-line">${providerLinksForMovie(movie, 2)}</span>`
-      : `<span class="mini-provider-line muted-provider">${unavailableStreamingLabel}</span>`;
-    return `
-    <article class="more-card" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
-      <div class="more-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
-        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="">` : ""}
-        <span>${movie.year}</span>
-      </div>
-      <div>
-        <h3>${movie.title}</h3>
-        <p>${displayText(movie.genre)} | ${displayText(movie.country)}<br>${movie.director}</p>
-        ${providerLine}
-      </div>
-    </article>
-  `;
-  }).join("");
+  void list;
 }
 
 function render() {
@@ -3250,6 +3230,12 @@ els.syncDemo.addEventListener("click", () => {
 
 els.profileFiles.addEventListener("change", (event) => {
   importProfileFiles(event.target.files);
+});
+
+document.querySelectorAll(".settings-panel").forEach((panel) => {
+  panel.addEventListener("toggle", () => {
+    if (panel.open) renderDataDiagnostics();
+  });
 });
 
 document.addEventListener("click", (event) => {
@@ -3346,12 +3332,12 @@ els.hero.addEventListener("click", (event) => {
 const restoredInitialCatalog = restoreTmdbCatalogCache();
 updateProviderFilter();
 render();
-window.setTimeout(async () => {
+runWhenIdle(async () => {
   const restoredSeed = await restoreCatalogSeed();
   if (restoredSeed || restoredInitialCatalog) {
     els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
   }
   runWhenIdle(() => {
     hydratePriorityPosters();
-  }, 2200);
-}, 250);
+  }, 2800);
+}, 1600);

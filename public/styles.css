@@ -63,6 +63,8 @@ button {
 }
 
 .result-panel {
+  display: flex;
+  align-items: center;
   padding: 22px;
   overflow: hidden;
 }
@@ -521,6 +523,7 @@ input[type="range"] {
 .hero-rec {
   display: grid;
   grid-template-columns: minmax(150px, 200px) minmax(0, 1fr);
+  width: 100%;
   min-height: 0;
   gap: 30px;
   align-items: center;
@@ -1233,6 +1236,18 @@ input[type="range"] {
   color: #ead3a4;
 }
 
+.dialog-helper-link {
+  color: var(--accent-2);
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.dialog-helper-link:hover,
+.dialog-helper-link:focus-visible {
+  color: var(--ink);
+}
+
 @media (max-width: 920px) {
   .app-shell,
   .hero-rec {
@@ -1241,6 +1256,10 @@ input[type="range"] {
 
   .app-shell {
     width: min(680px, calc(100vw - 24px));
+  }
+
+  .result-panel {
+    display: block;
   }
 
   .hero-rec {
