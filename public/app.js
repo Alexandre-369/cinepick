@@ -125,6 +125,7 @@ const recommendationHistoryKey = "cinepick_recommendation_history_v1";
 const recommendationHistoryLimit = 160;
 const posterCacheKey = "cinepick_poster_cache_v2";
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
+const ultraFastCatalogDefault = true;
 
 const displayNames = {
   Acao: "Ação",
@@ -1369,7 +1370,8 @@ const els = {
 
 els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
 els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
-els.useTmdb.checked = localStorage.getItem("cinepick_use_tmdb") === "true";
+const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
+els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
 useTmdb = els.useTmdb.checked;
 
 applyPosterCache();
@@ -1876,6 +1878,14 @@ function recommendationListForRender(advance = false) {
   const rankedAll = filteredMovies();
   if (!rankedAll.length) return [];
 
+  if (activeMode === "roulette") {
+    if (advance || !roulettePick) selectRouletteMovie(rankedAll);
+    const selected = rankedAll.find((movie) => movie.title === roulettePick) || rankedAll[0];
+    currentHeroKey = movieKey(selected.title, selected.year);
+    rememberRecommendation(selected);
+    return [selected];
+  }
+
   const signature = recommendationStateSignature();
   const signatureChanged = signature !== recommendationSignature;
   if (signatureChanged || !recommendationQueue.length) {
@@ -1885,8 +1895,7 @@ function recommendationListForRender(advance = false) {
 
   const current = currentHeroKey ? movieFromKey(rankedAll, currentHeroKey) : null;
   if (!advance && current) {
-    const rest = diversifyMovies(rankedAll.filter((movie) => movieKey(movie.title, movie.year) !== movieKey(current.title, current.year)), [current]);
-    return [current, ...rest];
+    return [current];
   }
 
   const selectedIndex = recommendationQueue.findIndex((movie) => {
@@ -1901,8 +1910,7 @@ function recommendationListForRender(advance = false) {
   currentHeroKey = movieKey(selected.title, selected.year);
   rememberRecommendation(selected);
 
-  const rest = diversifyMovies(rankedAll.filter((movie) => movieKey(movie.title, movie.year) !== currentHeroKey), [selected]);
-  return [selected, ...rest];
+  return [selected];
 }
 
 function moodMismatch(movie) {
@@ -2011,16 +2019,13 @@ function restoreTmdbCatalogCache() {
   if (cached.version !== tmdbCatalogConfig.cacheVersion) return false;
   if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
 
-    tmdbMovies = cached.movies;
-    tmdbMovies.forEach((movie) => {
-      movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
-      movie.providers = dedupeProviders(movie.providers || []);
-    });
-  useTmdb = true;
-  els.useTmdb.checked = true;
-  localStorage.setItem("cinepick_use_tmdb", "true");
+  tmdbMovies = cached.movies;
+  tmdbMovies.forEach((movie) => {
+    movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
+    movie.providers = dedupeProviders(movie.providers || []);
+  });
   updateProviderFilter();
-  els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do cache local. Atualizando em segundo plano.`;
+  els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos no cache. Ative o catálogo expandido quando quiser.`;
   return true;
 }
 
@@ -2038,13 +2043,9 @@ async function restoreCatalogSeed() {
       providers: dedupeProviders(movie.providers || []),
       rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb")
     }));
-    useTmdb = true;
-    els.useTmdb.checked = true;
-    localStorage.setItem("cinepick_use_tmdb", "true");
     updateProviderFilter();
     cacheTmdbCatalog();
-    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do catálogo pré-gerado. Atualizando em segundo plano.`;
-    render();
+    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes preparados em modo rápido. Ative o catálogo expandido quando quiser.`;
     return true;
   } catch {
     return false;
@@ -2226,10 +2227,9 @@ function selectRouletteMovie(list) {
     return;
   }
 
-  shuffleSalt = Math.floor(Math.random() * 100000);
   const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 28));
   const source = freshList.length ? freshList : list;
-  const roulettePool = diversifyMovies(weightedShuffle(source.slice(0, Math.min(160, source.length)), "roulette-pool"));
+  const roulettePool = weightedShuffle(source.slice(0, Math.min(90, source.length)), "roulette-pool");
   roulettePick = (roulettePool[0] || list[0]).title;
 }
 
@@ -2471,6 +2471,34 @@ function canonicalProviderName(provider) {
   return displayText(provider);
 }
 
+function providerSlug(provider) {
+  return normalize(canonicalProviderName(provider))
+    .replace(/\+/g, "plus")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function providerMonogram(provider) {
+  const key = providerSlug(provider);
+  const monograms = {
+    netflix: "N",
+    "prime-video": "PV",
+    "disneyplus": "D+",
+    max: "M",
+    globoplay: "G",
+    "apple-tv": "tv",
+    "claro-tvplus": "C+",
+    "paramountplus": "P+",
+    telecine: "T",
+    mubi: "MU",
+    crunchyroll: "CR",
+    looke: "L",
+    youtube: "YT",
+    "google-play": "GP"
+  };
+  return monograms[key] || displayText(provider).slice(0, 2).toUpperCase();
+}
+
 function dedupeProviders(providers = []) {
   const seen = new Set();
   return providers
@@ -2647,7 +2675,6 @@ async function loadTmdbCatalog({ auto = false } = {}) {
     updateProviderFilter();
     cacheTmdbCatalog();
     roulettePick = "";
-    if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
     els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do TMDb com capas oficiais.`;
     render();
     return true;
@@ -2862,10 +2889,6 @@ function setMode(mode) {
   els.moodPanel.hidden = mode !== "mood";
   els.roulettePanel.hidden = mode !== "roulette";
 
-  if (mode === "roulette" && !roulettePick) {
-    selectRouletteMovie(filteredMovies());
-  }
-
   render();
 }
 
@@ -2963,7 +2986,6 @@ async function importProfileFiles(files) {
   resetRecommendationFlow();
   renderProfileStats();
   els.syncStatus.textContent = `${csvFiles.length} arquivo(s) importado(s). Agora o app evita vistos e usa notas altas como sinal de gosto.`;
-  if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
   render();
 }
 
@@ -3030,8 +3052,9 @@ function providerLinksForMovie(movie, limit = 3) {
   const providers = dedupeProviders(movie.providers || []).slice(0, limit);
   if (!providers.length) return "";
   return providers.map((provider) => `
-    <a class="streaming-link" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Ver ${movie.title} em ${provider}">
-      ${displayText(provider)}
+    <a class="streaming-link" data-provider="${providerSlug(provider)}" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Ver ${movie.title} em ${provider}">
+      <span class="provider-mark" aria-hidden="true">${providerMonogram(provider)}</span>
+      <span class="provider-name">${displayText(provider)}</span>
     </a>
   `).join("");
 }
@@ -3176,13 +3199,12 @@ function renderWithAdvance(advance) {
   const list = recommendationListForRender(advance);
   if (activeMode === "roulette") {
     const selected = list.find((movie) => movie.title === roulettePick) || list[0];
-    const rotated = selected ? [selected, ...diversifyMovies(list.filter((movie) => movie.title !== selected.title), [selected])] : [];
     if (selected) {
       currentHeroKey = movieKey(selected.title, selected.year);
       rememberRecommendation(selected);
     }
-    renderHero(rotated[0]);
-    renderShortlist(rotated);
+    renderHero(selected);
+    renderShortlist(list);
     return;
   }
 
@@ -3210,7 +3232,6 @@ document.querySelectorAll("select, input").forEach((input) => {
     rerollOffset = 0;
     shuffleSalt = Math.floor(Math.random() * 100000);
     resetRecommendationFlow();
-    if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
     render();
   });
 });
@@ -3282,7 +3303,6 @@ els.useTmdb.addEventListener("change", () => {
   roulettePick = "";
   resetRecommendationFlow();
   updateProviderFilter();
-  if (activeMode === "roulette") selectRouletteMovie(filteredMovies());
   render();
 });
 
@@ -3291,7 +3311,9 @@ els.reroll.addEventListener("click", () => {
     els.rouletteWheel.classList.remove("is-spinning");
     void els.rouletteWheel.offsetWidth;
     els.rouletteWheel.classList.add("is-spinning");
-    selectRouletteMovie(filteredMovies());
+    shuffleSalt = Math.floor(Math.random() * 100000);
+    rerollOffset += 1 + Math.floor(Math.random() * 11);
+    roulettePick = "";
     renderWithAdvance(true);
     return;
   }
@@ -3305,7 +3327,9 @@ els.spin.addEventListener("click", () => {
   els.rouletteWheel.classList.remove("is-spinning");
   void els.rouletteWheel.offsetWidth;
   els.rouletteWheel.classList.add("is-spinning");
-  selectRouletteMovie(filteredMovies());
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  rerollOffset += 1 + Math.floor(Math.random() * 13);
+  roulettePick = "";
   renderWithAdvance(true);
 });
 
@@ -3329,15 +3353,17 @@ els.hero.addEventListener("click", (event) => {
   renderWithAdvance(true);
 });
 
-const restoredInitialCatalog = restoreTmdbCatalogCache();
 updateProviderFilter();
 render();
-runWhenIdle(async () => {
-  const restoredSeed = await restoreCatalogSeed();
-  if (restoredSeed || restoredInitialCatalog) {
-    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
-  }
-  runWhenIdle(() => {
-    hydratePriorityPosters();
-  }, 2800);
-}, 1600);
+if (useTmdb) {
+  runWhenIdle(async () => {
+    const restoredInitialCatalog = restoreTmdbCatalogCache();
+    const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
+    if (restoredSeed || restoredInitialCatalog) {
+      els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
+      render();
+    }
+  }, 2200);
+} else {
+  els.tmdbStatus.textContent = "Modo ultra rápido ativo: curadoria local primeiro. Ative o catálogo expandido quando quiser.";
+}

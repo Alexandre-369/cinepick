@@ -818,18 +818,44 @@ input[type="range"] {
 }
 
 .streaming-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-width: 0;
-  min-height: 32px;
+  min-height: 38px;
   overflow: hidden;
   border: 1px solid rgba(86, 182, 168, .38);
   border-radius: 7px;
   background: rgba(5, 18, 16, .36);
   color: #dff6f1;
-  padding: 8px 9px;
+  padding: 8px 10px;
   font-size: .78rem;
   font-weight: 900;
-  text-align: center;
   text-decoration: none;
+}
+
+.provider-mark,
+.provider-name {
+  min-width: 0;
+}
+
+.provider-mark {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  color: white;
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .02em;
+}
+
+.provider-name {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -839,6 +865,46 @@ input[type="range"] {
   border-color: var(--accent-2);
   background: rgba(86, 182, 168, .18);
   color: var(--ink);
+}
+
+.streaming-link[data-provider="netflix"] .provider-mark {
+  background: #b20710;
+}
+
+.streaming-link[data-provider="prime-video"] .provider-mark {
+  background: #1399ff;
+}
+
+.streaming-link[data-provider="disneyplus"] .provider-mark {
+  background: #113ccf;
+}
+
+.streaming-link[data-provider="max"] .provider-mark {
+  background: #5b3df5;
+}
+
+.streaming-link[data-provider="globoplay"] .provider-mark {
+  background: #ef3f31;
+}
+
+.streaming-link[data-provider="apple-tv"] .provider-mark {
+  background: #2d2d2d;
+}
+
+.streaming-link[data-provider="claro-tvplus"] .provider-mark {
+  background: #da291c;
+}
+
+.streaming-link[data-provider="paramountplus"] .provider-mark {
+  background: #0b4ecf;
+}
+
+.streaming-link[data-provider="telecine"] .provider-mark {
+  background: #ff7a00;
+}
+
+.streaming-link[data-provider="mubi"] .provider-mark {
+  background: #1f1f1f;
 }
 
 .meta-block {
