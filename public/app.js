@@ -1,12 +1,12 @@
 const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
   { id: "comfort", label: "Cobertor com rebobina", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
-  { id: "complexo", label: "Cabeça acesa", hint: "quebra-cabeça, teoria no banho, final que gruda", icon: "maze" },
-  { id: "intenso", label: "Unhas em risco", hint: "pressão, crime e coração batendo em 2x", icon: "pulse" },
-  { id: "sensivel", label: "Coração mole", hint: "bonito, humano, olho suando discretamente", icon: "heart" },
+  { id: "complexo", label: "Sinapse em chamas", hint: "mind game, camadas e conversa até de madrugada", icon: "maze" },
+  { id: "intenso", label: "Nervos de aço", hint: "pressão, crime e adrenalina no talo", icon: "pulse" },
+  { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
   { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e impacto sem pedir licença", icon: "bolt" },
-  { id: "surpresa", label: "Roleta cult", hint: "fora da curva, estranho do bem, risco calculado", icon: "dice" }
+  { id: "surpresa", label: "Desvio elegante", hint: "fora da curva, estranho do bem, risco calculado", icon: "dice" }
 ];
 
 const genreIds = {
@@ -3249,7 +3249,6 @@ function renderHero(movie) {
       <h2 class="${posterTitleClass}">${movie.title}</h2>
     </div>
     <div class="rec-copy">
-      <span class="kicker">${activeMode === "roulette" ? "Roleta escolheu" : "Melhor escolha agora"}</span>
       <h2 class="${heroTitleClass}">${movie.title}</h2>
       <div class="movie-info-grid">
         <div class="info-tile info-wide"><span>Direção</span><strong>${movie.director}</strong></div>
@@ -3469,7 +3468,7 @@ els.useTmdb.addEventListener("change", () => {
   render();
 });
 
-els.reroll.addEventListener("click", () => {
+function triggerNextPick() {
   if (activeMode === "roulette") {
     els.rouletteWheel.classList.remove("is-spinning");
     void els.rouletteWheel.offsetWidth;
@@ -3478,12 +3477,17 @@ els.reroll.addEventListener("click", () => {
     rerollOffset += 1 + Math.floor(Math.random() * 11);
     roulettePick = "";
     renderWithAdvance(true);
-    return;
+    return true;
   }
 
   shuffleSalt = Math.floor(Math.random() * 100000);
   rerollOffset += 1 + Math.floor(Math.random() * Math.max(8, filteredMovies().length));
   renderWithAdvance(true);
+  return true;
+}
+
+els.reroll?.addEventListener("click", () => {
+  triggerNextPick();
 });
 
 els.spin.addEventListener("click", () => {
@@ -3498,7 +3502,7 @@ els.spin.addEventListener("click", () => {
 
 els.hero.addEventListener("click", (event) => {
   if (event.target.closest("[data-next]")) {
-    els.reroll.click();
+    triggerNextPick();
     return;
   }
 
