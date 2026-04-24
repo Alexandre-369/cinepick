@@ -1,12 +1,12 @@
 const moods = [
-  { id: "leve", label: "Rir sem culpa", hint: "leve, rápido, sem boleto emocional" },
-  { id: "comfort", label: "Cobertor cinematográfico", hint: "aconchego, reprise afetiva, zero susto" },
-  { id: "nostalgia", label: "Saudade em 24 fps", hint: "cara de outro tempo, cheiro de locadora" },
-  { id: "complexo", label: "Cabeça acesa", hint: "quebra-cabeça, teoria no banho" },
-  { id: "intenso", label: "Unhas em risco", hint: "pressão, crime, respira fundo" },
-  { id: "sensivel", label: "Coração mole", hint: "bonito, humano, talvez um cisco" },
-  { id: "acao", label: "Pipoca voando", hint: "ritmo, fuga, soco coreografado" },
-  { id: "surpresa", label: "Roleta cult", hint: "fora da bolha, estranho do bem" }
+  { id: "leve", label: "Rir sem culpa", hint: "leve, rápido, sem boleto emocional", icon: "spark" },
+  { id: "comfort", label: "Cobertor cinematográfico", hint: "aconchego, reprise afetiva, zero susto", icon: "blanket" },
+  { id: "nostalgia", label: "Saudade em 24 fps", hint: "cara de outro tempo, cheiro de locadora", icon: "rewind" },
+  { id: "complexo", label: "Cabeça acesa", hint: "quebra-cabeça, teoria no banho", icon: "maze" },
+  { id: "intenso", label: "Unhas em risco", hint: "pressão, crime, respira fundo", icon: "pulse" },
+  { id: "sensivel", label: "Coração mole", hint: "bonito, humano, talvez um cisco", icon: "heart" },
+  { id: "acao", label: "Pipoca voando", hint: "ritmo, fuga, soco coreografado", icon: "bolt" },
+  { id: "surpresa", label: "Roleta cult", hint: "fora da bolha, estranho do bem", icon: "dice" }
 ];
 
 const genreIds = {
@@ -111,18 +111,18 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 11,
-  limit: 560,
+  cacheVersion: 12,
+  limit: 760,
   batchSize: 14,
   omdbEnrichLimit: 36,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
 
 const catalogDecades = [1970, 1980, 1990, 2000, 2010, 2020];
-const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG"];
+const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA"];
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
 const recommendationHistoryKey = "cinepick_recommendation_history_v1";
-const recommendationHistoryLimit = 160;
+const recommendationHistoryLimit = 280;
 const posterCacheKey = "cinepick_poster_cache_v2";
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
@@ -1318,8 +1318,10 @@ let lastRenderedHeroKey = "";
 let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
-let priorityPosterHydrationStarted = false;
-let catalogPosterHydrationStarted = false;
+let priorityPosterHydrationStarted = "";
+let priorityPosterHydrationInFlight = false;
+let catalogPosterHydrationStarted = "";
+let catalogPosterHydrationInFlight = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
@@ -1712,12 +1714,13 @@ function isRecentlyRecommended(movie, limit = 28) {
 function freshnessPenalty(movie) {
   const index = recentRecommendationIndex(movie);
   if (index < 0) return 0;
-  if (index < 4) return 220;
-  if (index < 12) return 132;
-  if (index < 32) return 72;
-  if (index < 70) return 34;
-  if (index < 120) return 14;
-  return 6;
+  if (index < 6) return 280;
+  if (index < 18) return 180;
+  if (index < 40) return 112;
+  if (index < 90) return 56;
+  if (index < 170) return 24;
+  if (index < 240) return 12;
+  return 7;
 }
 
 function rememberRecommendation(movie) {
@@ -1740,10 +1743,14 @@ function diversityPenalty(movie, selected) {
     const sameGenre = movieGenres(movie).some((genre) => hasGenre(item, [genre]));
     const sameCountry = movie.country === item.country;
     const sameDecade = movie.decade === item.decade;
+    const sameDirector = normalize(movie.director) === normalize(item.director);
+    const sameVibe = (movie.vibes || []).some((vibe) => (item.vibes || []).includes(vibe));
     return penalty
-      + (sameGenre ? 15 / distance : 0)
-      + (sameCountry ? 10 / distance : 0)
-      + (sameDecade ? 7 / distance : 0);
+      + (sameGenre ? 22 / distance : 0)
+      + (sameCountry ? 14 / distance : 0)
+      + (sameDecade ? 11 / distance : 0)
+      + (sameDirector ? 18 / distance : 0)
+      + (sameVibe ? 10 / distance : 0);
   }, 0);
 }
 
@@ -1753,8 +1760,8 @@ function weightedShuffle(list, scope = "weighted") {
 
   return list
     .map((movie) => {
-      const normalizedScore = Math.max(1, movie.score - minScore + 12);
-      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.78 : 0.92);
+      const normalizedScore = Math.max(1, movie.score - minScore + 10);
+      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.68 : 0.76);
       const random = Math.max(0.0001, seededUnit(movie, scope));
       return {
         movie,
@@ -1849,13 +1856,13 @@ function diversifyMovies(list, anchors = []) {
   while (remaining.length) {
     let bestIndex = 0;
     let bestValue = -Infinity;
-    const windowSize = Math.min(90, remaining.length);
+    const windowSize = Math.min(140, remaining.length);
 
     for (let index = 0; index < windowSize; index += 1) {
       const movie = remaining[index];
       const value = movie.score
         - diversityPenalty(movie, selected)
-        + seededUnit(movie, `diversity-${result.length}`) * 26;
+        + seededUnit(movie, `diversity-${result.length}`) * 42;
       if (value > bestValue) {
         bestValue = value;
         bestIndex = index;
@@ -1893,18 +1900,18 @@ function recommendationStateSignature() {
 }
 
 function buildRecommendationQueue(rankedAll, scope = "queue") {
-  const veryFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 45));
-  const moderatelyFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 20));
+  const veryFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 80));
+  const moderatelyFresh = rankedAll.filter((movie) => !isRecentlyRecommended(movie, 36));
   const ranked = veryFresh.length ? veryFresh : (moderatelyFresh.length ? moderatelyFresh : rankedAll);
   if (!ranked.length) return [];
 
   const profile = moodProfiles[activeMood] || {};
-  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.86 : 0.64;
-  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 150 : 96;
+  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.94 : 0.8;
+  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 240 : 160;
   const poolSize = Math.min(Math.max(minimumPool, Math.ceil(ranked.length * spread)), ranked.length);
   const frontPool = weightedShuffle(ranked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
-  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 140)), `${scope}-middle-${recommendationHistory.length}`);
-  const tail = weightedShuffle(ranked.slice(poolSize + 140), `${scope}-tail-${recommendationHistory.length}`);
+  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 220)), `${scope}-middle-${recommendationHistory.length}`);
+  const tail = weightedShuffle(ranked.slice(poolSize + 220), `${scope}-tail-${recommendationHistory.length}`);
   return diversifyMovies([...frontPool, ...middle, ...tail]);
 }
 
@@ -1946,7 +1953,7 @@ function recommendationListForRender(advance = false) {
   const selectedIndex = recommendationQueue.findIndex((movie) => {
     const key = movieKey(movie.title, movie.year);
     if (currentHeroKey && key === currentHeroKey) return false;
-    return !isRecentlyRecommended(movie, 28);
+    return !isRecentlyRecommended(movie, 60);
   });
   const fallbackIndex = recommendationQueue.findIndex((movie) => !currentHeroKey || movieKey(movie.title, movie.year) !== currentHeroKey);
   const index = selectedIndex >= 0 ? selectedIndex : fallbackIndex;
@@ -2167,7 +2174,7 @@ function scoreMovie(movie) {
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
   score -= freshnessPenalty(movie);
 
-  return score + shuffleNoise(movie) * (profile.surpriseMode ? 48 : 34);
+  return score + shuffleNoise(movie) * (profile.surpriseMode ? 92 : (activeMode === "roulette" ? 84 : 58));
 }
 
 function filteredMovies() {
@@ -2272,9 +2279,11 @@ function selectRouletteMovie(list) {
     return;
   }
 
-  const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 28));
+  const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 70));
   const source = freshList.length ? freshList : list;
-  const roulettePool = weightedShuffle(source.slice(0, Math.min(90, source.length)), "roulette-pool");
+  const roulettePool = diversifyMovies(
+    weightedShuffle(source.slice(0, Math.min(180, source.length)), "roulette-pool")
+  );
   roulettePick = (roulettePool[0] || list[0]).title;
 }
 
@@ -2835,10 +2844,12 @@ async function hydrateCuratedPosters() {
 }
 
 async function hydratePriorityPosters() {
-  if (priorityPosterHydrationStarted) return;
+  const signature = `${activeMode}|${activeMood}|${currentHeroKey}|${useTmdb}|${els.genre.value}|${els.country.value}|${els.decade.value}|${els.provider.value}`;
+  if (priorityPosterHydrationInFlight || priorityPosterHydrationStarted === signature) return;
   const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
   if (staticLocalhost) return;
-  priorityPosterHydrationStarted = true;
+  priorityPosterHydrationInFlight = true;
+  priorityPosterHydrationStarted = signature;
 
   const visibleMovies = filteredMovies();
   const ratingCandidates = visibleMovies
@@ -2847,7 +2858,10 @@ async function hydratePriorityPosters() {
   const candidates = visibleMovies
     .filter((movie) => !movie.posterUrl)
     .slice(0, 18);
-  if (!candidates.length && !ratingCandidates.length) return;
+  if (!candidates.length && !ratingCandidates.length) {
+    priorityPosterHydrationInFlight = false;
+    return;
+  }
 
   const previousStatus = els.tmdbStatus.textContent;
   let found = 0;
@@ -2878,19 +2892,27 @@ async function hydratePriorityPosters() {
     els.tmdbStatus.textContent = previousStatus;
   } catch {
     els.tmdbStatus.textContent = previousStatus;
+  } finally {
+    priorityPosterHydrationInFlight = false;
   }
 }
 
 async function hydrateCatalogPostersInBackground() {
-  if (catalogPosterHydrationStarted) return;
+  const missingCount = activeCatalog().filter((movie) => !movie.posterUrl).length;
+  const signature = `${useTmdb}|${activeCatalog().length}|${missingCount}`;
+  if (catalogPosterHydrationInFlight || catalogPosterHydrationStarted === signature) return;
   const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
   if (staticLocalhost) return;
-  catalogPosterHydrationStarted = true;
+  catalogPosterHydrationInFlight = true;
+  catalogPosterHydrationStarted = signature;
 
   const missingPosters = activeCatalog()
     .filter((movie) => !movie.posterUrl)
     .slice(0, 180);
-  if (!missingPosters.length) return;
+  if (!missingPosters.length) {
+    catalogPosterHydrationInFlight = false;
+    return;
+  }
 
   const previousStatus = els.tmdbStatus.textContent;
   let found = 0;
@@ -2912,6 +2934,8 @@ async function hydrateCatalogPostersInBackground() {
     if (!found) els.tmdbStatus.textContent = previousStatus;
   } catch {
     els.tmdbStatus.textContent = previousStatus;
+  } finally {
+    catalogPosterHydrationInFlight = false;
   }
 }
 
@@ -3034,11 +3058,28 @@ async function importProfileFiles(files) {
   render();
 }
 
+function moodIconSvg(icon) {
+  const icons = {
+    spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l1.8 4.2L18 10l-4.2 1.8L12 16l-1.8-4.2L6 10l4.2-1.8z"/></svg>',
+    blanket: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5H19v12H7.5A2.5 2.5 0 0 0 5 19.5z"/><path d="M5 7.5v12"/></svg>',
+    rewind: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7l-6 5 6 5V7zM19 7l-6 5 6 5V7z"/></svg>',
+    maze: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5z"/><path d="M9 5v5h6v4h-4v5"/></svg>',
+    pulse: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-4 3 8 2-4h7"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+    dice: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h.01M15 15h.01M15 9h.01M9 15h.01"/></svg>'
+  };
+  return icons[icon] || icons.spark;
+}
+
 function renderMoods() {
   els.moods.innerHTML = moods.map((mood) => `
     <button class="mood-chip ${mood.id === activeMood ? "is-active" : ""}" type="button" data-mood="${mood.id}">
-      <strong>${mood.label}</strong>
-      <span>${mood.hint}</span>
+      <span class="mood-icon" aria-hidden="true">${moodIconSvg(mood.icon)}</span>
+      <span class="mood-copy">
+        <strong>${mood.label}</strong>
+        <span>${mood.hint}</span>
+      </span>
     </button>
   `).join("");
 }
@@ -3120,7 +3161,7 @@ function renderMovieDialog(movie) {
   els.dialogContent.innerHTML = `
     <div class="dialog-grid">
       <div class="dialog-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
-        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
+        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}" loading="lazy" decoding="async">` : ""}
         <span>${movie.year}</span>
       </div>
       <div class="dialog-copy">
@@ -3186,7 +3227,7 @@ function renderHero(movie) {
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
-      ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}">` : ""}
+      ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}" loading="eager" decoding="async" fetchpriority="high">` : ""}
       <span class="poster-badge">${displayText(movie.genre)}</span>
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
@@ -3255,6 +3296,8 @@ function setDrawerPeek(peek) {
 }
 
 function renderWithAdvance(advance) {
+  document.body.dataset.mode = activeMode;
+  document.body.dataset.mood = activeMood;
   renderMoods();
   renderDataDiagnostics();
   const list = recommendationListForRender(advance);
@@ -3266,11 +3309,15 @@ function renderWithAdvance(advance) {
     }
     renderHero(selected);
     renderShortlist(list);
+    runWhenIdle(() => hydratePriorityPosters(), 260);
+    runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
     return;
   }
 
   renderHero(list[0]);
   renderShortlist(list);
+  runWhenIdle(() => hydratePriorityPosters(), 260);
+  runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
 }
 
 els.modeTabs.forEach((button) => {
@@ -3355,6 +3402,13 @@ document.addEventListener("click", (event) => {
   const movie = movieFromDomKey(trigger.dataset.openDetails);
   renderMovieDialog(movie);
 });
+
+document.addEventListener("error", (event) => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement) || !image.classList.contains("poster-img")) return;
+  image.closest(".has-official-poster")?.classList.remove("has-official-poster");
+  image.remove();
+}, true);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && els.drawer?.classList.contains("is-open")) {
