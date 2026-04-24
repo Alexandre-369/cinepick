@@ -1318,6 +1318,7 @@ let lastRenderedHeroKey = "";
 let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
+const attemptedHeroPosterKeys = new Set();
 let priorityPosterHydrationStarted = "";
 let priorityPosterHydrationInFlight = false;
 let catalogPosterHydrationStarted = "";
@@ -2809,6 +2810,23 @@ async function findPosterForMovie(movie) {
   return true;
 }
 
+function ensureHeroPoster(movie) {
+  if (!movie || movie.posterUrl) return;
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  if (staticLocalhost) return;
+  const key = movieKey(movie.title, movie.year);
+  if (attemptedHeroPosterKeys.has(key)) return;
+  attemptedHeroPosterKeys.add(key);
+
+  findPosterForMovie(movie)
+    .then((found) => {
+      if (!found) return;
+      updateProviderFilter();
+      render();
+    })
+    .catch(() => false);
+}
+
 async function hydrateCuratedPosters() {
   const token = els.tmdbToken.value.trim();
   if (token) localStorage.setItem("cinepick_tmdb_token", token);
@@ -3267,6 +3285,8 @@ function renderHero(movie) {
       </div>
     </div>
   `;
+
+  ensureHeroPoster(movie);
 }
 
 function renderShortlist(list) {
