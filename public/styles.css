@@ -103,11 +103,11 @@ select {
   gap: 14px;
 }
 
-.panel-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 2px;
+.mode-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .eyebrow {
@@ -147,7 +147,8 @@ h2 {
 
 .premium-drawer-toggle {
   width: 44px;
-  height: 44px;
+  height: 100%;
+  min-height: 52px;
   border-color: rgba(255, 255, 255, .14);
   background: rgba(23, 23, 23, .94);
   box-shadow: 0 10px 20px rgba(0, 0, 0, .2);
@@ -1521,8 +1522,17 @@ input[type="range"] {
   }
 
   .decision-panel {
-    gap: 12px;
+    gap: 10px;
     padding: 16px;
+  }
+
+  .mode-row {
+    gap: 6px;
+  }
+
+  .mode-tabs button {
+    min-height: 40px;
+    font-size: .98rem;
   }
 
   .result-panel {
@@ -1652,12 +1662,86 @@ input[type="range"] {
   .decision-panel,
   .result-panel {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
   }
 
   .rec-copy h2 {
     font-size: clamp(1.9rem, 9vw, 2.6rem);
     line-height: .94;
+  }
+
+  .mode-row {
+    gap: 6px;
+  }
+
+  .mode-tabs {
+    padding: 4px;
+  }
+
+  .mode-tabs button {
+    min-height: 38px;
+    gap: 6px;
+    font-size: .95rem;
+  }
+
+  .premium-drawer-toggle {
+    width: 42px;
+    min-height: 46px;
+  }
+
+  .mood-chip {
+    min-height: 64px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .mood-chip strong {
+    font-size: .86rem;
+    line-height: 1.08;
+  }
+
+  .mood-chip .mood-copy span {
+    font-size: .69rem;
+    line-height: 1.2;
+  }
+
+  .group-title span {
+    font-size: .84rem;
+  }
+
+  .movie-info-grid {
+    gap: 7px;
+  }
+
+  .info-tile {
+    padding: 9px 10px;
+  }
+
+  .info-tile strong {
+    font-size: .88rem;
+  }
+
+  .watch-strip {
+    padding: 10px;
+  }
+
+  .watch-strip strong {
+    font-size: .92rem;
+  }
+
+  .streaming-link {
+    min-height: 36px;
+    font-size: .74rem;
+  }
+
+  .rec-actions {
+    gap: 8px;
+  }
+
+  .rec-actions button {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: .95rem;
   }
 
   .filter-grid,
@@ -1717,11 +1801,11 @@ input[type="range"] {
   }
 
   .hero-rec {
-    gap: 12px;
+    gap: 10px;
   }
 
   .poster {
-    width: min(240px, 74vw);
+    width: min(236px, 74vw);
   }
 
   .watch-strip,
@@ -1755,5 +1839,27 @@ input[type="range"] {
 
   .dialog-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 390px) {
+  .app-shell {
+    padding: 7px 7px 10px;
+  }
+
+  .mode-tabs button {
+    font-size: .9rem;
+  }
+
+  .mood-chip strong {
+    font-size: .82rem;
+  }
+
+  .mood-chip .mood-copy span {
+    font-size: .67rem;
+  }
+
+  .poster {
+    width: min(226px, 76vw);
   }
 }
