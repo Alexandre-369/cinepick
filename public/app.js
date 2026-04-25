@@ -112,17 +112,17 @@ const countryCodes = {
 
 const tmdbCatalogConfig = {
   cacheVersion: 13,
-  limit: 920,
-  batchSize: 14,
+  limit: 1280,
+  batchSize: 16,
   omdbEnrichLimit: 36,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
 
-const catalogDecades = [1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
-const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA"];
-const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc"];
+const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
+const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
+const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc", "release_date.desc"];
 const recommendationHistoryKey = "cinepick_recommendation_history_v1";
-const recommendationHistoryLimit = 360;
+const recommendationHistoryLimit = 520;
 const posterCacheKey = "cinepick_poster_cache_v2";
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
@@ -1335,7 +1335,14 @@ let catalogPosterHydrationInFlight = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
+let posterCacheSize = Object.keys(posterCache).length;
 let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
+let recommendationHistoryVersion = 0;
+let filteredCacheSignature = "";
+let filteredCacheList = [];
+let catalogCacheSignature = "";
+let catalogCacheList = [];
+const sessionScopeSeen = new Map();
 const profileData = {
   watched: new Set(),
   highRated: new Set(),
@@ -1720,13 +1727,13 @@ function isRecentlyRecommended(movie, limit = 36) {
 function freshnessPenalty(movie) {
   const index = recentRecommendationIndex(movie);
   if (index < 0) return 0;
-  if (index < 8) return 320;
-  if (index < 24) return 210;
-  if (index < 60) return 130;
-  if (index < 120) return 68;
-  if (index < 220) return 30;
-  if (index < 320) return 14;
-  return 8;
+  if (index < 12) return 380;
+  if (index < 30) return 260;
+  if (index < 70) return 170;
+  if (index < 140) return 96;
+  if (index < 260) return 46;
+  if (index < 420) return 20;
+  return 10;
 }
 
 function rememberRecommendation(movie) {
@@ -1740,6 +1747,8 @@ function rememberRecommendation(movie) {
   recommendationHistory = [key, ...recommendationHistory.filter((item) => (
     !keys.includes(item) && !titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
   ))].slice(0, recommendationHistoryLimit);
+  recommendationHistoryVersion += 1;
+  scopeSeenSet().add(key);
   localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
 }
 
@@ -1767,7 +1776,7 @@ function weightedShuffle(list, scope = "weighted") {
   return list
     .map((movie) => {
       const normalizedScore = Math.max(1, movie.score - minScore + 10);
-      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.68 : 0.76);
+      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.62 : 0.72);
       const random = Math.max(0.0001, seededUnit(movie, scope));
       return {
         movie,
@@ -1776,6 +1785,26 @@ function weightedShuffle(list, scope = "weighted") {
     })
     .sort((a, b) => a.sortKey - b.sortKey)
     .map((item) => item.movie);
+}
+
+function recommendationScopeKey() {
+  return [
+    activeMode,
+    activeMood,
+    els.genre.value,
+    els.duration.value,
+    els.decade.value,
+    els.country.value,
+    els.provider.value,
+    String(els.hideWatched.checked),
+    String(useTmdb),
+    String(activeCatalog().length)
+  ].join("|");
+}
+
+function scopeSeenSet(scopeKey = recommendationScopeKey()) {
+  if (!sessionScopeSeen.has(scopeKey)) sessionScopeSeen.set(scopeKey, new Set());
+  return sessionScopeSeen.get(scopeKey);
 }
 
 function mergeMovieEnhancements(primary, candidate) {
@@ -1889,16 +1918,7 @@ function recommendationList() {
 
 function recommendationStateSignature() {
   return [
-    activeMode,
-    activeMood,
-    els.genre.value,
-    els.duration.value,
-    els.decade.value,
-    els.country.value,
-    els.provider.value,
-    String(els.hideWatched.checked),
-    String(useTmdb),
-    String(activeCatalog().length),
+    recommendationScopeKey(),
     String(shuffleSalt)
   ].join("|");
 }
@@ -1909,13 +1929,20 @@ function buildRecommendationQueue(rankedAll, scope = "queue") {
   const ranked = veryFresh.length ? veryFresh : (moderatelyFresh.length ? moderatelyFresh : rankedAll);
   if (!ranked.length) return [];
 
+  const seenSet = scopeSeenSet();
+  let antiRepeatRanked = ranked.filter((movie) => !seenSet.has(movieKey(movie.title, movie.year)));
+  if (!antiRepeatRanked.length) {
+    seenSet.clear();
+    antiRepeatRanked = ranked;
+  }
+
   const profile = moodProfiles[activeMood] || {};
-  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.94 : 0.8;
-  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 320 : 220;
-  const poolSize = Math.min(Math.max(minimumPool, Math.ceil(ranked.length * spread)), ranked.length);
-  const frontPool = weightedShuffle(ranked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
-  const middle = weightedShuffle(ranked.slice(poolSize, Math.min(ranked.length, poolSize + 220)), `${scope}-middle-${recommendationHistory.length}`);
-  const tail = weightedShuffle(ranked.slice(poolSize + 220), `${scope}-tail-${recommendationHistory.length}`);
+  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.98 : 0.9;
+  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 460 : 280;
+  const poolSize = Math.min(Math.max(minimumPool, Math.ceil(antiRepeatRanked.length * spread)), antiRepeatRanked.length);
+  const frontPool = weightedShuffle(antiRepeatRanked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
+  const middle = weightedShuffle(antiRepeatRanked.slice(poolSize, Math.min(antiRepeatRanked.length, poolSize + 320)), `${scope}-middle-${recommendationHistory.length}`);
+  const tail = weightedShuffle(antiRepeatRanked.slice(poolSize + 320), `${scope}-tail-${recommendationHistory.length}`);
   return diversifyMovies([...frontPool, ...middle, ...tail]);
 }
 
@@ -2055,6 +2082,7 @@ function cacheMovieEnhancement(movie) {
   movieCacheKeys(movie).forEach((key) => {
     posterCache[key] = enhancement;
   });
+  posterCacheSize = Object.keys(posterCache).length;
   localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
   syncMovieEnhancement(movie);
 }
@@ -2151,9 +2179,14 @@ function wasWatched(movie) {
 }
 
 function activeCatalog() {
+  const signature = `${useTmdb}|${curatedMovies.length}|${tmdbMovies.length}|${posterCacheSize}`;
+  if (catalogCacheSignature === signature && catalogCacheList.length) return catalogCacheList;
+
   const catalog = useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
   mergeCatalogEnhancements(catalog);
-  return catalog;
+  catalogCacheSignature = signature;
+  catalogCacheList = catalog;
+  return catalogCacheList;
 }
 
 function movieDuration(movie) {
@@ -2179,25 +2212,49 @@ function scoreMovie(movie) {
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
   score -= freshnessPenalty(movie);
 
-  return score + shuffleNoise(movie) * (profile.surpriseMode ? 92 : (activeMode === "roulette" ? 84 : 58));
+  return score + shuffleNoise(movie) * (profile.surpriseMode ? 132 : (activeMode === "roulette" ? 118 : 78));
 }
 
 function filteredMovies() {
-  const filtered = activeCatalog()
-    .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
-    .filter((movie) => {
-      if (activeMode === "mood" && moodMismatch(movie)) return false;
-      if (els.genre.value !== "qualquer" && !hasGenre(movie, [els.genre.value])) return false;
-      if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
-      if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
-      if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
-      if (els.provider.value !== "qualquer" && !dedupeProviders(movie.providers || []).includes(els.provider.value)) return false;
-      if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
-      return true;
-    });
+  const signature = [
+    activeMode,
+    activeMood,
+    els.genre.value,
+    els.duration.value,
+    els.decade.value,
+    els.country.value,
+    els.provider.value,
+    String(els.hideWatched.checked),
+    String(profileLoaded),
+    String(profileData.importedRows),
+    String(profileData.watched.size),
+    String(recommendationHistoryVersion),
+    String(shuffleSalt),
+    String(rerollOffset),
+    String(useTmdb),
+    String(activeCatalog().length)
+  ].join("|");
 
-  return dedupeByTitle(filtered)
-    .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a));
+  if (filteredCacheSignature === signature && filteredCacheList.length) return filteredCacheList;
+
+  const prefiltered = activeCatalog().filter((movie) => {
+    if (els.genre.value !== "qualquer" && !hasGenre(movie, [els.genre.value])) return false;
+    if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
+    if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
+    if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
+    if (els.provider.value !== "qualquer" && !dedupeProviders(movie.providers || []).includes(els.provider.value)) return false;
+    if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
+    if (activeMode === "mood" && moodMismatch(movie)) return false;
+    return true;
+  });
+
+  const ranked = dedupeByTitle(prefiltered
+    .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
+    .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a)));
+
+  filteredCacheSignature = signature;
+  filteredCacheList = ranked;
+  return ranked;
 }
 
 function pickBySeed(items, movie, scope) {
@@ -2285,8 +2342,14 @@ function selectRouletteMovie(list) {
 
   const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 96));
   const source = freshList.length ? freshList : list;
+  const seenSet = scopeSeenSet();
+  let antiRepeatSource = source.filter((movie) => !seenSet.has(movieKey(movie.title, movie.year)));
+  if (!antiRepeatSource.length) {
+    seenSet.clear();
+    antiRepeatSource = source;
+  }
   const roulettePool = diversifyMovies(
-    weightedShuffle(source.slice(0, Math.min(260, source.length)), "roulette-pool")
+    weightedShuffle(antiRepeatSource.slice(0, Math.min(620, antiRepeatSource.length)), "roulette-pool")
   );
   roulettePick = (roulettePool[0] || list[0]).title;
 }
@@ -2357,7 +2420,7 @@ function catalogDiscoveryGroups() {
   const groups = [];
 
   catalogSorts.forEach((sortBy) => {
-    const pages = sortBy === "vote_average.desc" ? 2 : 3;
+    const pages = sortBy === "vote_average.desc" ? 2 : (sortBy === "release_date.desc" ? 3 : 4);
     for (let page = 1; page <= pages; page += 1) {
       groups.push(baseCatalogParams({ sortBy, page, minVotes: sortBy === "vote_average.desc" ? 250 : 90 }));
     }
@@ -3314,7 +3377,7 @@ function setDrawerPeek(peek) {
 function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
-  renderMoods();
+  if (activeMode === "mood") renderMoods();
   renderDataDiagnostics();
   const list = recommendationListForRender(advance);
   if (activeMode === "roulette") {
@@ -3350,7 +3413,14 @@ els.moods.addEventListener("click", (event) => {
   render();
 });
 
-document.querySelectorAll("select, input").forEach((input) => {
+[
+  els.genre,
+  els.duration,
+  els.decade,
+  els.country,
+  els.provider,
+  els.hideWatched
+].filter(Boolean).forEach((input) => {
   input.addEventListener("input", () => {
     rerollOffset = 0;
     shuffleSalt = Math.floor(Math.random() * 100000);
@@ -3474,14 +3544,14 @@ function triggerNextPick() {
     void els.rouletteWheel.offsetWidth;
     els.rouletteWheel.classList.add("is-spinning");
     shuffleSalt = Math.floor(Math.random() * 100000);
-    rerollOffset += 1 + Math.floor(Math.random() * 11);
+    rerollOffset += 3 + Math.floor(Math.random() * 27);
     roulettePick = "";
     renderWithAdvance(true);
     return true;
   }
 
   shuffleSalt = Math.floor(Math.random() * 100000);
-  rerollOffset += 1 + Math.floor(Math.random() * Math.max(8, filteredMovies().length));
+  rerollOffset += 2 + Math.floor(Math.random() * Math.max(14, filteredMovies().length));
   renderWithAdvance(true);
   return true;
 }
@@ -3495,7 +3565,7 @@ els.spin.addEventListener("click", () => {
   void els.rouletteWheel.offsetWidth;
   els.rouletteWheel.classList.add("is-spinning");
   shuffleSalt = Math.floor(Math.random() * 100000);
-  rerollOffset += 1 + Math.floor(Math.random() * 13);
+  rerollOffset += 4 + Math.floor(Math.random() * 33);
   roulettePick = "";
   renderWithAdvance(true);
 });
