@@ -1332,6 +1332,8 @@ let priorityPosterHydrationStarted = "";
 let priorityPosterHydrationInFlight = false;
 let catalogPosterHydrationStarted = "";
 let catalogPosterHydrationInFlight = false;
+let renderQueued = false;
+let pendingAdvanceRender = false;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
@@ -3356,8 +3358,21 @@ function renderMoreOptions(list) {
   void list;
 }
 
+function scheduleRender(advance = false) {
+  pendingAdvanceRender = pendingAdvanceRender || advance;
+  if (renderQueued) return;
+
+  renderQueued = true;
+  window.requestAnimationFrame(() => {
+    renderQueued = false;
+    const shouldAdvance = pendingAdvanceRender;
+    pendingAdvanceRender = false;
+    renderWithAdvance(shouldAdvance);
+  });
+}
+
 function render() {
-  renderWithAdvance(false);
+  scheduleRender(false);
 }
 
 function setDrawerOpen(open) {
@@ -3367,6 +3382,10 @@ function setDrawerOpen(open) {
   els.drawer.setAttribute("aria-hidden", String(!open));
   els.drawerBackdrop.hidden = !open;
   document.body.classList.toggle("drawer-open", open);
+  if (els.drawerToggle) {
+    els.drawerToggle.classList.toggle("is-open", open);
+    els.drawerToggle.setAttribute("aria-pressed", String(open));
+  }
 }
 
 function setDrawerPeek(peek) {
@@ -3546,13 +3565,14 @@ function triggerNextPick() {
     shuffleSalt = Math.floor(Math.random() * 100000);
     rerollOffset += 3 + Math.floor(Math.random() * 27);
     roulettePick = "";
-    renderWithAdvance(true);
+    scheduleRender(true);
     return true;
   }
 
   shuffleSalt = Math.floor(Math.random() * 100000);
-  rerollOffset += 2 + Math.floor(Math.random() * Math.max(14, filteredMovies().length));
-  renderWithAdvance(true);
+  const currentPoolSize = Math.max(14, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 14);
+  rerollOffset += 2 + Math.floor(Math.random() * currentPoolSize);
+  scheduleRender(true);
   return true;
 }
 
@@ -3567,7 +3587,7 @@ els.spin.addEventListener("click", () => {
   shuffleSalt = Math.floor(Math.random() * 100000);
   rerollOffset += 4 + Math.floor(Math.random() * 33);
   roulettePick = "";
-  renderWithAdvance(true);
+  scheduleRender(true);
 });
 
 els.hero.addEventListener("click", (event) => {
@@ -3585,9 +3605,10 @@ els.hero.addEventListener("click", (event) => {
   renderProfileStats();
   els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
   shuffleSalt = Math.floor(Math.random() * 100000);
-  rerollOffset += 1 + Math.floor(Math.random() * Math.max(12, filteredMovies().length));
+  const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
+  rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
   resetRecommendationFlow({ keepCurrent: true });
-  renderWithAdvance(true);
+  scheduleRender(true);
 });
 
 updateProviderFilter();

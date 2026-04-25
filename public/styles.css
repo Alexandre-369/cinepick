@@ -166,6 +166,17 @@ h2 {
   box-shadow: 0 12px 24px rgba(0, 0, 0, .24);
 }
 
+.premium-drawer-toggle.is-open {
+  border-color: rgba(86, 182, 168, .56);
+  background:
+    linear-gradient(180deg, rgba(86, 182, 168, .18), rgba(86, 182, 168, .08)),
+    rgba(20, 27, 27, .98);
+  box-shadow:
+    0 0 0 1px rgba(86, 182, 168, .24) inset,
+    0 12px 26px rgba(0, 0, 0, .26),
+    0 0 18px rgba(86, 182, 168, .2);
+}
+
 svg {
   width: 20px;
   height: 20px;
@@ -238,6 +249,14 @@ label,
 .mode-tabs button:hover,
 .mode-tabs button:focus-visible {
   transform: translateY(-1px);
+}
+
+.mode-tabs button:active,
+.mood-chip:active,
+.rec-actions button:active,
+#spin:active,
+.premium-drawer-toggle:active {
+  transform: scale(.98);
 }
 
 .icon-button:hover,
@@ -1861,5 +1880,12 @@ input[type="range"] {
 
   .poster {
     width: min(226px, 76vw);
+  }
+}
+
+@media (max-width: 430px) {
+  .app-shell {
+    max-width: 430px;
+    margin-inline: auto;
   }
 }
