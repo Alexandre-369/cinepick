@@ -1330,10 +1330,13 @@ let recommendationSignature = "";
 const attemptedHeroPosterKeys = new Set();
 let priorityPosterHydrationStarted = "";
 let priorityPosterHydrationInFlight = false;
+let nextPriorityHydrationAt = 0;
 let catalogPosterHydrationStarted = "";
 let catalogPosterHydrationInFlight = false;
 let renderQueued = false;
 let pendingAdvanceRender = false;
+let moodRenderKey = "";
+let nextBackgroundRenderAt = 0;
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
@@ -1566,12 +1569,22 @@ function seededUnit(movie, scope = "pick") {
   return ((hashString(key) % 9999) + 1) / 10000;
 }
 
+function clearMovieDerivedCache(movie) {
+  if (!movie) return;
+  delete movie.__genreCache;
+  delete movie.__genreKeySet;
+  delete movie.__searchText;
+}
+
 function movieGenres(movie) {
-  return uniqueNormalized([movie.genre, ...(movie.genres || [])]);
+  if (Array.isArray(movie.__genreCache)) return movie.__genreCache;
+  movie.__genreCache = uniqueNormalized([movie.genre, ...(movie.genres || [])]);
+  return movie.__genreCache;
 }
 
 function movieSearchText(movie) {
-  return normalize([
+  if (movie.__searchText) return movie.__searchText;
+  movie.__searchText = normalize([
     movie.title,
     movie.director,
     movie.genre,
@@ -1580,11 +1593,14 @@ function movieSearchText(movie) {
     ...(movie.tags || []),
     movie.overview
   ].join(" "));
+  return movie.__searchText;
 }
 
 function hasGenre(movie, genres) {
-  const movieGenreKeys = movieGenres(movie).map(normalize);
-  return genres.some((genre) => movieGenreKeys.includes(normalize(genre)));
+  if (!movie.__genreKeySet) {
+    movie.__genreKeySet = new Set(movieGenres(movie).map(normalize));
+  }
+  return genres.some((genre) => movie.__genreKeySet.has(normalize(genre)));
 }
 
 function genreMatchCount(movie, genres = []) {
@@ -1846,6 +1862,7 @@ function applyMovieEnhancements(target, enhanced) {
   target.overview = target.overview || enhanced.overview || "";
   target.tags = uniqueNormalized([...(target.tags || []), ...(enhanced.tags || [])]).slice(0, 8);
   target.vibes = uniqueNormalized([...(target.vibes || []), ...(enhanced.vibes || [])]);
+  clearMovieDerivedCache(target);
 }
 
 function mergeCatalogEnhancements(list) {
@@ -2218,6 +2235,7 @@ function scoreMovie(movie) {
 }
 
 function filteredMovies() {
+  const catalog = activeCatalog();
   const signature = [
     activeMode,
     activeMood,
@@ -2234,17 +2252,17 @@ function filteredMovies() {
     String(shuffleSalt),
     String(rerollOffset),
     String(useTmdb),
-    String(activeCatalog().length)
+    String(catalog.length)
   ].join("|");
 
   if (filteredCacheSignature === signature && filteredCacheList.length) return filteredCacheList;
 
-  const prefiltered = activeCatalog().filter((movie) => {
+  const prefiltered = catalog.filter((movie) => {
     if (els.genre.value !== "qualquer" && !hasGenre(movie, [els.genre.value])) return false;
     if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
     if (els.decade.value !== "qualquer" && movie.decade !== els.decade.value) return false;
     if (els.country.value !== "qualquer" && movie.country !== els.country.value) return false;
-    if (els.provider.value !== "qualquer" && !dedupeProviders(movie.providers || []).includes(els.provider.value)) return false;
+    if (els.provider.value !== "qualquer" && !(movie.providers || []).includes(els.provider.value)) return false;
     if (els.hideWatched.checked && profileLoaded && wasWatched(movie)) return false;
     if (activeMode === "mood" && moodMismatch(movie)) return false;
     return true;
@@ -2882,7 +2900,7 @@ function ensureHeroPoster(movie) {
     .then((found) => {
       if (!found) return;
       updateProviderFilter();
-      render();
+      requestBackgroundRender(true);
     })
     .catch(() => false);
 }
@@ -2922,6 +2940,10 @@ async function hydrateCuratedPosters() {
 }
 
 async function hydratePriorityPosters() {
+  const now = Date.now();
+  if (now < nextPriorityHydrationAt) return;
+  nextPriorityHydrationAt = now + 4200;
+
   const signature = `${activeMode}|${activeMood}|${currentHeroKey}|${useTmdb}|${els.genre.value}|${els.country.value}|${els.decade.value}|${els.provider.value}`;
   if (priorityPosterHydrationInFlight || priorityPosterHydrationStarted === signature) return;
   const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
@@ -2948,7 +2970,7 @@ async function hydratePriorityPosters() {
     if (ratingCandidates.length) {
       const ratingResults = await Promise.all(ratingCandidates.map((movie) => enrichRatingsFromOmdb(movie).catch(() => false)));
       found += ratingResults.filter(Boolean).length;
-      if (found) render();
+      if (found) requestBackgroundRender();
     }
 
     for (let index = 0; index < candidates.length; index += 3) {
@@ -2956,14 +2978,14 @@ async function hydratePriorityPosters() {
       const results = await Promise.all(batch.map((movie) => findPosterForMovie(movie).catch(() => false)));
       found += results.filter(Boolean).length;
       if (found) {
-        updateProviderFilter();
-        render();
+        requestBackgroundRender();
       }
     }
 
     if (found) {
+      updateProviderFilter();
       els.tmdbStatus.textContent = `${found} capas e notas oficiais adicionadas automaticamente aos filmes em destaque.`;
-      render();
+      requestBackgroundRender(true);
       return;
     }
 
@@ -3003,13 +3025,17 @@ async function hydrateCatalogPostersInBackground() {
       found += batchFound;
 
       if (batchFound) {
-        updateProviderFilter();
         els.tmdbStatus.textContent = `${found} capas recuperadas no catálogo expandido.`;
-        render();
+        requestBackgroundRender();
       }
     }
 
-    if (!found) els.tmdbStatus.textContent = previousStatus;
+    if (!found) {
+      els.tmdbStatus.textContent = previousStatus;
+    } else {
+      updateProviderFilter();
+      requestBackgroundRender(true);
+    }
   } catch {
     els.tmdbStatus.textContent = previousStatus;
   } finally {
@@ -3152,6 +3178,8 @@ function moodIconSvg(icon) {
 }
 
 function renderMoods() {
+  const key = `${activeMode}|${activeMood}`;
+  if (moodRenderKey === key && els.moods.childElementCount) return;
   els.moods.innerHTML = moods.map((mood) => `
     <button class="mood-chip ${mood.id === activeMood ? "is-active" : ""}" type="button" data-mood="${mood.id}">
       <span class="mood-icon" aria-hidden="true">${moodIconSvg(mood.icon)}</span>
@@ -3161,6 +3189,7 @@ function renderMoods() {
       </span>
     </button>
   `).join("");
+  moodRenderKey = key;
 }
 
 function renderDataDiagnostics() {
@@ -3369,6 +3398,14 @@ function scheduleRender(advance = false) {
     pendingAdvanceRender = false;
     renderWithAdvance(shouldAdvance);
   });
+}
+
+function requestBackgroundRender(force = false) {
+  const now = Date.now();
+  if (!force && now < nextBackgroundRenderAt) return false;
+  nextBackgroundRenderAt = now + 520;
+  scheduleRender(false);
+  return true;
 }
 
 function render() {
