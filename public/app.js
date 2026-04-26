@@ -1337,6 +1337,17 @@ let renderQueued = false;
 let pendingAdvanceRender = false;
 let moodRenderKey = "";
 let nextBackgroundRenderAt = 0;
+let renderRafScheduled = false;
+let renderInFlight = false;
+// Instant UI first: local ranking is fast enough for our current catalog size.
+// Worker path stays available for future experiments, but starts disabled to avoid
+// click latency from message serialization on every interaction.
+let workerEnabled = false;
+let recoWorker = null;
+let recoWorkerRequestId = 0;
+const recoWorkerPending = new Map();
+let workerCatalogSignature = "";
+let workerCatalogLite = [];
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
@@ -2234,9 +2245,8 @@ function scoreMovie(movie) {
   return score + shuffleNoise(movie) * (profile.surpriseMode ? 132 : (activeMode === "roulette" ? 118 : 78));
 }
 
-function filteredMovies() {
-  const catalog = activeCatalog();
-  const signature = [
+function filteredStateSignature(catalogLength) {
+  return [
     activeMode,
     activeMood,
     els.genre.value,
@@ -2252,11 +2262,11 @@ function filteredMovies() {
     String(shuffleSalt),
     String(rerollOffset),
     String(useTmdb),
-    String(catalog.length)
+    String(catalogLength)
   ].join("|");
+}
 
-  if (filteredCacheSignature === signature && filteredCacheList.length) return filteredCacheList;
-
+function computeFilteredMoviesLocal(catalog) {
   const prefiltered = catalog.filter((movie) => {
     if (els.genre.value !== "qualquer" && !hasGenre(movie, [els.genre.value])) return false;
     if (!durationMatches(els.duration.value, movieDuration(movie))) return false;
@@ -2268,13 +2278,157 @@ function filteredMovies() {
     return true;
   });
 
-  const ranked = dedupeByTitle(prefiltered
+  return dedupeByTitle(prefiltered
     .map((movie) => ({ ...movie, score: scoreMovie(movie) }))
     .sort((a, b) => b.score - a.score || shuffleNoise(b) - shuffleNoise(a)));
+}
 
-  filteredCacheSignature = signature;
-  filteredCacheList = ranked;
+function workerMovieLite(movie) {
+  return {
+    key: movieKey(movie.title, movie.year),
+    title: movie.title,
+    year: movie.year,
+    decade: movie.decade,
+    genre: movie.genre,
+    genres: movie.genres || [],
+    duration: Number(movie.duration) || 0,
+    country: movie.country,
+    director: movie.director,
+    imdb: Number(movie.imdb) || 0,
+    rt: Number(movie.rt) || 0,
+    tmdbVotes: Number(movie.tmdbVotes) || 0,
+    overview: movie.overview || "",
+    tags: movie.tags || [],
+    vibes: movie.vibes || [],
+    providers: movie.providers || [],
+    favoriteSignal: Boolean(movie.favoriteSignal),
+    seen: Boolean(movie.seen)
+  };
+}
+
+function buildWorkerCatalogLite(catalog) {
+  const signature = `${catalogCacheSignature}|${catalog.length}|${profileData.importedRows}|${profileData.watched.size}`;
+  if (workerCatalogSignature === signature && workerCatalogLite.length) return workerCatalogLite;
+  workerCatalogLite = catalog.map(workerMovieLite);
+  workerCatalogSignature = signature;
+  return workerCatalogLite;
+}
+
+function getRecoWorker() {
+  if (!workerEnabled) return null;
+  if (recoWorker) return recoWorker;
+
+  try {
+    recoWorker = new Worker("./reco-worker.js");
+  } catch {
+    workerEnabled = false;
+    return null;
+  }
+
+  recoWorker.addEventListener("message", (event) => {
+    const payload = event.data || {};
+    const pending = recoWorkerPending.get(payload.requestId);
+    if (!pending) return;
+    recoWorkerPending.delete(payload.requestId);
+    if (payload.error) {
+      pending.reject(new Error(payload.error));
+      return;
+    }
+    pending.resolve(payload);
+  });
+
+  recoWorker.addEventListener("error", () => {
+    workerEnabled = false;
+  });
+
+  return recoWorker;
+}
+
+function runRecoWorker(payload) {
+  const worker = getRecoWorker();
+  if (!worker) return Promise.reject(new Error("worker indisponível"));
+
+  const requestId = ++recoWorkerRequestId;
+  return new Promise((resolve, reject) => {
+    recoWorkerPending.set(requestId, { resolve, reject });
+    worker.postMessage({ ...payload, requestId });
+  });
+}
+
+async function computeFilteredMoviesWorker(catalog, signature) {
+  const movies = buildWorkerCatalogLite(catalog);
+  const payload = {
+    type: "compute",
+    signature,
+    movies,
+    state: {
+      activeMode,
+      activeMood,
+      filters: {
+        genre: els.genre.value,
+        duration: els.duration.value,
+        decade: els.decade.value,
+        country: els.country.value,
+        provider: els.provider.value,
+        hideWatched: Boolean(els.hideWatched.checked)
+      },
+      profileLoaded: Boolean(profileLoaded),
+      profileFavoriteDirectors: [...profileData.favoriteDirectors],
+      profileFavoriteTags: [...profileData.favoriteTags],
+      profileWatchedKeys: [...profileData.watched],
+      recommendationHistory,
+      shuffleSalt,
+      rerollOffset,
+      sessionSeed,
+      moodProfiles,
+      moodAliasMap
+    }
+  };
+
+  const result = await runRecoWorker(payload);
+  const byKey = new Map(catalog.map((movie) => [movieKey(movie.title, movie.year), movie]));
+  const ranked = (result.items || [])
+    .map((item) => {
+      const movie = byKey.get(item.key);
+      if (!movie) return null;
+      return { ...movie, score: item.score };
+    })
+    .filter(Boolean);
   return ranked;
+}
+
+async function ensureFilteredMoviesFresh() {
+  const catalog = activeCatalog();
+  const signature = filteredStateSignature(catalog.length);
+
+  if (filteredCacheSignature === signature && filteredCacheList.length) return filteredCacheList;
+
+  if (workerEnabled) {
+    try {
+      const ranked = await computeFilteredMoviesWorker(catalog, signature);
+      filteredCacheSignature = signature;
+      filteredCacheList = ranked;
+      return filteredCacheList;
+    } catch {
+      workerEnabled = false;
+    }
+  }
+
+  filteredCacheList = computeFilteredMoviesLocal(catalog);
+  filteredCacheSignature = signature;
+  return filteredCacheList;
+}
+
+function filteredMovies() {
+  const catalog = activeCatalog();
+  const signature = filteredStateSignature(catalog.length);
+  if (filteredCacheSignature === signature && filteredCacheList.length) return filteredCacheList;
+
+  // Always compute synchronously for the current state so buttons feel immediate.
+  // This avoids showing stale lists while async work settles.
+  filteredCacheList = computeFilteredMoviesLocal(catalog);
+  filteredCacheSignature = signature;
+  return filteredCacheList;
 }
 
 function pickBySeed(items, movie, scope) {
@@ -3389,15 +3543,32 @@ function renderMoreOptions(list) {
 
 function scheduleRender(advance = false) {
   pendingAdvanceRender = pendingAdvanceRender || advance;
-  if (renderQueued) return;
-
   renderQueued = true;
+  if (renderRafScheduled) return;
+  renderRafScheduled = true;
+
   window.requestAnimationFrame(() => {
-    renderQueued = false;
-    const shouldAdvance = pendingAdvanceRender;
-    pendingAdvanceRender = false;
-    renderWithAdvance(shouldAdvance);
+    renderRafScheduled = false;
+    flushRenderQueue();
   });
+}
+
+async function flushRenderQueue() {
+  if (renderInFlight) return;
+  renderInFlight = true;
+
+  try {
+    while (renderQueued) {
+      const shouldAdvance = pendingAdvanceRender;
+      renderQueued = false;
+      pendingAdvanceRender = false;
+      await renderWithAdvance(shouldAdvance);
+    }
+  } catch {
+    // keep UI responsive even if an async render step fails
+  } finally {
+    renderInFlight = false;
+  }
 }
 
 function requestBackgroundRender(force = false) {
@@ -3430,7 +3601,7 @@ function setDrawerPeek(peek) {
   els.drawer.classList.toggle("is-peeking", peek);
 }
 
-function renderWithAdvance(advance) {
+async function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
   if (activeMode === "mood") renderMoods();
