@@ -121,9 +121,11 @@ const tmdbCatalogConfig = {
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc", "release_date.desc"];
-const recommendationHistoryKey = "cinepick_recommendation_history_v1";
+const recommendationHistoryKey = "cinepick_recommendation_history_v2";
 const recommendationHistoryLimit = 520;
-const posterCacheKey = "cinepick_poster_cache_v2";
+const posterCacheKey = "cinepick_poster_cache_v3";
+const appStorageVersionKey = "cinepick_storage_schema";
+const appStorageVersion = 3;
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
 
@@ -1349,6 +1351,23 @@ const recoWorkerPending = new Map();
 let workerCatalogSignature = "";
 let workerCatalogLite = [];
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
+function applyStorageMigration() {
+  const storedVersion = Number(localStorage.getItem(appStorageVersionKey) || 0);
+  if (storedVersion >= appStorageVersion) return;
+
+  [
+    "cinepick_recommendation_history_v1",
+    "cinepick_recommendation_history_v2",
+    "cinepick_poster_cache",
+    "cinepick_poster_cache_v2",
+    "cinepick_tmdb_catalog"
+  ].forEach((key) => localStorage.removeItem(key));
+
+  localStorage.setItem(appStorageVersionKey, String(appStorageVersion));
+}
+
+applyStorageMigration();
+
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let posterCacheSize = Object.keys(posterCache).length;
@@ -3205,6 +3224,27 @@ function runWhenIdle(callback, timeout = 1600) {
   window.setTimeout(callback, timeout);
 }
 
+function bindInstantPress(button, handler) {
+  if (!button) return;
+  let pointerHandled = false;
+
+  button.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || !event.isPrimary) return;
+    pointerHandled = true;
+    event.preventDefault();
+    handler();
+  });
+
+  button.addEventListener("click", (event) => {
+    if (pointerHandled) {
+      pointerHandled = false;
+      event.preventDefault();
+      return;
+    }
+    handler();
+  });
+}
+
 function setMode(mode) {
   activeMode = mode;
   rerollOffset = 0;
@@ -3784,11 +3824,11 @@ function triggerNextPick() {
   return true;
 }
 
-els.reroll?.addEventListener("click", () => {
+bindInstantPress(els.reroll, () => {
   triggerNextPick();
 });
 
-els.spin.addEventListener("click", () => {
+bindInstantPress(els.spin, () => {
   els.rouletteWheel.classList.remove("is-spinning");
   void els.rouletteWheel.offsetWidth;
   els.rouletteWheel.classList.add("is-spinning");
@@ -3798,7 +3838,41 @@ els.spin.addEventListener("click", () => {
   scheduleRender(true);
 });
 
+let heroPointerHandled = false;
+els.hero.addEventListener("pointerdown", (event) => {
+  const nextButton = event.target.closest("[data-next]");
+  if (nextButton) {
+    heroPointerHandled = true;
+    event.preventDefault();
+    triggerNextPick();
+    return;
+  }
+
+  const seenButton = event.target.closest("[data-seen]");
+  if (!seenButton) return;
+
+  heroPointerHandled = true;
+  event.preventDefault();
+  const movie = activeCatalog().find((item) => item.title === seenButton.dataset.seen);
+  if (movie) movie.seen = true;
+  if (movie) profileData.watched.add(movieKey(movie.title, movie.year));
+  profileLoaded = true;
+  renderProfileStats();
+  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
+  rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
+  resetRecommendationFlow({ keepCurrent: true });
+  scheduleRender(true);
+});
+
 els.hero.addEventListener("click", (event) => {
+  if (heroPointerHandled) {
+    heroPointerHandled = false;
+    event.preventDefault();
+    return;
+  }
+
   if (event.target.closest("[data-next]")) {
     triggerNextPick();
     return;
