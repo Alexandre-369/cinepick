@@ -3246,6 +3246,7 @@ function bindInstantPress(button, handler) {
 }
 
 function setMode(mode) {
+  if (!mode || mode === activeMode) return;
   activeMode = mode;
   rerollOffset = 0;
   shuffleSalt = Math.floor(Math.random() * 100000);
@@ -3667,7 +3668,7 @@ async function renderWithAdvance(advance) {
 }
 
 els.modeTabs.forEach((button) => {
-  button.addEventListener("click", () => setMode(button.dataset.mode));
+  bindInstantPress(button, () => setMode(button.dataset.mode));
 });
 
 els.moods.addEventListener("click", (event) => {
