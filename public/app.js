@@ -2220,11 +2220,48 @@ function buildRecommendationQueue(rankedAll, scope = "queue") {
   const frontPool = weightedShuffle(antiRepeatRanked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
   const middle = weightedShuffle(antiRepeatRanked.slice(poolSize, Math.min(antiRepeatRanked.length, poolSize + 320)), `${scope}-middle-${recommendationHistory.length}`);
   const tail = weightedShuffle(antiRepeatRanked.slice(poolSize + 320), `${scope}-tail-${recommendationHistory.length}`);
-  return diversifyMovies([...frontPool, ...middle, ...tail]);
+  const anchors = recentDiversityAnchors(antiRepeatRanked, activeMode === "roulette" ? 14 : 10);
+  return diversifyMovies([...frontPool, ...middle, ...tail], anchors);
 }
 
 function movieFromKey(list, key) {
   return list.find((movie) => movieKey(movie.title, movie.year) === key || movieTitleKey(movie) === normalize(key));
+}
+
+function recentDiversityAnchors(list, limit = 10) {
+  if (!list.length || limit <= 0) return [];
+
+  const byExactKey = new Map();
+  const byTitleKey = new Map();
+  list.forEach((movie) => {
+    const exactKey = movieKey(movie.title, movie.year);
+    byExactKey.set(exactKey, movie);
+    byTitleKey.set(movieTitleKey(movie), movie);
+  });
+
+  const moodHistory = moodRecommendationList();
+  const combined = [...recommendationHistory.slice(0, limit * 4), ...moodHistory.slice(0, limit * 3)];
+  const seen = new Set();
+  const anchors = [];
+
+  for (const entry of combined) {
+    const rawKey = String(entry || "");
+    let movie = byExactKey.get(rawKey);
+    if (!movie) {
+      const titlePart = normalize(rawKey.split("|")[0]);
+      movie = byTitleKey.get(titlePart);
+    }
+    if (!movie) continue;
+
+    const exactKey = movieKey(movie.title, movie.year);
+    if (seen.has(exactKey)) continue;
+    seen.add(exactKey);
+    anchors.push(movie);
+
+    if (anchors.length >= limit) break;
+  }
+
+  return anchors;
 }
 
 function resetRecommendationFlow({ keepCurrent = false } = {}) {
@@ -2273,24 +2310,48 @@ function recommendationListForRender(advance = false) {
   return [selected];
 }
 
-function nextCandidateForPreload(list) {
-  if (!list.length) return null;
+function nextCandidatesForPreload(list, limit = 2) {
+  if (!list.length || limit <= 0) return [];
   const currentKey = currentHeroKey;
+  const candidates = [];
+  const seen = new Set();
+
+  const tryAdd = (movie) => {
+    if (!movie) return;
+    const key = movieKey(movie.title, movie.year);
+    if (key === currentKey || seen.has(key)) return;
+    seen.add(key);
+    candidates.push(movie);
+  };
 
   if (activeMode === "roulette") {
-    return list.find((movie) => movieKey(movie.title, movie.year) !== currentKey) || null;
+    list.forEach((movie) => {
+      if (candidates.length >= limit) return;
+      tryAdd(movie);
+    });
+    return candidates;
   }
 
-  return recommendationQueue.find((movie) => movieKey(movie.title, movie.year) !== currentKey)
-    || list.find((movie) => movieKey(movie.title, movie.year) !== currentKey)
-    || null;
+  recommendationQueue.forEach((movie) => {
+    if (candidates.length >= limit) return;
+    tryAdd(movie);
+  });
+
+  list.forEach((movie) => {
+    if (candidates.length >= limit) return;
+    tryAdd(movie);
+  });
+
+  return candidates;
 }
 
 function prewarmNextRecommendation(list) {
-  const candidate = nextCandidateForPreload(list);
-  if (!candidate) return;
-  preloadPosterAsset(candidate);
-  ensureHeroPoster(candidate);
+  const candidates = nextCandidatesForPreload(list, 2);
+  if (!candidates.length) return;
+  candidates.forEach((candidate) => {
+    preloadPosterAsset(candidate);
+    ensureHeroPoster(candidate);
+  });
 }
 
 function moodMismatch(movie) {
@@ -2796,8 +2857,10 @@ function selectRouletteMovie(list) {
     seenSet.clear();
     antiRepeatSource = source;
   }
+  const anchors = recentDiversityAnchors(antiRepeatSource, 12);
   const roulettePool = diversifyMovies(
-    weightedShuffle(antiRepeatSource.slice(0, Math.min(620, antiRepeatSource.length)), "roulette-pool")
+    weightedShuffle(antiRepeatSource.slice(0, Math.min(620, antiRepeatSource.length)), "roulette-pool"),
+    anchors
   );
   roulettePick = (roulettePool[0] || list[0]).title;
 }

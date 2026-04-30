@@ -997,8 +997,9 @@ input[type="range"] {
   display: grid;
   max-width: 560px;
   order: 3;
-  height: 74px;
+  min-height: 92px;
   align-content: center;
+  align-items: start;
   gap: 8px;
   overflow: hidden;
   border: 1px solid rgba(86, 182, 168, .28);
@@ -1029,17 +1030,23 @@ input[type="range"] {
 }
 
 .provider-links {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 
 .streaming-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  min-width: 142px;
   gap: 8px;
-  min-width: 0;
   min-height: 38px;
   overflow: hidden;
   border: 1px solid rgba(86, 182, 168, .38);
@@ -1174,9 +1181,11 @@ input[type="range"] {
 
 .rec-actions {
   order: 4;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(142px, 180px));
+  justify-content: start;
   gap: 10px;
-  min-height: 42px;
+  min-height: 46px;
   margin: 0 0 14px;
 }
 
@@ -1883,7 +1892,15 @@ input[type="range"] {
   }
 
   .provider-links {
-    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .streaming-link {
+    min-width: 128px;
+  }
+
+  .rec-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .fact-grid,
