@@ -235,7 +235,7 @@ label,
   background: transparent;
   color: var(--muted);
   font-weight: 900;
-  transition: transform .18s ease, background .18s ease, color .18s ease;
+  transition: transform .16s ease, background .18s ease, color .18s ease, box-shadow .18s ease, filter .18s ease;
 }
 
 .mode-tabs button.is-active {
@@ -300,6 +300,7 @@ button:focus-visible {
   color: #15110a;
   padding: 0 14px;
   font-weight: 900;
+  transition: transform .16s ease, filter .16s ease, box-shadow .2s ease, background .2s ease;
 }
 
 .wide-action {
@@ -578,7 +579,7 @@ button:focus-visible {
   color: var(--ink);
   padding: 12px;
   text-align: left;
-  transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  transition: transform .16s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, filter .16s ease;
 }
 
 .mood-chip strong {
@@ -1040,6 +1041,7 @@ input[type="range"] {
   font-size: .78rem;
   font-weight: 900;
   text-decoration: none;
+  transition: transform .16s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
 }
 
 .provider-mark,
@@ -1073,6 +1075,15 @@ input[type="range"] {
   background: rgba(86, 182, 168, .18);
   color: var(--ink);
   box-shadow: 0 10px 22px rgba(0, 0, 0, .12);
+}
+
+.mode-tabs button.is-pressed,
+.mood-chip.is-pressed,
+.rec-actions button.is-pressed,
+.roulette-panel button.is-pressed,
+.icon-button.is-pressed {
+  transform: scale(.975);
+  filter: brightness(.96);
 }
 
 .streaming-link[data-provider="netflix"] .provider-mark {

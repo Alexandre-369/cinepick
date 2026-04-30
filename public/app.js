@@ -1394,6 +1394,7 @@ let filteredCacheList = [];
 let catalogCacheSignature = "";
 let catalogCacheList = [];
 const sessionScopeSeen = new Map();
+const preloadedPosterUrls = new Set();
 const uiPerfMetrics = {
   modeSwitch: [],
   moodPick: [],
@@ -1574,6 +1575,76 @@ function titleAliasesFor(title) {
 
   const [canonical, aliases] = reverse;
   return uniqueNormalized([canonical, ...aliases.filter((alias) => normalize(alias) !== normalizedTitle)]);
+}
+
+function tmdbPosterCandidates(url) {
+  if (!url || !String(url).includes("image.tmdb.org/t/p/")) return [url].filter(Boolean);
+  return [
+    String(url).replace("/w500/", "/w500/"),
+    String(url).replace("/w500/", "/w342/"),
+    String(url).replace("/w500/", "/w300/"),
+    String(url).replace("/w500/", "/w185/"),
+    String(url).replace("/w500/", "/original/")
+  ];
+}
+
+function uniqueUrls(list) {
+  const seen = new Set();
+  return list.filter((value) => {
+    const key = String(value || "").trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function posterCandidates(url) {
+  return uniqueUrls(tmdbPosterCandidates(url));
+}
+
+function choosePosterSrc(candidates, variant = "hero") {
+  if (!candidates.length) return "";
+  if (variant === "dialog") {
+    return candidates.find((url) => url.includes("/w500/"))
+      || candidates.find((url) => url.includes("/w342/"))
+      || candidates[0];
+  }
+
+  return candidates.find((url) => url.includes("/w342/"))
+    || candidates.find((url) => url.includes("/w300/"))
+    || candidates[0];
+}
+
+function posterSrcSet(candidates) {
+  const entries = candidates
+    .map((url) => {
+      const match = String(url).match(/\/w(\d+)\//);
+      if (!match) return null;
+      return `${url} ${match[1]}w`;
+    })
+    .filter(Boolean);
+  return entries.join(", ");
+}
+
+function posterImgMarkup(movie, { loading = "lazy", decoding = "async", fetchpriority = "auto", variant = "hero" } = {}) {
+  if (!movie?.posterUrl) return "";
+  const candidates = posterCandidates(movie.posterUrl);
+  if (!candidates.length) return "";
+  const src = choosePosterSrc(candidates, variant);
+  const srcset = posterSrcSet(candidates);
+  const sizes = variant === "dialog" ? "(max-width: 920px) 62vw, 240px" : "(max-width: 920px) 74vw, 200px";
+  return `<img class="poster-img" src="${src}" ${srcset ? `srcset="${srcset}" sizes="${sizes}"` : ""} data-poster-candidates="${candidates.join("||")}" alt="Capa de ${movie.title}" loading="${loading}" decoding="${decoding}" fetchpriority="${fetchpriority}">`;
+}
+
+function preloadPosterAsset(movie) {
+  const candidates = posterCandidates(movie?.posterUrl);
+  const src = choosePosterSrc(candidates, "hero");
+  if (!src || preloadedPosterUrls.has(src)) return;
+  preloadedPosterUrls.add(src);
+  const image = new Image();
+  image.decoding = "async";
+  image.loading = "eager";
+  image.src = src;
 }
 
 function movieTitleKeys(movie) {
@@ -2132,6 +2203,7 @@ function nextCandidateForPreload(list) {
 function prewarmNextRecommendation(list) {
   const candidate = nextCandidateForPreload(list);
   if (!candidate) return;
+  preloadPosterAsset(candidate);
   ensureHeroPoster(candidate);
 }
 
@@ -3315,6 +3387,14 @@ function runWhenIdle(callback, timeout = 1600) {
   window.setTimeout(callback, timeout);
 }
 
+function pulsePressState(element) {
+  if (!element) return;
+  element.classList.add("is-pressed");
+  window.setTimeout(() => {
+    element.classList.remove("is-pressed");
+  }, 120);
+}
+
 function bindInstantPress(button, handler) {
   if (!button) return;
   let pointerHandled = false;
@@ -3323,6 +3403,7 @@ function bindInstantPress(button, handler) {
     if (event.button !== 0 || !event.isPrimary) return;
     pointerHandled = true;
     event.preventDefault();
+    pulsePressState(button);
     handler();
   });
 
@@ -3599,7 +3680,7 @@ function renderMovieDialog(movie) {
   els.dialogContent.innerHTML = `
     <div class="dialog-grid">
       <div class="dialog-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
-        ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}" loading="lazy" decoding="async">` : ""}
+        ${posterImgMarkup(movie, { loading: "lazy", decoding: "async", fetchpriority: "auto", variant: "dialog" })}
         <span>${movie.year}</span>
       </div>
       <div class="dialog-copy">
@@ -3666,7 +3747,7 @@ function renderHero(movie) {
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
-      ${movie.posterUrl ? `<img class="poster-img" src="${movie.posterUrl}" alt="Capa de ${movie.title}" loading="eager" decoding="async" fetchpriority="high">` : ""}
+      ${posterImgMarkup(movie, { loading: "eager", decoding: "async", fetchpriority: "high", variant: "hero" })}
       <span class="poster-badge">${displayText(movie.genre)}</span>
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
@@ -3822,6 +3903,12 @@ els.moods.addEventListener("click", (event) => {
   });
 });
 
+els.moods.addEventListener("pointerdown", (event) => {
+  const button = event.target.closest("[data-mood]");
+  if (!button) return;
+  pulsePressState(button);
+});
+
 [
   els.genre,
   els.duration,
@@ -3900,6 +3987,17 @@ document.addEventListener("click", (event) => {
 document.addEventListener("error", (event) => {
   const image = event.target;
   if (!(image instanceof HTMLImageElement) || !image.classList.contains("poster-img")) return;
+  const candidates = (image.dataset.posterCandidates || "").split("||").filter(Boolean);
+  const tried = new Set((image.dataset.posterTried || "").split("||").filter(Boolean));
+  tried.add(image.currentSrc || image.src);
+  const nextCandidate = candidates.find((candidate) => !tried.has(candidate));
+
+  if (nextCandidate) {
+    image.dataset.posterTried = [...tried].join("||");
+    image.src = nextCandidate;
+    return;
+  }
+
   image.closest(".has-official-poster")?.classList.remove("has-official-poster");
   image.remove();
 }, true);
@@ -3990,6 +4088,7 @@ els.hero.addEventListener("pointerdown", (event) => {
   if (nextButton) {
     heroPointerHandled = true;
     event.preventDefault();
+    pulsePressState(nextButton);
     measureUiAction("nextPick", () => {
       triggerNextPick();
     });
@@ -4001,6 +4100,7 @@ els.hero.addEventListener("pointerdown", (event) => {
 
   heroPointerHandled = true;
   event.preventDefault();
+  pulsePressState(seenButton);
   measureUiAction("seenPick", () => {
     markMovieSeenAndAdvance(seenButton.dataset.seen);
   });
