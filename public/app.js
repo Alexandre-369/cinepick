@@ -123,6 +123,8 @@ const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", 
 const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc", "revenue.desc", "release_date.desc"];
 const recommendationHistoryKey = "cinepick_recommendation_history_v2";
 const recommendationHistoryLimit = 520;
+const moodRecommendationHistoryKey = "cinepick_mood_recommendation_history_v1";
+const moodRecommendationHistoryLimit = 280;
 const posterCacheKey = "cinepick_poster_cache_v3";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
@@ -1358,6 +1360,7 @@ function applyStorageMigration() {
   [
     "cinepick_recommendation_history_v1",
     "cinepick_recommendation_history_v2",
+    "cinepick_mood_recommendation_history_v1",
     "cinepick_poster_cache",
     "cinepick_poster_cache_v2",
     "cinepick_tmdb_catalog"
@@ -1368,16 +1371,36 @@ function applyStorageMigration() {
 
 applyStorageMigration();
 
+function sanitizeMoodRecommendationHistory(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).map(([scope, list]) => [
+      scope,
+      Array.isArray(list) ? list.slice(0, moodRecommendationHistoryLimit).filter(Boolean) : []
+    ])
+  );
+}
+
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let posterCacheSize = Object.keys(posterCache).length;
 let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
+let moodRecommendationHistory = sanitizeMoodRecommendationHistory(
+  JSON.parse(localStorage.getItem(moodRecommendationHistoryKey) || "{}")
+);
 let recommendationHistoryVersion = 0;
 let filteredCacheSignature = "";
 let filteredCacheList = [];
 let catalogCacheSignature = "";
 let catalogCacheList = [];
 const sessionScopeSeen = new Map();
+const uiPerfMetrics = {
+  modeSwitch: [],
+  moodPick: [],
+  nextPick: [],
+  spinPick: [],
+  seenPick: []
+};
 const profileData = {
   watched: new Set(),
   highRated: new Set(),
@@ -1772,16 +1795,50 @@ function isRecentlyRecommended(movie, limit = 36) {
   return index >= 0 && index < limit;
 }
 
+function recommendationMoodScope() {
+  return activeMode === "mood" ? `mood:${activeMood}` : "roulette";
+}
+
+function moodRecommendationList(scope = recommendationMoodScope()) {
+  return moodRecommendationHistory[scope] || [];
+}
+
+function moodRecommendationIndex(movie, scope = recommendationMoodScope()) {
+  const keys = movieCacheKeys(movie);
+  const titleKeys = movieTitleKeys(movie);
+  return moodRecommendationList(scope).findIndex((item) => (
+    keys.includes(item) || titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
+  ));
+}
+
+function isMoodRecentlyRecommended(movie, limit = 42, scope = recommendationMoodScope()) {
+  const index = moodRecommendationIndex(movie, scope);
+  return index >= 0 && index < limit;
+}
+
 function freshnessPenalty(movie) {
   const index = recentRecommendationIndex(movie);
-  if (index < 0) return 0;
-  if (index < 12) return 380;
-  if (index < 30) return 260;
-  if (index < 70) return 170;
-  if (index < 140) return 96;
-  if (index < 260) return 46;
-  if (index < 420) return 20;
-  return 10;
+  let penalty = 0;
+  if (index >= 0) {
+    if (index < 12) penalty += 380;
+    else if (index < 30) penalty += 260;
+    else if (index < 70) penalty += 170;
+    else if (index < 140) penalty += 96;
+    else if (index < 260) penalty += 46;
+    else if (index < 420) penalty += 20;
+    else penalty += 10;
+  }
+
+  const moodIndex = moodRecommendationIndex(movie);
+  if (moodIndex >= 0) {
+    if (moodIndex < 10) penalty += 320;
+    else if (moodIndex < 24) penalty += 170;
+    else if (moodIndex < 56) penalty += 90;
+    else if (moodIndex < 120) penalty += 42;
+    else penalty += 14;
+  }
+
+  return penalty;
 }
 
 function rememberRecommendation(movie) {
@@ -1795,9 +1852,17 @@ function rememberRecommendation(movie) {
   recommendationHistory = [key, ...recommendationHistory.filter((item) => (
     !keys.includes(item) && !titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
   ))].slice(0, recommendationHistoryLimit);
+
+  const moodScope = recommendationMoodScope();
+  const moodHistory = moodRecommendationList(moodScope);
+  moodRecommendationHistory[moodScope] = [key, ...moodHistory.filter((item) => (
+    !keys.includes(item) && !titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`))
+  ))].slice(0, moodRecommendationHistoryLimit);
+
   recommendationHistoryVersion += 1;
   scopeSeenSet().add(key);
   localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
+  localStorage.setItem(moodRecommendationHistoryKey, JSON.stringify(moodRecommendationHistory));
 }
 
 function diversityPenalty(movie, selected) {
@@ -1986,6 +2051,12 @@ function buildRecommendationQueue(rankedAll, scope = "queue") {
   }
 
   const profile = moodProfiles[activeMood] || {};
+  const moodCooldownLimit = activeMode === "roulette" ? 120 : (profile.surpriseMode ? 150 : 96);
+  const moodFresh = antiRepeatRanked.filter((movie) => !isMoodRecentlyRecommended(movie, moodCooldownLimit));
+  if (moodFresh.length >= Math.max(24, Math.floor(antiRepeatRanked.length * 0.2))) {
+    antiRepeatRanked = moodFresh;
+  }
+
   const spread = activeMode === "roulette" || profile.surpriseMode ? 0.98 : 0.9;
   const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 460 : 280;
   const poolSize = Math.min(Math.max(minimumPool, Math.ceil(antiRepeatRanked.length * spread)), antiRepeatRanked.length);
@@ -2043,6 +2114,25 @@ function recommendationListForRender(advance = false) {
   rememberRecommendation(selected);
 
   return [selected];
+}
+
+function nextCandidateForPreload(list) {
+  if (!list.length) return null;
+  const currentKey = currentHeroKey;
+
+  if (activeMode === "roulette") {
+    return list.find((movie) => movieKey(movie.title, movie.year) !== currentKey) || null;
+  }
+
+  return recommendationQueue.find((movie) => movieKey(movie.title, movie.year) !== currentKey)
+    || list.find((movie) => movieKey(movie.title, movie.year) !== currentKey)
+    || null;
+}
+
+function prewarmNextRecommendation(list) {
+  const candidate = nextCandidateForPreload(list);
+  if (!candidate) return;
+  ensureHeroPoster(candidate);
 }
 
 function moodMismatch(movie) {
@@ -2534,7 +2624,8 @@ function selectRouletteMovie(list) {
   }
 
   const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 96));
-  const source = freshList.length ? freshList : list;
+  const moodFreshList = freshList.filter((movie) => !isMoodRecentlyRecommended(movie, 140, "roulette"));
+  const source = moodFreshList.length ? moodFreshList : (freshList.length ? freshList : list);
   const seenSet = scopeSeenSet();
   let antiRepeatSource = source.filter((movie) => !seenSet.has(movieKey(movie.title, movie.year)));
   if (!antiRepeatSource.length) {
@@ -3245,6 +3336,42 @@ function bindInstantPress(button, handler) {
   });
 }
 
+function pushPerfMetric(metric, durationMs) {
+  const bucket = uiPerfMetrics[metric];
+  if (!bucket || !Number.isFinite(durationMs)) return;
+  bucket.push(durationMs);
+  if (bucket.length > 36) bucket.shift();
+}
+
+function averagePerfMetric(metric) {
+  const bucket = uiPerfMetrics[metric] || [];
+  if (!bucket.length) return 0;
+  return bucket.reduce((total, value) => total + value, 0) / bucket.length;
+}
+
+function measureUiAction(metric, fn) {
+  const start = performance.now();
+  fn();
+  window.requestAnimationFrame(() => {
+    pushPerfMetric(metric, performance.now() - start);
+  });
+}
+
+function markMovieSeenAndAdvance(title) {
+  const movie = activeCatalog().find((item) => item.title === title);
+  if (!movie) return;
+  movie.seen = true;
+  profileData.watched.add(movieKey(movie.title, movie.year));
+  profileLoaded = true;
+  renderProfileStats();
+  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
+  rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
+  resetRecommendationFlow({ keepCurrent: true });
+  scheduleRender(true);
+}
+
 function setMode(mode) {
   if (!mode || mode === activeMode) return;
   activeMode = mode;
@@ -3398,6 +3525,10 @@ function renderDataDiagnostics() {
   const tmdbRatings = catalog.filter((movie) => movie.rtSource === "tmdb").length;
   const streamingCount = catalog.filter((movie) => (movie.providers || []).length).length;
   const cachedPosters = Object.keys(posterCache).length;
+  const modeMs = averagePerfMetric("modeSwitch");
+  const nextMs = averagePerfMetric("nextPick");
+  const moodMs = averagePerfMetric("moodPick");
+  const spinMs = averagePerfMetric("spinPick");
 
   els.dataDiagnostics.innerHTML = `
     <div><strong>${posterCount}/${catalog.length}</strong><span>capas</span></div>
@@ -3406,6 +3537,10 @@ function renderDataDiagnostics() {
     <div><strong>${streamingCount}/${catalog.length}</strong><span>streaming BR</span></div>
     <div><strong>${Math.round((posterCount / total) * 100)}%</strong><span>cobertura</span></div>
     <div><strong>${cachedPosters}</strong><span>cache local</span></div>
+    <div><strong>${modeMs ? `${modeMs.toFixed(0)} ms` : "--"}</strong><span>resp. humor/roleta</span></div>
+    <div><strong>${nextMs ? `${nextMs.toFixed(0)} ms` : "--"}</strong><span>resp. próximo</span></div>
+    <div><strong>${moodMs ? `${moodMs.toFixed(0)} ms` : "--"}</strong><span>resp. humor mood</span></div>
+    <div><strong>${spinMs ? `${spinMs.toFixed(0)} ms` : "--"}</strong><span>resp. girar roleta</span></div>
   `;
 }
 
@@ -3656,6 +3791,7 @@ async function renderWithAdvance(advance) {
     }
     renderHero(selected);
     renderShortlist(list);
+    runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
     runWhenIdle(() => hydratePriorityPosters(), 260);
     runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
     return;
@@ -3663,22 +3799,27 @@ async function renderWithAdvance(advance) {
 
   renderHero(list[0]);
   renderShortlist(list);
+  runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
   runWhenIdle(() => hydratePriorityPosters(), 260);
   runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
 }
 
 els.modeTabs.forEach((button) => {
-  bindInstantPress(button, () => setMode(button.dataset.mode));
+  bindInstantPress(button, () => {
+    measureUiAction("modeSwitch", () => setMode(button.dataset.mode));
+  });
 });
 
 els.moods.addEventListener("click", (event) => {
   const button = event.target.closest("[data-mood]");
   if (!button) return;
-  activeMood = button.dataset.mood;
-  rerollOffset = 0;
-  shuffleSalt = Math.floor(Math.random() * 100000);
-  resetRecommendationFlow();
-  render();
+  measureUiAction("moodPick", () => {
+    activeMood = button.dataset.mood;
+    rerollOffset = 0;
+    shuffleSalt = Math.floor(Math.random() * 100000);
+    resetRecommendationFlow();
+    render();
+  });
 });
 
 [
@@ -3826,17 +3967,21 @@ function triggerNextPick() {
 }
 
 bindInstantPress(els.reroll, () => {
-  triggerNextPick();
+  measureUiAction("nextPick", () => {
+    triggerNextPick();
+  });
 });
 
 bindInstantPress(els.spin, () => {
-  els.rouletteWheel.classList.remove("is-spinning");
-  void els.rouletteWheel.offsetWidth;
-  els.rouletteWheel.classList.add("is-spinning");
-  shuffleSalt = Math.floor(Math.random() * 100000);
-  rerollOffset += 4 + Math.floor(Math.random() * 33);
-  roulettePick = "";
-  scheduleRender(true);
+  measureUiAction("spinPick", () => {
+    els.rouletteWheel.classList.remove("is-spinning");
+    void els.rouletteWheel.offsetWidth;
+    els.rouletteWheel.classList.add("is-spinning");
+    shuffleSalt = Math.floor(Math.random() * 100000);
+    rerollOffset += 4 + Math.floor(Math.random() * 33);
+    roulettePick = "";
+    scheduleRender(true);
+  });
 });
 
 let heroPointerHandled = false;
@@ -3845,7 +3990,9 @@ els.hero.addEventListener("pointerdown", (event) => {
   if (nextButton) {
     heroPointerHandled = true;
     event.preventDefault();
-    triggerNextPick();
+    measureUiAction("nextPick", () => {
+      triggerNextPick();
+    });
     return;
   }
 
@@ -3854,17 +4001,9 @@ els.hero.addEventListener("pointerdown", (event) => {
 
   heroPointerHandled = true;
   event.preventDefault();
-  const movie = activeCatalog().find((item) => item.title === seenButton.dataset.seen);
-  if (movie) movie.seen = true;
-  if (movie) profileData.watched.add(movieKey(movie.title, movie.year));
-  profileLoaded = true;
-  renderProfileStats();
-  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
-  shuffleSalt = Math.floor(Math.random() * 100000);
-  const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
-  rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
-  resetRecommendationFlow({ keepCurrent: true });
-  scheduleRender(true);
+  measureUiAction("seenPick", () => {
+    markMovieSeenAndAdvance(seenButton.dataset.seen);
+  });
 });
 
 els.hero.addEventListener("click", (event) => {
@@ -3875,23 +4014,17 @@ els.hero.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-next]")) {
-    triggerNextPick();
+    measureUiAction("nextPick", () => {
+      triggerNextPick();
+    });
     return;
   }
 
   const seenButton = event.target.closest("[data-seen]");
   if (!seenButton) return;
-  const movie = activeCatalog().find((item) => item.title === seenButton.dataset.seen);
-  if (movie) movie.seen = true;
-  if (movie) profileData.watched.add(movieKey(movie.title, movie.year));
-  profileLoaded = true;
-  renderProfileStats();
-  els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
-  shuffleSalt = Math.floor(Math.random() * 100000);
-  const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
-  rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
-  resetRecommendationFlow({ keepCurrent: true });
-  scheduleRender(true);
+  measureUiAction("seenPick", () => {
+    markMovieSeenAndAdvance(seenButton.dataset.seen);
+  });
 });
 
 updateProviderFilter();
