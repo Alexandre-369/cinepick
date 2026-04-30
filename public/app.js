@@ -3550,6 +3550,21 @@ function pulsePressState(element) {
   }, 120);
 }
 
+function spawnButtonRipple(button, sourceEvent) {
+  if (!button || !sourceEvent) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const rect = button.getBoundingClientRect();
+  const x = sourceEvent.clientX - rect.left;
+  const y = sourceEvent.clientY - rect.top;
+  const ripple = document.createElement("span");
+  ripple.className = "action-ripple";
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  button.appendChild(ripple);
+  window.setTimeout(() => ripple.remove(), 460);
+}
+
 function bindInstantPress(button, handler) {
   if (!button) return;
   let pointerHandled = false;
@@ -3923,13 +3938,13 @@ function renderHero(movie) {
         ${providers.length ? `<div class="provider-links">${providerLinks}</div>` : `<strong>${unavailableStreamingLabel}</strong>`}
       </div>
       <div class="rec-actions">
-        <button type="button" data-next>
+        <button class="action-next" type="button" data-next>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          Próximo
+          <span>Próximo</span>
         </button>
-        <button type="button" data-seen="${movie.title}">
+        <button class="action-seen" type="button" data-seen="${movie.title}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
-          Já vi
+          <span>Já vi</span>
         </button>
       </div>
       <div class="meta-block">
@@ -4247,6 +4262,7 @@ els.hero.addEventListener("pointerdown", (event) => {
     heroPointerHandled = true;
     event.preventDefault();
     pulsePressState(nextButton);
+    spawnButtonRipple(nextButton, event);
     measureUiAction("nextPick", () => {
       triggerNextPick();
     });
@@ -4259,6 +4275,7 @@ els.hero.addEventListener("pointerdown", (event) => {
   heroPointerHandled = true;
   event.preventDefault();
   pulsePressState(seenButton);
+  spawnButtonRipple(seenButton, event);
   measureUiAction("seenPick", () => {
     markMovieSeenAndAdvance(seenButton.dataset.seen);
   });

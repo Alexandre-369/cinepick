@@ -1189,16 +1189,105 @@ input[type="range"] {
   margin: 0 0 14px;
 }
 
-.rec-actions button.secondary {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
+.rec-actions button {
+  position: relative;
+  isolation: isolate;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(231, 183, 95, .52);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, .2);
+  will-change: transform, filter;
+}
+
+.rec-actions button svg,
+.rec-actions button span {
+  position: relative;
+  z-index: 2;
+  transition: transform .22s ease;
+}
+
+.rec-actions button::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(110deg, rgba(255,255,255,.18), rgba(255,255,255,0) 36%);
+  opacity: .28;
+  content: "";
+  transition: opacity .18s ease;
+}
+
+.rec-actions button::after {
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  background: linear-gradient(120deg, rgba(255,255,255,.26), rgba(255,255,255,0) 34%);
+  transform: translateX(-116%);
+  content: "";
+  pointer-events: none;
+  transition: transform .52s cubic-bezier(.2, .72, .08, 1);
+}
+
+.rec-actions button.action-next {
+  background:
+    linear-gradient(180deg, #f0c96f, #dfb75a);
+  color: #1a1409;
+}
+
+.rec-actions button.action-seen {
+  background:
+    linear-gradient(180deg, #ebc472, #d8ae53);
+  color: #1b150a;
 }
 
 .rec-actions button:hover,
 .rec-actions button:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, .16);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, .22);
+}
+
+.rec-actions button:hover::after,
+.rec-actions button:focus-visible::after {
+  transform: translateX(118%);
+}
+
+.rec-actions button:hover svg {
+  transform: translateX(1px);
+}
+
+.rec-actions button.action-seen:hover svg {
+  transform: scale(1.06);
+}
+
+.rec-actions button:focus-visible {
+  border-color: rgba(86, 182, 168, .66);
+  box-shadow:
+    0 0 0 3px rgba(86, 182, 168, .2),
+    0 14px 30px rgba(0, 0, 0, .25);
+}
+
+.action-ripple {
+  position: absolute;
+  z-index: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.6), rgba(255,255,255,0) 68%);
+  pointer-events: none;
+  animation: action-ripple .45s ease-out forwards;
+}
+
+@keyframes action-ripple {
+  from {
+    opacity: .8;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(14);
+  }
 }
 
 .shortlist-head {
