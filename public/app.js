@@ -125,6 +125,7 @@ const recommendationHistoryKey = "cinepick_recommendation_history_v2";
 const recommendationHistoryLimit = 520;
 const moodRecommendationHistoryKey = "cinepick_mood_recommendation_history_v1";
 const moodRecommendationHistoryLimit = 280;
+const watchLaterKey = "cinepick_watch_later_v1";
 const posterCacheKey = "cinepick_poster_cache_v3";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
@@ -1414,6 +1415,7 @@ let useTmdb = false;
 let tmdbMovies = [];
 let tmdbLoadInProgress = false;
 let lastRenderedHeroKey = "";
+let lastRenderedVisualKey = "";
 let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
@@ -1467,6 +1469,13 @@ function sanitizeMoodRecommendationHistory(value) {
   );
 }
 
+function sanitizeStoredKeyList(value, limit = 400) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => typeof item === "string" && item.includes("|"))
+    .slice(0, limit);
+}
+
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let posterCacheSize = Object.keys(posterCache).length;
@@ -1474,6 +1483,10 @@ let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistor
 let moodRecommendationHistory = sanitizeMoodRecommendationHistory(
   JSON.parse(localStorage.getItem(moodRecommendationHistoryKey) || "{}")
 );
+let watchLaterSet = new Set(sanitizeStoredKeyList(
+  JSON.parse(localStorage.getItem(watchLaterKey) || "[]"),
+  420
+));
 let recommendationHistoryVersion = 0;
 let filteredCacheSignature = "";
 let filteredCacheList = [];
@@ -2540,6 +2553,41 @@ function profileAffinity(movie) {
 
 function wasWatched(movie) {
   return movie.seen || profileData.watched.has(movieKey(movie.title, movie.year));
+}
+
+function persistWatchLaterSet() {
+  localStorage.setItem(watchLaterKey, JSON.stringify([...watchLaterSet].slice(0, 420)));
+}
+
+function isWatchLater(movie) {
+  if (!movie) return false;
+  const keys = movieCacheKeys(movie);
+  const titleKeys = movieTitleKeys(movie);
+  for (const key of watchLaterSet) {
+    if (keys.includes(key)) return true;
+    if (titleKeys.some((titleKey) => key.startsWith(`${titleKey}|`))) return true;
+  }
+  return false;
+}
+
+function toggleWatchLater(movie) {
+  if (!movie) return false;
+  const keys = movieCacheKeys(movie);
+  const titleKeys = movieTitleKeys(movie);
+  let removed = false;
+
+  watchLaterSet = new Set([...watchLaterSet].filter((item) => {
+    const match = keys.includes(item) || titleKeys.some((titleKey) => item.startsWith(`${titleKey}|`));
+    if (match) removed = true;
+    return !match;
+  }));
+
+  if (!removed) {
+    watchLaterSet.add(movieKey(movie.title, movie.year));
+  }
+
+  persistWatchLaterSet();
+  return !removed;
 }
 
 function activeCatalog() {
@@ -3877,6 +3925,8 @@ function renderMovieDialog(movie) {
 
 function renderHero(movie) {
   if (!movie) {
+    lastRenderedVisualKey = "";
+    els.hero.classList.remove("is-swapping");
     els.hero.innerHTML = `
       <div class="rec-copy">
         <span class="kicker">Sem resultado perfeito</span>
@@ -3914,11 +3964,16 @@ function renderHero(movie) {
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
   const heroTitleClass = movie.title.length > 30 ? "hero-title is-long" : movie.title.length > 20 ? "hero-title is-medium" : "hero-title";
   const posterTitleClass = movie.title.length > 28 ? "poster-title is-long" : movie.title.length > 18 ? "poster-title is-medium" : "poster-title";
+  const watchLaterActive = isWatchLater(movie);
+  const heroKey = movieKey(movie.title, movie.year);
+  const shouldAnimateSwap = Boolean(lastRenderedVisualKey) && lastRenderedVisualKey !== heroKey;
+  if (shouldAnimateSwap) els.hero.classList.add("is-swapping");
 
   els.hero.innerHTML = `
     <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
       ${posterImgMarkup(movie, { loading: "eager", decoding: "async", fetchpriority: "high", variant: "hero" })}
       <span class="poster-badge">${displayText(movie.genre)}</span>
+      ${watchLaterActive ? `<span class="poster-save-badge">Ver depois</span>` : ""}
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
       <h2 class="${posterTitleClass}">${movie.title}</h2>
@@ -3946,6 +4001,10 @@ function renderHero(movie) {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
           <span>Já vi</span>
         </button>
+        <button class="action-later ${watchLaterActive ? "is-saved" : ""}" type="button" data-watch-later="${movieDomKey(movie)}" aria-pressed="${watchLaterActive ? "true" : "false"}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-3-6 3z"/></svg>
+          <span>${watchLaterActive ? "Guardado" : "Ver depois"}</span>
+        </button>
       </div>
       <div class="meta-block">
         <span class="section-label">Vibe</span>
@@ -3958,6 +4017,16 @@ function renderHero(movie) {
   `;
 
   ensureHeroPoster(movie);
+  lastRenderedVisualKey = heroKey;
+  if (shouldAnimateSwap) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        els.hero.classList.remove("is-swapping");
+      });
+    });
+  } else {
+    els.hero.classList.remove("is-swapping");
+  }
 }
 
 function renderShortlist(list) {
@@ -4269,16 +4338,38 @@ els.hero.addEventListener("pointerdown", (event) => {
     return;
   }
 
-  const seenButton = event.target.closest("[data-seen]");
-  if (!seenButton) return;
+  const watchLaterButton = event.target.closest("[data-watch-later]");
+  if (watchLaterButton) {
+    heroPointerHandled = true;
+    event.preventDefault();
+    pulsePressState(watchLaterButton);
+    spawnButtonRipple(watchLaterButton, event);
+    measureUiAction("seenPick", () => {
+      const movie = movieFromDomKey(watchLaterButton.dataset.watchLater);
+      if (!movie) return;
+      const isNowSaved = toggleWatchLater(movie);
+      els.syncStatus.textContent = isNowSaved
+        ? `"${movie.title}" foi para Ver depois.`
+        : `"${movie.title}" removido de Ver depois.`;
+      render();
+    });
+    return;
+  }
 
-  heroPointerHandled = true;
-  event.preventDefault();
-  pulsePressState(seenButton);
-  spawnButtonRipple(seenButton, event);
-  measureUiAction("seenPick", () => {
-    markMovieSeenAndAdvance(seenButton.dataset.seen);
-  });
+  const seenButton = event.target.closest("[data-seen]");
+  if (seenButton) {
+    heroPointerHandled = true;
+    event.preventDefault();
+    pulsePressState(seenButton);
+    spawnButtonRipple(seenButton, event);
+    measureUiAction("seenPick", () => {
+      markMovieSeenAndAdvance(seenButton.dataset.seen);
+    });
+    return;
+  }
+
+  const posterCard = event.target.closest(".poster[data-open-details]");
+  if (posterCard) pulsePressState(posterCard);
 });
 
 els.hero.addEventListener("click", (event) => {
@@ -4292,6 +4383,18 @@ els.hero.addEventListener("click", (event) => {
     measureUiAction("nextPick", () => {
       triggerNextPick();
     });
+    return;
+  }
+
+  const watchLaterButton = event.target.closest("[data-watch-later]");
+  if (watchLaterButton) {
+    const movie = movieFromDomKey(watchLaterButton.dataset.watchLater);
+    if (!movie) return;
+    const isNowSaved = toggleWatchLater(movie);
+    els.syncStatus.textContent = isNowSaved
+      ? `"${movie.title}" foi para Ver depois.`
+      : `"${movie.title}" removido de Ver depois.`;
+    render();
     return;
   }
 
