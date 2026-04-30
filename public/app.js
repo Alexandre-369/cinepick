@@ -1,11 +1,11 @@
 const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
-  { id: "comfort", label: "Cobertor com rebobina", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
+  { id: "comfort", label: "Rebobine antes de devolver", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
   { id: "complexo", label: "Sinapse em chamas", hint: "mind game, camadas e conversa até de madrugada", icon: "maze" },
-  { id: "intenso", label: "Nervos de aço", hint: "pressão, crime e adrenalina no talo", icon: "pulse" },
+  { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "pulse" },
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
-  { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e impacto sem pedir licença", icon: "bolt" },
+  { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e explosão coreografada", icon: "bolt" },
   { id: "surpresa", label: "Desvio elegante", hint: "fora da curva, estranho do bem, risco calculado", icon: "dice" }
 ];
 
@@ -385,10 +385,11 @@ const moodProfiles = {
     requiredComplexity: true
   },
   intenso: {
-    preferredGenres: ["Suspense", "Crime", "Terror", "Misterio", "Acao", "Guerra"],
-    avoidGenres: ["Familia", "Animacao", "Comedia", "Romance", "Musica"],
-    hardAvoidGenres: ["Familia", "Animacao", "Musica"],
+    preferredGenres: ["Suspense", "Crime", "Misterio", "Drama"],
+    avoidGenres: ["Acao", "Aventura", "Familia", "Animacao", "Comedia", "Romance", "Musica"],
+    hardAvoidGenres: ["Acao", "Aventura", "Familia", "Animacao", "Musica"],
     conflictingVibes: ["comfort"],
+    keywords: ["whodunit", "detetive", "detective", "investigacao", "investigação", "pistas", "suspeito", "suspeitos", "serial", "noir", "crime", "mistério", "misterio"],
     requiredPositive: true
   },
   sensivel: {
@@ -405,10 +406,10 @@ const moodProfiles = {
     longMoviePenalty: 135
   },
   acao: {
-    preferredGenres: ["Acao", "Aventura", "Ficcao cientifica", "Fantasia", "Faroeste"],
-    avoidGenres: ["Romance", "Musica", "Documentario"],
+    preferredGenres: ["Acao", "Aventura", "Ficcao cientifica", "Fantasia", "Faroeste", "Guerra", "Crime", "Suspense"],
+    avoidGenres: ["Romance", "Musica", "Documentario", "Drama"],
     hardAvoidGenres: ["Documentario"],
-    keywords: ["perseguicao", "aventura", "guerra", "fuga", "assalto", "energia", "missao"],
+    keywords: ["perseguicao", "perseguição", "aventura", "guerra", "fuga", "assalto", "energia", "missao", "missão", "explosao", "explosão", "corrida", "coreografia", "adrenalina"],
     longMoviePenalty: 170
   },
   surpresa: {
@@ -440,10 +441,10 @@ const moodReasonPools = {
     ({ director, genre }) => `${director} faz ${genre.toLowerCase()} com densidade, bom para quando a cabeça quer mastigar o filme.`
   ],
   intenso: [
-    ({ genre, tag }) => `Para tensão, a recomendação mira ${genre.toLowerCase()} com ${tag} no centro.`,
-    ({ director, minutes }) => `${director} entrega pressão em ${minutes}, sem depender só de barulho ou susto.`,
-    ({ country, decade, tagPair }) => `O peso vem de ${country}, dos ${decade}, misturando ${tagPair}.`,
-    ({ scoreText, genre }) => `É uma escolha ${scoreText} de ${genre.toLowerCase()}, boa para entrar em modo alerta.`
+    ({ genre, tag }) => `Hora de brincar de detetive: ${genre.toLowerCase()} com ${tag} como pista principal.`,
+    ({ director, minutes }) => `${director} conduz ${minutes} de suspeitas, viradas e cara de "quem fez isso?".`,
+    ({ country, decade, tagPair }) => `O caso vem de ${country}, recorte dos ${decade}, cruzando ${tagPair}.`,
+    ({ scoreText, genre }) => `É uma escolha ${scoreText} de ${genre.toLowerCase()}, para caçar detalhes quadro a quadro.`
   ],
   sensivel: [
     ({ tagPair, director }) => `Para um humor mais sensível, ${director} trabalha ${tagPair} sem pressa.`,
@@ -458,10 +459,10 @@ const moodReasonPools = {
     ({ scoreText, genre }) => `É uma escolha ${scoreText} de ${genre.toLowerCase()}, boa para uma noite ligeiramente amaldiçoada.`
   ],
   acao: [
-    ({ genre, tag }) => `Para ação, o impulso vem de ${genre.toLowerCase()} com ${tag} puxando o ritmo.`,
-    ({ director, minutes }) => `${director} aparece como boa escolha para energia em ${minutes}.`,
-    ({ country, tagPair }) => `A recomendação foge do piloto automático: ${country}, ${tagPair}, e movimento real.`,
-    ({ decade, scoreText }) => `Tem pulso de ${decade} e chega ${scoreText}, então a rotação não depende só de explosão.`
+    ({ genre, tag }) => `Sem cerimônia: ${genre.toLowerCase()} com ${tag} para manter o batimento lá no teto.`,
+    ({ director, minutes }) => `${director} acelera ${minutes} com ritmo de perseguição bem orquestrada.`,
+    ({ country, tagPair }) => `A sessão vem de ${country}, mistura ${tagPair} e não pede licença para acelerar.`,
+    ({ decade, scoreText }) => `Pulso de ${decade}, ${scoreText}, e energia de "só mais uma cena".`
   ],
   surpresa: [
     ({ country, director }) => `A surpresa está em sair da rota comum: ${country}, por ${director}.`,
@@ -1289,7 +1290,92 @@ const extraCuratedMovies = [
   ["All That Breathes", 2022, "Documentario", 97, "India", "Shaunak Sen", 70, 99, ["sensivel", "complexo"], ["aves", "cidade", "ecologia"], false],
   ["Hoop Dreams", 1994, "Documentario", 171, "Estados Unidos", "Steve James", 83, 98, ["sensivel", "complexo"], ["basquete", "juventude", "Estados Unidos"], false],
   ["Grizzly Man", 2005, "Documentario", 103, "Estados Unidos", "Werner Herzog", 78, 92, ["surpresa", "complexo"], ["natureza", "obsessao", "arquivo"], false],
-  ["Collective", 2019, "Documentario", 109, "Romenia", "Alexander Nanau", 81, 99, ["intenso", "complexo"], ["documentario", "jornalismo", "corrupcao"], false]
+  ["Collective", 2019, "Documentario", 109, "Romenia", "Alexander Nanau", 81, 99, ["intenso", "complexo"], ["documentario", "jornalismo", "corrupcao"], false],
+  ["Se7en", 1995, "Crime", 127, "Estados Unidos", "David Fincher", 86, 83, ["intenso", "complexo"], ["detetive", "serial killer", "noir"], true],
+  ["Prisoners", 2013, "Suspense", 153, "Estados Unidos", "Denis Villeneuve", 81, 81, ["intenso", "complexo"], ["investigacao", "sequestro", "moral"], true],
+  ["Gone Girl", 2014, "Suspense", 149, "Estados Unidos", "David Fincher", 81, 88, ["intenso", "complexo"], ["casamento", "misterio", "crime"], true],
+  ["Chinatown", 1974, "Misterio", 130, "Estados Unidos", "Roman Polanski", 82, 98, ["intenso", "nostalgia"], ["detetive", "noir", "corrupcao"], true],
+  ["L.A. Confidential", 1997, "Crime", 138, "Estados Unidos", "Curtis Hanson", 82, 99, ["intenso", "nostalgia"], ["detetive", "policia", "conspiracao"], true],
+  ["Mystic River", 2003, "Crime", 138, "Estados Unidos", "Clint Eastwood", 79, 89, ["intenso", "sensivel"], ["trauma", "crime", "investigacao"], false],
+  ["The Girl with the Dragon Tattoo", 2011, "Suspense", 158, "Estados Unidos", "David Fincher", 78, 86, ["intenso", "complexo"], ["investigacao", "jornalismo", "serial killer"], false],
+  ["Shutter Island", 2010, "Suspense", 138, "Estados Unidos", "Martin Scorsese", 82, 69, ["intenso", "complexo"], ["asilo", "mistério", "virada"], true],
+  ["The Batman", 2022, "Crime", 176, "Estados Unidos", "Matt Reeves", 78, 85, ["intenso", "acao"], ["detetive", "noir", "charadas"], true],
+  ["The Fugitive", 1993, "Suspense", 130, "Estados Unidos", "Andrew Davis", 78, 96, ["intenso", "acao"], ["fuga", "investigacao", "perseguicao"], false],
+  ["Murder on the Orient Express", 1974, "Misterio", 128, "Reino Unido", "Sidney Lumet", 73, 90, ["intenso", "nostalgia"], ["whodunit", "detetive", "suspeitos"], false],
+  ["Death on the Nile", 1978, "Misterio", 140, "Reino Unido", "John Guillermin", 72, 79, ["intenso", "nostalgia"], ["whodunit", "poirot", "suspeitos"], false],
+  ["Sleuth", 1972, "Misterio", 138, "Reino Unido", "Joseph L. Mankiewicz", 79, 96, ["intenso", "complexo"], ["duelo", "crime", "jogo mental"], false],
+  ["The Last of Sheila", 1973, "Misterio", 120, "Estados Unidos", "Herbert Ross", 73, 90, ["intenso", "leve"], ["whodunit", "pistas", "iate"], false],
+  ["The Name of the Rose", 1986, "Misterio", 130, "Alemanha", "Jean-Jacques Annaud", 77, 74, ["intenso", "complexo"], ["mosteiro", "detetive", "crime"], false],
+  ["The Usual Suspects", 1995, "Crime", 106, "Estados Unidos", "Bryan Singer", 85, 88, ["intenso", "complexo"], ["whodunit", "virada", "interrogatorio"], true],
+  ["Sherlock Holmes", 2009, "Acao", 129, "Reino Unido", "Guy Ritchie", 76, 70, ["intenso", "acao"], ["detetive", "luta", "investigacao"], false],
+  ["Sherlock Holmes: A Game of Shadows", 2011, "Acao", 129, "Reino Unido", "Guy Ritchie", 74, 60, ["acao", "intenso"], ["detetive", "conspiracao", "adrenalina"], false],
+  ["John Wick", 2014, "Acao", 101, "Estados Unidos", "Chad Stahelski", 74, 86, ["acao", "intenso"], ["vinganca", "coreografia", "assassinos"], true],
+  ["John Wick: Chapter 2", 2017, "Acao", 122, "Estados Unidos", "Chad Stahelski", 75, 89, ["acao", "intenso"], ["adrenalina", "mundo do crime", "coreografia"], true],
+  ["John Wick: Chapter 3 - Parabellum", 2019, "Acao", 131, "Estados Unidos", "Chad Stahelski", 74, 89, ["acao", "intenso"], ["fuga", "coreografia", "adrenalina"], false],
+  ["John Wick: Chapter 4", 2023, "Acao", 169, "Estados Unidos", "Chad Stahelski", 78, 94, ["acao", "intenso"], ["duelos", "adrenalina", "coreografia"], true],
+  ["Mission: Impossible - Ghost Protocol", 2011, "Acao", 133, "Estados Unidos", "Brad Bird", 74, 93, ["acao", "leve"], ["missao", "espionagem", "acrobacias"], false],
+  ["Mission: Impossible - Rogue Nation", 2015, "Acao", 131, "Estados Unidos", "Christopher McQuarrie", 74, 94, ["acao", "intenso"], ["espionagem", "fuga", "golpes"], false],
+  ["Mission: Impossible - Fallout", 2018, "Acao", 147, "Estados Unidos", "Christopher McQuarrie", 77, 97, ["acao", "intenso"], ["perseguicao", "espionagem", "acrobacias"], true],
+  ["Mission: Impossible - Dead Reckoning Part One", 2023, "Acao", 163, "Estados Unidos", "Christopher McQuarrie", 77, 96, ["acao", "intenso"], ["espionagem", "corrida", "acrobacias"], false],
+  ["Edge of Tomorrow", 2014, "Ficcao cientifica", 113, "Estados Unidos", "Doug Liman", 79, 91, ["acao", "complexo"], ["loop temporal", "guerra", "adrenalina"], true],
+  ["Top Gun: Maverick", 2022, "Acao", 131, "Estados Unidos", "Joseph Kosinski", 83, 96, ["acao", "nostalgia"], ["velocidade", "aviacao", "treino"], true],
+  ["Baby Driver", 2017, "Acao", 113, "Reino Unido", "Edgar Wright", 76, 92, ["acao", "leve"], ["assalto", "musica", "fuga"], false],
+  ["Dredd", 2012, "Acao", 95, "Reino Unido", "Pete Travis", 71, 80, ["acao", "intenso"], ["predio", "futuro", "adrenalina"], false],
+  ["Nobody", 2021, "Acao", 92, "Estados Unidos", "Ilya Naishuller", 74, 84, ["acao", "leve"], ["vinganca", "coreografia", "crime"], false],
+  ["Upgrade", 2018, "Ficcao cientifica", 100, "Australia", "Leigh Whannell", 75, 88, ["acao", "intenso"], ["tecnologia", "vinganca", "coreografia"], false],
+  ["The Bourne Ultimatum", 2007, "Acao", 115, "Estados Unidos", "Paul Greengrass", 80, 92, ["acao", "intenso"], ["espionagem", "fuga", "perseguicao"], true],
+  ["Casino Royale", 2006, "Acao", 144, "Reino Unido", "Martin Campbell", 80, 94, ["acao", "intenso"], ["espionagem", "cassino", "perseguicao"], true],
+  ["Skyfall", 2012, "Acao", 143, "Reino Unido", "Sam Mendes", 78, 92, ["acao", "intenso"], ["espionagem", "vilao", "adrenalina"], true],
+  ["The Invisible Guest", 2016, "Suspense", 106, "Espanha", "Oriol Paulo", 80, 67, ["intenso", "complexo"], ["crime", "interrogatorio", "virada"], false],
+  ["Marshland", 2014, "Crime", 105, "Espanha", "Alberto Rodriguez", 72, 92, ["intenso", "complexo"], ["detetive", "serial killer", "noir"], false],
+  ["Tell No One", 2006, "Suspense", 131, "Franca", "Guillaume Canet", 75, 93, ["intenso", "complexo"], ["desaparecimento", "investigacao", "virada"], false],
+  ["Caché", 2005, "Suspense", 117, "Franca", "Michael Haneke", 73, 88, ["intenso", "complexo"], ["misterio", "culpa", "investigacao"], false],
+  ["The Vanishing", 1988, "Suspense", 107, "Paises Baixos", "George Sluizer", 77, 98, ["intenso", "complexo"], ["desaparecimento", "obsessao", "mistério"], false],
+  ["Knives Out", 2019, "Misterio", 130, "Estados Unidos", "Rian Johnson", 79, 97, ["intenso", "leve"], ["whodunit", "familia", "suspeitos"], true],
+  ["Glass Onion: A Knives Out Mystery", 2022, "Misterio", 139, "Estados Unidos", "Rian Johnson", 71, 92, ["intenso", "leve"], ["whodunit", "ilha", "detetive"], false],
+  ["Zodiac", 2007, "Suspense", 157, "Estados Unidos", "David Fincher", 77, 90, ["intenso", "complexo"], ["detetive", "investigacao", "obsessao"], true],
+  ["Brick", 2005, "Misterio", 110, "Estados Unidos", "Rian Johnson", 72, 80, ["intenso", "surpresa"], ["noir", "escola", "detetive"], false],
+  ["The Kid Detective", 2020, "Misterio", 100, "Canada", "Evan Morgan", 70, 84, ["intenso", "leve"], ["detetive", "humor seco", "crime"], false],
+  ["Wind River", 2017, "Suspense", 107, "Estados Unidos", "Taylor Sheridan", 77, 87, ["intenso", "complexo"], ["investigacao", "neve", "crime"], false],
+  ["The Chaser", 2008, "Crime", 125, "Coreia do Sul", "Na Hong-jin", 78, 82, ["intenso", "complexo"], ["detetive", "serial killer", "pressao"], false],
+  ["The Guilty", 2018, "Suspense", 85, "Dinamarca", "Gustav Moller", 75, 98, ["intenso", "complexo"], ["telefone", "investigacao", "tempo real"], false],
+  ["Sicario", 2015, "Crime", 121, "Estados Unidos", "Denis Villeneuve", 76, 92, ["acao", "intenso"], ["fronteira", "operacao", "pressao"], true],
+  ["Atomic Blonde", 2017, "Acao", 115, "Alemanha", "David Leitch", 67, 79, ["acao", "intenso"], ["espionagem", "coreografia", "anos 80"], false],
+  ["The Man from Nowhere", 2010, "Acao", 119, "Coreia do Sul", "Lee Jeong-beom", 78, 100, ["acao", "intenso"], ["resgate", "crime", "adrenalina"], false],
+  ["Hard Boiled", 1992, "Acao", 128, "Hong Kong", "John Woo", 77, 94, ["acao", "intenso"], ["tiroteio", "dupla", "caos"], false],
+  ["Police Story", 1985, "Acao", 100, "Hong Kong", "Jackie Chan", 75, 93, ["acao", "leve"], ["dublês", "comedia fisica", "ritmo"], false],
+  ["RRR", 2022, "Acao", 182, "India", "S. S. Rajamouli", 78, 95, ["acao", "surpresa"], ["epico", "amizade", "energia"], true],
+  ["The Night Comes for Us", 2018, "Acao", 121, "Indonesia", "Timo Tjahjanto", 69, 91, ["acao", "terror"], ["gangue", "adrenalina", "violencia"], false],
+  ["Die Hard", 1988, "Acao", 132, "Estados Unidos", "John McTiernan", 82, 94, ["acao", "leve"], ["predio", "resgate", "classico"], true],
+  ["Point Break", 1991, "Acao", 122, "Estados Unidos", "Kathryn Bigelow", 73, 69, ["acao", "leve"], ["assalto", "surf", "perseguicao"], false],
+  ["Run Lola Run", 1998, "Acao", 81, "Alemanha", "Tom Tykwer", 76, 94, ["acao", "complexo"], ["corrida", "tempo", "energia"], true],
+  ["The Villainess", 2017, "Acao", 124, "Coreia do Sul", "Jung Byung-gil", 66, 84, ["acao", "intenso"], ["vinganca", "coreografia", "espionagem"], false],
+  ["Chef", 2014, "Comedia", 115, "Estados Unidos", "Jon Favreau", 73, 87, ["comfort", "leve"], ["comida", "familia", "viagem"], false],
+  ["School of Rock", 2003, "Comedia", 109, "Estados Unidos", "Richard Linklater", 72, 92, ["comfort", "leve"], ["musica", "escola", "energia"], true],
+  ["Hunt for the Wilderpeople", 2016, "Comedia", 101, "Nova Zelandia", "Taika Waititi", 78, 97, ["comfort", "leve"], ["aventura", "familia", "floresta"], false],
+  ["Kiki's Delivery Service", 1989, "Animacao", 103, "Japao", "Hayao Miyazaki", 78, 98, ["comfort", "leve"], ["Ghibli", "amizade", "cidade"], true],
+  ["Whisper of the Heart", 1995, "Animacao", 111, "Japao", "Yoshifumi Kondo", 79, 94, ["comfort", "sensivel"], ["Ghibli", "juventude", "romance"], false],
+  ["Fantastic Mr. Fox", 2009, "Animacao", 87, "Estados Unidos", "Wes Anderson", 79, 93, ["comfort", "leve"], ["familia", "humor", "animacao"], true],
+  ["Pride", 2014, "Comedia", 120, "Reino Unido", "Matthew Warchus", 78, 92, ["comfort", "sensivel"], ["amizade", "politica", "coletivo"], false],
+  ["Shaun of the Dead", 2004, "Comedia", 99, "Reino Unido", "Edgar Wright", 79, 92, ["leve", "terror"], ["zumbi", "comedia", "amizade"], true],
+  ["Hot Fuzz", 2007, "Comedia", 121, "Reino Unido", "Edgar Wright", 78, 91, ["leve", "acao"], ["detetive", "cidade pequena", "caos"], true],
+  ["The Apartment", 1960, "Comedia", 125, "Estados Unidos", "Billy Wilder", 83, 94, ["comfort", "sensivel"], ["classico", "romance", "cidade"], true],
+  ["Incendies", 2010, "Drama", 131, "Canada", "Denis Villeneuve", 83, 92, ["complexo", "intenso"], ["familia", "segredo", "guerra"], true],
+  ["C'mon C'mon", 2021, "Drama", 109, "Estados Unidos", "Mike Mills", 74, 94, ["sensivel", "comfort"], ["familia", "escuta", "afeto"], false],
+  ["Petite Maman", 2021, "Drama", 72, "Franca", "Celine Sciamma", 74, 97, ["sensivel", "comfort"], ["memoria", "infancia", "fantasia"], false],
+  ["Columbus", 2017, "Drama", 104, "Estados Unidos", "Kogonada", 72, 97, ["sensivel", "complexo"], ["arquitetura", "encontro", "silencio"], false],
+  ["A Separation", 2011, "Drama", 123, "Ira", "Asghar Farhadi", 83, 99, ["complexo", "intenso"], ["familia", "tribunal", "moral"], true],
+  ["Bacurau", 2019, "Suspense", 131, "Brasil", "Kleber Mendonca Filho", 74, 91, ["surpresa", "acao"], ["sertao", "comunidade", "resistencia"], true],
+  ["Aquarius", 2016, "Drama", 146, "Brasil", "Kleber Mendonca Filho", 75, 97, ["sensivel", "complexo"], ["cidade", "resistencia", "memoria"], false],
+  ["Carandiru", 2003, "Drama", 145, "Brasil", "Hector Babenco", 76, 75, ["intenso", "complexo"], ["prisao", "Brasil", "sobrevivencia"], false],
+  ["Tropa de Elite", 2007, "Acao", 115, "Brasil", "Jose Padilha", 80, 90, ["acao", "intenso"], ["crime", "favela", "pressao"], true],
+  ["Tropa de Elite 2: O Inimigo Agora e Outro", 2010, "Acao", 115, "Brasil", "Jose Padilha", 80, 91, ["acao", "complexo"], ["corrupcao", "politica", "crime"], true],
+  ["O Homem do Futuro", 2011, "Ficcao cientifica", 106, "Brasil", "Claudio Torres", 71, 75, ["leve", "complexo"], ["tempo", "romance", "comedia"], false],
+  ["The Others", 2001, "Terror", 104, "Espanha", "Alejandro Amenabar", 76, 84, ["terror", "complexo"], ["casa", "mistério", "silencio"], true],
+  ["REC", 2007, "Terror", 78, "Espanha", "Jaume Balaguero", 74, 90, ["terror", "intenso"], ["predio", "caos", "infectados"], false],
+  ["The Orphanage", 2007, "Terror", 105, "Espanha", "J. A. Bayona", 74, 87, ["terror", "sensivel"], ["casa", "infancia", "fantasma"], false],
+  ["The Witch", 2015, "Terror", 92, "Estados Unidos", "Robert Eggers", 69, 91, ["terror", "complexo"], ["folclore", "paranoia", "familia"], true],
+  ["It Follows", 2014, "Terror", 100, "Estados Unidos", "David Robert Mitchell", 68, 95, ["terror", "surpresa"], ["suspense", "paranoia", "juventude"], true]
 ];
 
 function createCuratedMovie([title, year, genre, duration, country, director, imdb, rt, vibes, tags, favoriteSignal]) {
@@ -1524,13 +1610,13 @@ function formatImdbScore(score) {
 }
 
 function secondaryScoreLabel(movie) {
-  if (movie.rtSource === "omdb" || movie.rtSource === "curated") return "Rotten Tomatoes";
-  return "TMDb";
+  void movie;
+  return "Rotten Tomatoes";
 }
 
 function formatSecondaryScore(movie) {
   if (movie.rtSource === "omdb" || movie.rtSource === "curated") return `${movie.rt}%`;
-  return formatImdbScore(movie.rt);
+  return "--";
 }
 
 function formatRuntime(minutes) {
@@ -2234,7 +2320,13 @@ function moodMismatch(movie) {
   }
 
   if (activeMood === "intenso") {
-    return hasConflictingVibe || hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    const detectiveGenres = hasGenre(movie, ["Suspense", "Misterio", "Crime"]);
+    const detectiveTerms = hasAnyText(movieSearchText(movie), [
+      "whodunit", "detetive", "detective", "investigacao", "investigação",
+      "suspeito", "suspeitos", "pistas", "serial", "noir", "investigador"
+    ]);
+    const tooActionHeavy = hasGenre(movie, ["Acao", "Aventura"]) && !detectiveGenres;
+    return hasConflictingVibe || hardAvoidMatches > 0 || tooActionHeavy || (!preferredMatches && !hasVibe && !detectiveTerms);
   }
 
   if (activeMood === "terror") {
@@ -3987,13 +4079,16 @@ document.addEventListener("click", (event) => {
 document.addEventListener("error", (event) => {
   const image = event.target;
   if (!(image instanceof HTMLImageElement) || !image.classList.contains("poster-img")) return;
+  const canonical = (url) => String(url || "").split("?")[0];
   const candidates = (image.dataset.posterCandidates || "").split("||").filter(Boolean);
-  const tried = new Set((image.dataset.posterTried || "").split("||").filter(Boolean));
-  tried.add(image.currentSrc || image.src);
-  const nextCandidate = candidates.find((candidate) => !tried.has(candidate));
+  const tried = new Set((image.dataset.posterTried || "").split("||").map(canonical).filter(Boolean));
+  tried.add(canonical(image.currentSrc || image.src));
+  const nextCandidate = candidates.find((candidate) => !tried.has(canonical(candidate)));
 
   if (nextCandidate) {
-    image.dataset.posterTried = [...tried].join("||");
+    image.dataset.posterTried = [...tried, canonical(nextCandidate)].join("||");
+    image.srcset = "";
+    image.sizes = "";
     image.src = nextCandidate;
     return;
   }
