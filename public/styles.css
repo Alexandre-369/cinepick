@@ -517,6 +517,123 @@ button:focus-visible {
   gap: 8px;
 }
 
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-right: 14px;
+  margin-left: 14px;
+}
+
+.session-stat {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #10100f;
+  padding: 9px;
+}
+
+.session-stat strong {
+  display: block;
+  color: var(--accent);
+  font-size: 1.02rem;
+  line-height: 1.05;
+}
+
+.session-stat span {
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.drawer-actions {
+  display: grid;
+  gap: 8px;
+  margin: 10px 14px 0;
+}
+
+.preset-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 14px 6px;
+}
+
+.preset-head span {
+  color: var(--ink);
+  font-size: .8rem;
+  font-weight: 900;
+}
+
+.preset-head small {
+  color: #888176;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 14px;
+}
+
+.preset-chip {
+  min-height: 34px;
+  border: 1px solid rgba(231, 183, 95, .28);
+  border-radius: 8px;
+  background: rgba(40, 35, 25, .42);
+  color: #efdfbc;
+  padding: 0 10px;
+  font-size: .74rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: left;
+  transition: transform .16s ease, border-color .2s ease, background .2s ease;
+}
+
+.preset-chip:hover,
+.preset-chip:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(231, 183, 95, .56);
+  background: rgba(63, 52, 30, .58);
+}
+
+.compact-toggle {
+  margin-inline: 14px !important;
+  margin-bottom: 2px;
+}
+
+.ghost-action {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(86, 182, 168, .28);
+  border-radius: 8px;
+  background: rgba(19, 28, 27, .62);
+  color: #d8f1ec;
+  padding: 0 12px;
+  font-size: .8rem;
+  font-weight: 800;
+  transition: transform .16s ease, border-color .18s ease, background .18s ease;
+}
+
+.ghost-action svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.ghost-action:hover,
+.ghost-action:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(86, 182, 168, .5);
+  background: rgba(29, 44, 42, .78);
+}
+
 .profile-stat {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -652,6 +769,18 @@ button:focus-visible {
 .filter-grid label {
   display: grid;
   gap: 7px;
+}
+
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-label svg {
+  width: 14px;
+  height: 14px;
+  opacity: .82;
 }
 
 .wide-field {
@@ -1100,17 +1229,41 @@ input[type="range"] {
 }
 
 .provider-mark {
-  display: inline-grid;
-  width: 22px;
+  display: inline-flex;
+  width: 30px;
   height: 22px;
   flex: 0 0 auto;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .11);
+  padding: 0 4px;
   color: white;
-  font-size: .58rem;
+  font-size: .5rem;
   font-weight: 900;
   letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.provider-mark span {
+  display: inline-block;
+  line-height: 1;
+  transform: translateY(.2px);
+}
+
+.provider-mark svg {
+  width: 100%;
+  height: 100%;
+  stroke: none;
+}
+
+.provider-mark--prime-video,
+.provider-mark--globoplay,
+.provider-mark--claro-tvplus,
+.provider-mark--mubi,
+.provider-mark--looke,
+.provider-mark--google-play {
+  text-transform: none;
 }
 
 .provider-name {
@@ -1138,43 +1291,128 @@ input[type="range"] {
 }
 
 .streaming-link[data-provider="netflix"] .provider-mark {
-  background: #b20710;
+  background: linear-gradient(135deg, #f01420, #b20710);
 }
 
 .streaming-link[data-provider="prime-video"] .provider-mark {
-  background: #1399ff;
+  background: linear-gradient(135deg, #1399ff, #0683de);
 }
 
 .streaming-link[data-provider="disneyplus"] .provider-mark {
-  background: #113ccf;
+  background: linear-gradient(135deg, #1c4ce6, #113ccf);
 }
 
 .streaming-link[data-provider="max"] .provider-mark {
-  background: #5b3df5;
+  background: linear-gradient(135deg, #5b3df5, #4728da);
 }
 
 .streaming-link[data-provider="globoplay"] .provider-mark {
-  background: #ef3f31;
+  background: linear-gradient(135deg, #f05544, #db2f22);
 }
 
 .streaming-link[data-provider="apple-tv"] .provider-mark {
-  background: #2d2d2d;
+  background: linear-gradient(135deg, #3c3c3c, #242424);
 }
 
 .streaming-link[data-provider="claro-tvplus"] .provider-mark {
-  background: #da291c;
+  background: linear-gradient(135deg, #e03527, #bf1f14);
 }
 
 .streaming-link[data-provider="paramountplus"] .provider-mark {
-  background: #0b4ecf;
+  background: linear-gradient(135deg, #1a63e8, #0b4ecf);
 }
 
 .streaming-link[data-provider="telecine"] .provider-mark {
-  background: #ff7a00;
+  background: linear-gradient(135deg, #ff8d1f, #ee7400);
 }
 
 .streaming-link[data-provider="mubi"] .provider-mark {
-  background: #1f1f1f;
+  background: linear-gradient(135deg, #2c2c2c, #181818);
+}
+
+.streaming-link[data-provider="youtube"] .provider-mark {
+  background: linear-gradient(135deg, #ff3838, #db1212);
+}
+
+.streaming-link[data-provider="google-play"] .provider-mark {
+  background: linear-gradient(135deg, #34a853, #188038);
+}
+
+.streaming-link[data-provider="crunchyroll"] .provider-mark {
+  background: linear-gradient(135deg, #ff8a1f, #f47521);
+}
+
+.streaming-link[data-provider="looke"] .provider-mark {
+  background: linear-gradient(135deg, #57a6ff, #2779ff);
+}
+
+@media (max-width: 520px) {
+  body.compact-sidebar .settings-panel summary small,
+  body.compact-sidebar .profile-sync .microcopy,
+  body.compact-sidebar .roulette-panel .microcopy {
+    display: none;
+  }
+
+  body.compact-sidebar .drawer-header h2 {
+    font-size: .96rem;
+  }
+
+  body.compact-sidebar .drawer-body {
+    gap: 9px;
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+
+  body.compact-sidebar .settings-panel summary {
+    min-height: 42px;
+    padding: 0 12px;
+  }
+
+  body.compact-sidebar .settings-panel[open] {
+    padding-bottom: 10px;
+  }
+
+  body.compact-sidebar .settings-panel .filter-grid,
+  body.compact-sidebar .settings-panel .profile-sync,
+  body.compact-sidebar .settings-panel .toggle-row,
+  body.compact-sidebar .session-stats,
+  body.compact-sidebar .preset-grid,
+  body.compact-sidebar .drawer-actions,
+  body.compact-sidebar .compact-toggle {
+    margin-right: 10px;
+    margin-left: 10px;
+  }
+
+  body.compact-sidebar .filter-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  body.compact-sidebar .filter-grid label {
+    gap: 5px;
+    font-size: .78rem;
+  }
+
+  body.compact-sidebar .field-label {
+    justify-content: center;
+    gap: 0;
+  }
+
+  body.compact-sidebar .field-label span {
+    display: none;
+  }
+
+  body.compact-sidebar .field-label svg {
+    width: 16px;
+    height: 16px;
+    opacity: .95;
+  }
+
+  body.compact-sidebar .preset-chip,
+  body.compact-sidebar .ghost-action {
+    min-height: 32px;
+    font-size: .72rem;
+  }
 }
 
 .meta-block {

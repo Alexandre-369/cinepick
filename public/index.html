@@ -70,14 +70,55 @@
           </button>
         </div>
         <div class="drawer-body">
+          <details class="settings-panel session-panel" open>
+            <summary>
+              <span>Sessão</span>
+              <small>atalhos rápidos</small>
+            </summary>
+            <div class="session-stats" id="session-stats"></div>
+            <div class="drawer-actions">
+              <button class="ghost-action" id="refresh-shuffle" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h5l3 4 3-4h7M3 17h5l3-4 3 4h7"/><path d="M18 5l3 2-3 2M18 15l3 2-3 2"/></svg>
+                Reembaralhar agora
+              </button>
+              <button class="ghost-action" id="clear-session-seen" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16"/><path d="M7 12a5 5 0 0 1 10 0"/><path d="M8 16h8"/></svg>
+                Limpar "já vi" da sessão
+              </button>
+              <button class="ghost-action" id="clear-watch-later" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v14l-6-3-6 3z"/><path d="M9 10h6"/></svg>
+                Limpar "ver depois"
+              </button>
+            </div>
+            <div class="preset-head">
+              <span>Presets de sessão</span>
+              <small>1 clique</small>
+            </div>
+            <div class="preset-grid" id="preset-grid">
+              <button class="preset-chip" type="button" data-preset="curta-leve">Noite curta</button>
+              <button class="preset-chip" type="button" data-preset="detetive">Detetive mode</button>
+              <button class="preset-chip" type="button" data-preset="terror">Apague a luz</button>
+              <button class="preset-chip" type="button" data-preset="br-classico">Brasil clássico</button>
+              <button class="preset-chip" type="button" data-preset="acao-max">Tiro, porrada e bomba</button>
+              <button class="preset-chip" type="button" data-preset="roleta-total">Roleta total</button>
+            </div>
+            <div class="toggle-row compact-toggle">
+              <label class="switch">
+                <input id="compact-sidebar" type="checkbox">
+                <span></span>
+              </label>
+              <span>Modo compacto no mobile</span>
+            </div>
+          </details>
+
           <details class="settings-panel" open>
             <summary>
               <span>Ajustes finos</span>
               <small>gênero, tempo, década e streaming</small>
             </summary>
             <div class="filter-grid">
-              <label>
-                Gênero
+              <label title="Gênero">
+                <span class="field-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/></svg><span>Gênero</span></span>
                 <select id="genre">
                   <option value="qualquer">Qualquer</option>
                   <option value="Comedia">Comédia</option>
@@ -93,8 +134,8 @@
                   <option value="Misterio">Mistério</option>
                 </select>
               </label>
-              <label>
-                Duração
+              <label title="Duração">
+                <span class="field-label"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg><span>Duração</span></span>
                 <select id="duration">
                   <option value="qualquer">Qualquer</option>
                   <option value="ate90">Até 90 min</option>
@@ -103,8 +144,8 @@
                   <option value="longo">Mais de 130 min</option>
                 </select>
               </label>
-              <label>
-                Década
+              <label title="Década">
+                <span class="field-label"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Década</span></span>
                 <select id="decade">
                   <option value="qualquer">Qualquer</option>
                   <option value="1930">1930s</option>
@@ -119,8 +160,8 @@
                   <option value="2020">2020s</option>
                 </select>
               </label>
-              <label>
-                Nacionalidade
+              <label title="Nacionalidade">
+                <span class="field-label"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16"/></svg><span>Nacionalidade</span></span>
                 <select id="country">
                   <option value="qualquer">Qualquer</option>
                   <option value="Africa do Sul">África do Sul</option>
@@ -155,8 +196,8 @@
                   <option>Turquia</option>
                 </select>
               </label>
-              <label>
-                Streaming
+              <label title="Streaming">
+                <span class="field-label"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="11" rx="2"/><path d="M8 20h8"/></svg><span>Streaming</span></span>
                 <select id="provider">
                   <option value="qualquer">Qualquer</option>
                 </select>

@@ -2,7 +2,7 @@ const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
   { id: "comfort", label: "Rebobine antes de devolver", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
   { id: "complexo", label: "Sinapse em chamas", hint: "mind game, camadas e conversa até de madrugada", icon: "maze" },
-  { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "pulse" },
+  { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "magnifier" },
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
   { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e explosão coreografada", icon: "bolt" },
@@ -129,6 +129,7 @@ const watchLaterKey = "cinepick_watch_later_v1";
 const posterCacheKey = "cinepick_poster_cache_v3";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
+const compactSidebarKey = "cinepick_compact_sidebar_v1";
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
 
@@ -1492,6 +1493,7 @@ let filteredCacheSignature = "";
 let filteredCacheList = [];
 let catalogCacheSignature = "";
 let catalogCacheList = [];
+let sessionSeenSet = new Set();
 const sessionScopeSeen = new Map();
 const preloadedPosterUrls = new Set();
 const uiPerfMetrics = {
@@ -1536,6 +1538,12 @@ const els = {
   useTmdb: document.querySelector("#use-tmdb"),
   tmdbStatus: document.querySelector("#tmdb-status"),
   dataDiagnostics: document.querySelector("#data-diagnostics"),
+  sessionStats: document.querySelector("#session-stats"),
+  presetGrid: document.querySelector("#preset-grid"),
+  compactSidebar: document.querySelector("#compact-sidebar"),
+  refreshShuffle: document.querySelector("#refresh-shuffle"),
+  clearSessionSeen: document.querySelector("#clear-session-seen"),
+  clearWatchLater: document.querySelector("#clear-watch-later"),
   drawerToggle: document.querySelector("#drawer-toggle"),
   drawerClose: document.querySelector("#drawer-close"),
   drawer: document.querySelector("#side-drawer"),
@@ -1553,6 +1561,10 @@ els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
 const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
 els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
 useTmdb = els.useTmdb.checked;
+const storedCompactSidebar = localStorage.getItem(compactSidebarKey);
+const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
+if (els.compactSidebar) els.compactSidebar.checked = compactSidebarEnabled;
+applyCompactSidebar(compactSidebarEnabled);
 
 applyPosterCache();
 
@@ -3161,21 +3173,43 @@ function providerMonogram(provider) {
   const key = providerSlug(provider);
   const monograms = {
     netflix: "N",
-    "prime-video": "PV",
+    "prime-video": "prime",
     "disneyplus": "D+",
-    max: "M",
-    globoplay: "G",
+    max: "max",
+    globoplay: "globo",
     "apple-tv": "tv",
-    "claro-tvplus": "C+",
+    "claro-tvplus": "claro+",
     "paramountplus": "P+",
-    telecine: "T",
-    mubi: "MU",
+    telecine: "tc",
+    mubi: "mubi",
     crunchyroll: "CR",
-    looke: "L",
+    looke: "looke",
     youtube: "YT",
-    "google-play": "GP"
+    "google-play": "play"
   };
-  return monograms[key] || displayText(provider).slice(0, 2).toUpperCase();
+  return monograms[key] || displayText(provider).slice(0, 3).toUpperCase();
+}
+
+function providerBrandMark(provider) {
+  const key = providerSlug(provider);
+  const brandMarks = {
+    netflix: '<svg viewBox="0 0 28 20" aria-hidden="true"><path fill="#E50914" d="M8 2h4l8 16h-4z"/><path fill="#8a040b" d="M8 2h4v16H8z"/><path fill="#f73f4a" d="M16 2h4v16h-4z"/></svg>',
+    "prime-video": '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="4" y="11.5" font-size="7" font-weight="700" fill="#8fd5ff">prime</text><path d="M6 14.7c3.1 1.7 7.4 1.8 11 .3" stroke="#8fd5ff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
+    disneyplus: '<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M3.5 7.7c3.2-3.8 12.5-4.7 20.7-.8" stroke="#9ec2ff" stroke-width="1.2" fill="none" stroke-linecap="round"/><text x="4.3" y="14.2" font-size="8" font-weight="700" fill="#e7f1ff">D+</text></svg>',
+    max: '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="4" y="13.5" font-size="10" font-weight="800" fill="#efe9ff">max</text></svg>',
+    globoplay: '<svg viewBox="0 0 28 20" aria-hidden="true"><circle cx="14" cy="10" r="6.2" fill="none" stroke="#fff" stroke-width="1.6"/><rect x="11.4" y="8" width="5.2" height="4" rx="1.1" fill="#fff"/></svg>',
+    "apple-tv": '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="6.2" y="13.2" font-size="9" font-weight="700" fill="#e7e7e7">tv</text><circle cx="4.2" cy="8.5" r="1.1" fill="#e7e7e7"/></svg>',
+    "claro-tvplus": '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="3.5" y="13" font-size="8" font-weight="700" fill="#fff">claro+</text></svg>',
+    paramountplus: '<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M5.4 13.4h17.2" stroke="#dce8ff" stroke-width="1.2"/><path d="M9 12.8l5-6.5 5 6.5z" fill="none" stroke="#dce8ff" stroke-width="1.2"/><text x="3.3" y="17.2" font-size="4.6" font-weight="700" fill="#dce8ff">PARAMOUNT+</text></svg>',
+    telecine: '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="5.5" y="13.3" font-size="9" font-weight="800" fill="#271300">T</text><circle cx="17" cy="10" r="4.4" fill="#271300"/></svg>',
+    mubi: '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="4.5" y="13.3" font-size="9" font-weight="700" fill="#f4f4f4">mubi</text></svg>',
+    crunchyroll: '<svg viewBox="0 0 28 20" aria-hidden="true"><circle cx="10.2" cy="10" r="4.2" fill="#fff"/><circle cx="10.8" cy="10" r="2.2" fill="#f47521"/><path d="M15.2 8.3h6.2" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    looke: '<svg viewBox="0 0 28 20" aria-hidden="true"><text x="5.3" y="13.3" font-size="8.8" font-weight="700" fill="#f5faff">looke</text></svg>',
+    youtube: '<svg viewBox="0 0 28 20" aria-hidden="true"><rect x="4.3" y="5.2" width="19.4" height="9.8" rx="3.2" fill="#fff"/><path d="M13 8.1l4.3 2.1-4.3 2.1z" fill="#d51616"/></svg>',
+    "google-play": '<svg viewBox="0 0 28 20" aria-hidden="true"><path d="M9 6l8 4-8 4z" fill="#fff"/><path d="M9 6l3.2 2.3-2.1 1.7L7.6 8.4z" fill="#34a853"/><path d="M10 10l2.2 1.8L9 14 7.5 11.5z" fill="#fbbc05"/></svg>'
+  };
+  if (brandMarks[key]) return brandMarks[key];
+  return `<span>${providerMonogram(provider)}</span>`;
 }
 
 function dedupeProviders(providers = []) {
@@ -3660,9 +3694,12 @@ function markMovieSeenAndAdvance(title) {
   const movie = activeCatalog().find((item) => item.title === title);
   if (!movie) return;
   movie.seen = true;
-  profileData.watched.add(movieKey(movie.title, movie.year));
+  const key = movieKey(movie.title, movie.year);
+  profileData.watched.add(key);
+  sessionSeenSet.add(key);
   profileLoaded = true;
   renderProfileStats();
+  renderSessionStats();
   els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
   shuffleSalt = Math.floor(Math.random() * 100000);
   const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
@@ -3766,6 +3803,20 @@ function renderProfileStats() {
   `;
 }
 
+function renderSessionStats() {
+  if (!els.sessionStats) return;
+  const catalogSize = activeCatalog().length;
+  const watchedInSession = sessionSeenSet.size;
+  const watchLaterCount = watchLaterSet.size;
+  const profileWatchedCount = profileData.watched.size;
+  els.sessionStats.innerHTML = `
+    <div class="session-stat"><strong>${catalogSize}</strong><span>catálogo</span></div>
+    <div class="session-stat"><strong>${watchedInSession}</strong><span>já vi (sessão)</span></div>
+    <div class="session-stat"><strong>${watchLaterCount}</strong><span>ver depois</span></div>
+    <div class="session-stat"><strong>${profileWatchedCount}</strong><span>vistos perfil</span></div>
+  `;
+}
+
 async function importProfileFiles(files) {
   const csvFiles = [...files].filter((file) => file.name.toLowerCase().endsWith(".csv"));
   if (!csvFiles.length) return;
@@ -3779,6 +3830,7 @@ async function importProfileFiles(files) {
   roulettePick = "";
   resetRecommendationFlow();
   renderProfileStats();
+  renderSessionStats();
   els.syncStatus.textContent = `${csvFiles.length} arquivo(s) importado(s). Agora o app evita vistos e usa notas altas como sinal de gosto.`;
   render();
 }
@@ -3790,7 +3842,7 @@ function moodIconSvg(icon) {
     rewind: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7l-6 5 6 5V7zM19 7l-6 5 6 5V7z"/></svg>',
     moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"/></svg>',
     maze: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 4v4h4V6h4v6h-4v4h6"/><path d="M8 20v-6h4v2h4v4"/></svg>',
-    pulse: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>',
+    magnifier: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/><path d="M9.2 11.2l1.2 1.2 2.4-2.4"/></svg>',
     heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
     bolt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
     dice: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h.01M15 15h.01M15 9h.01M9 15h.01"/></svg>'
@@ -3876,10 +3928,82 @@ function providerLinksForMovie(movie, limit = 3) {
   if (!providers.length) return "";
   return providers.map((provider) => `
     <a class="streaming-link" data-provider="${providerSlug(provider)}" href="${streamingSearchUrl(provider, movie)}" target="_blank" rel="noopener noreferrer" title="Ver ${movie.title} em ${provider}">
-      <span class="provider-mark" aria-hidden="true">${providerMonogram(provider)}</span>
+      <span class="provider-mark provider-mark--${providerSlug(provider)}" aria-hidden="true">${providerBrandMark(provider)}</span>
       <span class="provider-name">${displayText(provider)}</span>
     </a>
   `).join("");
+}
+
+function setSelectValue(select, value = "qualquer") {
+  if (!select) return;
+  const allowed = new Set([...select.options].map((option) => option.value));
+  select.value = allowed.has(value) ? value : "qualquer";
+}
+
+function applyQuickPreset(presetId) {
+  const presets = {
+    "curta-leve": {
+      label: "Noite curta",
+      mode: "mood",
+      mood: "leve",
+      filters: { genre: "Comedia", duration: "ate90", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+    },
+    detetive: {
+      label: "Detetive mode",
+      mode: "mood",
+      mood: "intenso",
+      filters: { genre: "Misterio", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+    },
+    terror: {
+      label: "Apague a luz",
+      mode: "mood",
+      mood: "terror",
+      filters: { genre: "Terror", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+    },
+    "br-classico": {
+      label: "Brasil clássico",
+      mode: "mood",
+      mood: "comfort",
+      filters: { genre: "Drama", duration: "qualquer", decade: "1960", country: "Brasil", provider: "qualquer" }
+    },
+    "acao-max": {
+      label: "Tiro, porrada e bomba",
+      mode: "mood",
+      mood: "acao",
+      filters: { genre: "Acao", duration: "medio", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+    },
+    "roleta-total": {
+      label: "Roleta total",
+      mode: "roulette",
+      filters: { genre: "qualquer", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+    }
+  };
+
+  const preset = presets[presetId];
+  if (!preset) return;
+
+  if (preset.mood) activeMood = preset.mood;
+  if (preset.filters) {
+    setSelectValue(els.genre, preset.filters.genre);
+    setSelectValue(els.duration, preset.filters.duration);
+    setSelectValue(els.decade, preset.filters.decade);
+    setSelectValue(els.country, preset.filters.country);
+    setSelectValue(els.provider, preset.filters.provider);
+  }
+  els.hideWatched.checked = true;
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  rerollOffset += 3 + Math.floor(Math.random() * 37);
+  resetRecommendationFlow();
+  els.syncStatus.textContent = `Preset aplicado: ${preset.label}.`;
+
+  if (preset.mode) setMode(preset.mode);
+  else render();
+}
+
+function applyCompactSidebar(enabled) {
+  document.body.classList.toggle("compact-sidebar", enabled);
+  if (els.compactSidebar) els.compactSidebar.checked = enabled;
+  localStorage.setItem(compactSidebarKey, String(enabled));
 }
 
 function renderMovieDialog(movie) {
@@ -4100,6 +4224,7 @@ function setDrawerPeek(peek) {
 async function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
+  renderSessionStats();
   if (activeMode === "mood") renderMoods();
   renderDataDiagnostics();
   const list = recommendationListForRender(advance);
@@ -4179,6 +4304,58 @@ els.syncDemo.addEventListener("click", () => {
 
 els.profileFiles.addEventListener("change", (event) => {
   importProfileFiles(event.target.files);
+});
+
+bindInstantPress(els.refreshShuffle, () => {
+  measureUiAction("nextPick", () => {
+    shuffleSalt = Math.floor(Math.random() * 100000);
+    rerollOffset += 7 + Math.floor(Math.random() * 51);
+    roulettePick = "";
+    scheduleRender(true);
+  });
+});
+
+bindInstantPress(els.clearSessionSeen, () => {
+  if (!sessionSeenSet.size) {
+    els.syncStatus.textContent = "Nada para limpar em 'já vi' nesta sessão.";
+    return;
+  }
+  const keysToClear = new Set(sessionSeenSet);
+  [...curatedMovies, ...tmdbMovies].forEach((movie) => {
+    if (keysToClear.has(movieKey(movie.title, movie.year))) movie.seen = false;
+  });
+  keysToClear.forEach((key) => profileData.watched.delete(key));
+  sessionSeenSet = new Set();
+  profileLoaded = profileData.watched.size > 0;
+  renderProfileStats();
+  renderSessionStats();
+  els.syncStatus.textContent = "Limpeza concluída: marcações de 'já vi' desta sessão foram removidas.";
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  resetRecommendationFlow();
+  scheduleRender(true);
+});
+
+bindInstantPress(els.clearWatchLater, () => {
+  if (!watchLaterSet.size) {
+    els.syncStatus.textContent = "Sua lista 'ver depois' já está vazia.";
+    return;
+  }
+  watchLaterSet = new Set();
+  persistWatchLaterSet();
+  renderSessionStats();
+  els.syncStatus.textContent = "Lista 'ver depois' limpa.";
+  render();
+});
+
+els.presetGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-preset]");
+  if (!button) return;
+  pulsePressState(button);
+  applyQuickPreset(button.dataset.preset);
+});
+
+els.compactSidebar?.addEventListener("change", () => {
+  applyCompactSidebar(Boolean(els.compactSidebar.checked));
 });
 
 document.querySelectorAll(".settings-panel").forEach((panel) => {
