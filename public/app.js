@@ -130,6 +130,11 @@ const posterCacheKey = "cinepick_poster_cache_v3";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
 const compactSidebarKey = "cinepick_compact_sidebar_v1";
+const activePresetKey = "cinepick_active_preset_v1";
+const presetFavoritesKey = "cinepick_preset_favorites_v1";
+const presetFavoritesLimit = 3;
+const recommendationTimeMemoryKey = "cinepick_recommendation_time_memory_v1";
+const recommendationTimeMemoryDays = 21;
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
 
@@ -255,6 +260,51 @@ const moodAliasMap = {
   comfort: ["comfort", "nostalgia"],
   terror: ["terror", "intenso"]
 };
+
+const sessionPresets = [
+  {
+    id: "curta-leve",
+    label: "Noite curta",
+    mode: "mood",
+    mood: "leve",
+    filters: { genre: "Comedia", duration: "ate90", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  },
+  {
+    id: "detetive",
+    label: "Detetive mode",
+    mode: "mood",
+    mood: "intenso",
+    filters: { genre: "Misterio", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  },
+  {
+    id: "terror",
+    label: "Apague a luz",
+    mode: "mood",
+    mood: "terror",
+    filters: { genre: "Terror", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  },
+  {
+    id: "br-classico",
+    label: "Brasil clássico",
+    mode: "mood",
+    mood: "comfort",
+    filters: { genre: "Drama", duration: "qualquer", decade: "1960", country: "Brasil", provider: "qualquer" }
+  },
+  {
+    id: "acao-max",
+    label: "Tiro, porrada e bomba",
+    mode: "mood",
+    mood: "acao",
+    filters: { genre: "Acao", duration: "medio", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  },
+  {
+    id: "roleta-total",
+    label: "Roleta total",
+    mode: "roulette",
+    filters: { genre: "qualquer", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  }
+];
+const sessionPresetMap = Object.fromEntries(sessionPresets.map((preset) => [preset.id, preset]));
 
 const posterTitleAliases = {
   "About Time": ["Questão de Tempo"],
@@ -1429,6 +1479,7 @@ let catalogPosterHydrationInFlight = false;
 let renderQueued = false;
 let pendingAdvanceRender = false;
 let moodRenderKey = "";
+let presetRenderKey = "";
 let nextBackgroundRenderAt = 0;
 let renderRafScheduled = false;
 let renderInFlight = false;
@@ -1477,6 +1528,28 @@ function sanitizeStoredKeyList(value, limit = 400) {
     .slice(0, limit);
 }
 
+function sanitizePresetFavoriteIds(value) {
+  if (!Array.isArray(value)) return [];
+  return uniqueNormalized(value)
+    .filter((id) => typeof id === "string" && sessionPresetMap[id])
+    .slice(0, presetFavoritesLimit);
+}
+
+function sanitizeRecommendationTimeMemory(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const cutoff = Date.now() - recommendationTimeMemoryDays * 24 * 60 * 60 * 1000;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key, timestamp]) => (
+        typeof key === "string"
+        && key.includes("|")
+        && Number.isFinite(Number(timestamp))
+        && Number(timestamp) >= cutoff
+      ))
+      .map(([key, timestamp]) => [key, Number(timestamp)])
+  );
+}
+
 const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
 const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
 let posterCacheSize = Object.keys(posterCache).length;
@@ -1488,6 +1561,11 @@ let watchLaterSet = new Set(sanitizeStoredKeyList(
   JSON.parse(localStorage.getItem(watchLaterKey) || "[]"),
   420
 ));
+let activePresetId = "";
+let presetFavoriteIds = sanitizePresetFavoriteIds(JSON.parse(localStorage.getItem(presetFavoritesKey) || "[]"));
+let recommendationTimeMemory = sanitizeRecommendationTimeMemory(
+  JSON.parse(localStorage.getItem(recommendationTimeMemoryKey) || "{}")
+);
 let recommendationHistoryVersion = 0;
 let filteredCacheSignature = "";
 let filteredCacheList = [];
@@ -1565,6 +1643,9 @@ const storedCompactSidebar = localStorage.getItem(compactSidebarKey);
 const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
 if (els.compactSidebar) els.compactSidebar.checked = compactSidebarEnabled;
 applyCompactSidebar(compactSidebarEnabled);
+const storedActivePresetId = localStorage.getItem(activePresetKey) || "";
+if (sessionPresetMap[storedActivePresetId]) activePresetId = storedActivePresetId;
+pruneRecommendationTimeMemory();
 
 applyPosterCache();
 
@@ -1998,6 +2079,39 @@ function isMoodRecentlyRecommended(movie, limit = 42, scope = recommendationMood
   return index >= 0 && index < limit;
 }
 
+function pruneRecommendationTimeMemory(now = Date.now()) {
+  const cutoff = now - recommendationTimeMemoryDays * 24 * 60 * 60 * 1000;
+  let changed = false;
+  recommendationTimeMemory = Object.fromEntries(
+    Object.entries(recommendationTimeMemory).filter(([key, timestamp]) => {
+      const valid = typeof key === "string" && key.includes("|") && Number.isFinite(Number(timestamp)) && Number(timestamp) >= cutoff;
+      if (!valid) changed = true;
+      return valid;
+    })
+  );
+  if (changed) localStorage.setItem(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
+}
+
+function latestRecommendationTimestamp(movie) {
+  const keys = movieCacheKeys(movie);
+  const timestamps = keys
+    .map((key) => Number(recommendationTimeMemory[key] || 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return timestamps.length ? Math.max(...timestamps) : 0;
+}
+
+function recommendationTimePenalty(movie) {
+  const lastSeenAt = latestRecommendationTimestamp(movie);
+  if (!lastSeenAt) return 0;
+  const ageMs = Date.now() - lastSeenAt;
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (ageMs < dayMs) return 520;
+  if (ageMs < 3 * dayMs) return 310;
+  if (ageMs < 7 * dayMs) return 140;
+  if (ageMs < 14 * dayMs) return 64;
+  return 0;
+}
+
 function freshnessPenalty(movie) {
   const index = recentRecommendationIndex(movie);
   let penalty = 0;
@@ -2020,7 +2134,7 @@ function freshnessPenalty(movie) {
     else penalty += 14;
   }
 
-  return penalty;
+  return penalty + recommendationTimePenalty(movie);
 }
 
 function rememberRecommendation(movie) {
@@ -2043,8 +2157,14 @@ function rememberRecommendation(movie) {
 
   recommendationHistoryVersion += 1;
   scopeSeenSet().add(key);
+  const now = Date.now();
+  movieCacheKeys(movie).forEach((cacheKey) => {
+    recommendationTimeMemory[cacheKey] = now;
+  });
+  pruneRecommendationTimeMemory(now);
   localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
   localStorage.setItem(moodRecommendationHistoryKey, JSON.stringify(moodRecommendationHistory));
+  localStorage.setItem(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
 }
 
 function diversityPenalty(movie, selected) {
@@ -2653,6 +2773,7 @@ function filteredStateSignature(catalogLength) {
     String(profileData.importedRows),
     String(profileData.watched.size),
     String(recommendationHistoryVersion),
+    String(Math.floor(Date.now() / (24 * 60 * 60 * 1000))),
     String(shuffleSalt),
     String(rerollOffset),
     String(useTmdb),
@@ -2908,9 +3029,15 @@ function selectRouletteMovie(list) {
     return;
   }
 
-  const freshList = list.filter((movie) => !isRecentlyRecommended(movie, 96));
+  const threeDayMs = 3 * 24 * 60 * 60 * 1000;
+  const timeFreshList = list.filter((movie) => {
+    const lastSeenAt = latestRecommendationTimestamp(movie);
+    return !lastSeenAt || Date.now() - lastSeenAt > threeDayMs;
+  });
+  const baseList = timeFreshList.length ? timeFreshList : list;
+  const freshList = baseList.filter((movie) => !isRecentlyRecommended(movie, 96));
   const moodFreshList = freshList.filter((movie) => !isMoodRecentlyRecommended(movie, 140, "roulette"));
-  const source = moodFreshList.length ? moodFreshList : (freshList.length ? freshList : list);
+  const source = moodFreshList.length ? moodFreshList : (freshList.length ? freshList : baseList);
   const seenSet = scopeSeenSet();
   let antiRepeatSource = source.filter((movie) => !seenSet.has(movieKey(movie.title, movie.year)));
   if (!antiRepeatSource.length) {
@@ -3708,8 +3835,9 @@ function markMovieSeenAndAdvance(title) {
   scheduleRender(true);
 }
 
-function setMode(mode) {
+function setMode(mode, { preservePreset = false } = {}) {
   if (!mode || mode === activeMode) return;
+  if (!preservePreset) clearActivePreset();
   activeMode = mode;
   rerollOffset = 0;
   shuffleSalt = Math.floor(Math.random() * 100000);
@@ -3940,48 +4068,76 @@ function setSelectValue(select, value = "qualquer") {
   select.value = allowed.has(value) ? value : "qualquer";
 }
 
-function applyQuickPreset(presetId) {
-  const presets = {
-    "curta-leve": {
-      label: "Noite curta",
-      mode: "mood",
-      mood: "leve",
-      filters: { genre: "Comedia", duration: "ate90", decade: "qualquer", country: "qualquer", provider: "qualquer" }
-    },
-    detetive: {
-      label: "Detetive mode",
-      mode: "mood",
-      mood: "intenso",
-      filters: { genre: "Misterio", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
-    },
-    terror: {
-      label: "Apague a luz",
-      mode: "mood",
-      mood: "terror",
-      filters: { genre: "Terror", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
-    },
-    "br-classico": {
-      label: "Brasil clássico",
-      mode: "mood",
-      mood: "comfort",
-      filters: { genre: "Drama", duration: "qualquer", decade: "1960", country: "Brasil", provider: "qualquer" }
-    },
-    "acao-max": {
-      label: "Tiro, porrada e bomba",
-      mode: "mood",
-      mood: "acao",
-      filters: { genre: "Acao", duration: "medio", decade: "qualquer", country: "qualquer", provider: "qualquer" }
-    },
-    "roleta-total": {
-      label: "Roleta total",
-      mode: "roulette",
-      filters: { genre: "qualquer", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
-    }
-  };
+function persistPresetState() {
+  localStorage.setItem(activePresetKey, activePresetId || "");
+  localStorage.setItem(presetFavoritesKey, JSON.stringify(presetFavoriteIds.slice(0, presetFavoritesLimit)));
+}
 
-  const preset = presets[presetId];
+function setActivePreset(presetId = "") {
+  activePresetId = sessionPresetMap[presetId] ? presetId : "";
+  persistPresetState();
+}
+
+function clearActivePreset() {
+  if (!activePresetId) return;
+  activePresetId = "";
+  persistPresetState();
+  renderPresets();
+}
+
+function orderedPresets() {
+  const favorites = presetFavoriteIds
+    .map((id) => sessionPresetMap[id])
+    .filter(Boolean);
+  const favoriteIds = new Set(favorites.map((preset) => preset.id));
+  const remaining = sessionPresets.filter((preset) => !favoriteIds.has(preset.id));
+  return [...favorites, ...remaining];
+}
+
+function renderPresets() {
+  if (!els.presetGrid) return;
+  const renderKey = `${activePresetId}|${presetFavoriteIds.join(",")}`;
+  if (presetRenderKey === renderKey && els.presetGrid.childElementCount) return;
+
+  els.presetGrid.innerHTML = orderedPresets().map((preset) => {
+    const isActive = preset.id === activePresetId;
+    const isFavorite = presetFavoriteIds.includes(preset.id);
+    return `
+      <div class="preset-item ${isActive ? "is-active" : ""} ${isFavorite ? "is-favorite" : ""}">
+        <button class="preset-chip ${isActive ? "is-active" : ""}" type="button" data-preset="${preset.id}">
+          ${preset.label}
+        </button>
+        <button class="preset-pin ${isFavorite ? "is-favorite" : ""}" type="button" data-preset-pin="${preset.id}" aria-pressed="${isFavorite ? "true" : "false"}" title="${isFavorite ? "Remover dos favoritos" : "Salvar nos favoritos"}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-2.2 5.2v3.2l2.2 2.1H8l2.2-2.1V9.2z"/><path d="M12 14.5V20"/></svg>
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  presetRenderKey = renderKey;
+}
+
+function togglePresetFavorite(presetId) {
+  if (!sessionPresetMap[presetId]) return;
+  if (presetFavoriteIds.includes(presetId)) {
+    presetFavoriteIds = presetFavoriteIds.filter((id) => id !== presetId);
+    persistPresetState();
+    renderPresets();
+    els.syncStatus.textContent = `"${sessionPresetMap[presetId].label}" removido dos favoritos.`;
+    return;
+  }
+
+  presetFavoriteIds = [...presetFavoriteIds, presetId].slice(-presetFavoritesLimit);
+  persistPresetState();
+  renderPresets();
+  els.syncStatus.textContent = `"${sessionPresetMap[presetId].label}" salvo nos favoritos.`;
+}
+
+function applyQuickPreset(presetId) {
+  const preset = sessionPresetMap[presetId];
   if (!preset) return;
 
+  setActivePreset(presetId);
   if (preset.mood) activeMood = preset.mood;
   if (preset.filters) {
     setSelectValue(els.genre, preset.filters.genre);
@@ -3995,9 +4151,14 @@ function applyQuickPreset(presetId) {
   rerollOffset += 3 + Math.floor(Math.random() * 37);
   resetRecommendationFlow();
   els.syncStatus.textContent = `Preset aplicado: ${preset.label}.`;
+  renderPresets();
 
-  if (preset.mode) setMode(preset.mode);
-  else render();
+  const modeChanged = Boolean(preset.mode && preset.mode !== activeMode);
+  if (modeChanged) {
+    setMode(preset.mode, { preservePreset: true });
+  } else {
+    render();
+  }
 }
 
 function applyCompactSidebar(enabled) {
@@ -4225,6 +4386,7 @@ async function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
   renderSessionStats();
+  renderPresets();
   if (activeMode === "mood") renderMoods();
   renderDataDiagnostics();
   const list = recommendationListForRender(advance);
@@ -4259,6 +4421,7 @@ els.moods.addEventListener("click", (event) => {
   const button = event.target.closest("[data-mood]");
   if (!button) return;
   measureUiAction("moodPick", () => {
+    clearActivePreset();
     activeMood = button.dataset.mood;
     rerollOffset = 0;
     shuffleSalt = Math.floor(Math.random() * 100000);
@@ -4282,6 +4445,7 @@ els.moods.addEventListener("pointerdown", (event) => {
   els.hideWatched
 ].filter(Boolean).forEach((input) => {
   input.addEventListener("input", () => {
+    clearActivePreset();
     rerollOffset = 0;
     shuffleSalt = Math.floor(Math.random() * 100000);
     resetRecommendationFlow();
@@ -4348,6 +4512,12 @@ bindInstantPress(els.clearWatchLater, () => {
 });
 
 els.presetGrid?.addEventListener("click", (event) => {
+  const pinButton = event.target.closest("[data-preset-pin]");
+  if (pinButton) {
+    pulsePressState(pinButton);
+    togglePresetFavorite(pinButton.dataset.presetPin);
+    return;
+  }
   const button = event.target.closest("[data-preset]");
   if (!button) return;
   pulsePressState(button);

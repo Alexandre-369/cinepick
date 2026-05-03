@@ -579,6 +579,13 @@ button:focus-visible {
   margin: 0 14px;
 }
 
+.preset-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 6px;
+  align-items: stretch;
+}
+
 .preset-chip {
   min-height: 34px;
   border: 1px solid rgba(231, 183, 95, .28);
@@ -593,11 +600,49 @@ button:focus-visible {
   transition: transform .16s ease, border-color .2s ease, background .2s ease;
 }
 
+.preset-chip.is-active {
+  border-color: rgba(86, 182, 168, .62);
+  background: linear-gradient(180deg, rgba(86, 182, 168, .2), rgba(27, 53, 49, .84));
+  color: #e3f8f4;
+}
+
 .preset-chip:hover,
 .preset-chip:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(231, 183, 95, .56);
   background: rgba(63, 52, 30, .58);
+}
+
+.preset-pin {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 8px;
+  background: rgba(26, 26, 24, .9);
+  color: #9f9789;
+  transition: transform .16s ease, border-color .2s ease, color .2s ease, background .2s ease;
+}
+
+.preset-pin svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.9;
+}
+
+.preset-pin.is-favorite,
+.preset-item.is-favorite .preset-pin {
+  border-color: rgba(231, 183, 95, .52);
+  background: rgba(58, 44, 21, .9);
+  color: #f0ce85;
+}
+
+.preset-pin:hover,
+.preset-pin:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(231, 183, 95, .58);
+  color: #f4d89f;
 }
 
 .compact-toggle {
@@ -1409,6 +1454,7 @@ input[type="range"] {
   }
 
   body.compact-sidebar .preset-chip,
+  body.compact-sidebar .preset-pin,
   body.compact-sidebar .ghost-action {
     min-height: 32px;
     font-size: .72rem;
