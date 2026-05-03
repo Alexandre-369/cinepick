@@ -1,7 +1,7 @@
 const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
   { id: "comfort", label: "Rebobine antes de devolver", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
-  { id: "complexo", label: "Sinapse em chamas", hint: "mind game, camadas e conversa até de madrugada", icon: "maze" },
+  { id: "complexo", label: "Sinapse em chamas", hint: "fantasia, ficção científica e viagem especulativa", icon: "maze" },
   { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "magnifier" },
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
@@ -429,12 +429,16 @@ const moodProfiles = {
     longMoviePenalty: 155
   },
   complexo: {
-    preferredGenres: ["Drama", "Ficcao cientifica", "Misterio", "Documentario"],
-    avoidGenres: ["Familia", "Animacao", "Comedia", "Acao", "Aventura"],
-    hardAvoidGenres: ["Familia", "Animacao"],
-    conflictingVibes: ["comfort", "leve"],
-    keywords: ["tempo", "memoria", "sonho", "identidade", "misterio", "obsessao", "politica", "conspiracao", "paranoia", "luto", "metafisica", "filosofia"],
-    requiredComplexity: true
+    preferredGenres: ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio", "Suspense"],
+    avoidGenres: ["Documentario", "Guerra", "Crime", "Musica"],
+    hardAvoidGenres: ["Documentario", "Guerra"],
+    conflictingVibes: ["comfort"],
+    keywords: [
+      "ficcao", "ficção", "cientifica", "científica", "fantasia", "multiverso",
+      "tempo", "espaco", "espaço", "distopia", "utopia", "futuro", "ia", "alien",
+      "portal", "paradoxo", "mito", "magia", "cyberpunk", "realidade", "simulacao", "simulação"
+    ],
+    requiredPositive: true
   },
   intenso: {
     preferredGenres: ["Suspense", "Crime", "Misterio", "Drama"],
@@ -487,10 +491,10 @@ const moodReasonPools = {
     ({ genre, minutes }) => `É uma aposta de ${genre.toLowerCase()} em ${minutes}, boa quando a noite pede colo e não correria.`
   ],
   complexo: [
-    ({ director, tagPair }) => `Para pensar, a força está em ${director} cruzando ${tagPair}.`,
-    ({ genre, decade, scoreText }) => `A base é ${genre.toLowerCase()} dos ${decade}, ${scoreText}, com camadas suficientes para render conversa depois.`,
-    ({ country, tag }) => `A escolha abre uma porta menos óbvia: ${country}, ${tag}, e mais pergunta do que resposta pronta.`,
-    ({ director, genre }) => `${director} faz ${genre.toLowerCase()} com densidade, bom para quando a cabeça quer mastigar o filme.`
+    ({ director, tagPair }) => `Sinapse em chamas hoje: ${director} cruza ${tagPair} e abre um universo paralelo para a sessão.`,
+    ({ genre, decade, scoreText }) => `A pedida vem em ${genre.toLowerCase()} dos ${decade}, ${scoreText}, com boa dose de imaginação especulativa.`,
+    ({ country, tag }) => `Saiu um desvio cósmico por ${country}, com ${tag}, para fugir do óbvio sem perder o fio.`,
+    ({ director, genre }) => `${director} conduz ${genre.toLowerCase()} com cara de "e se...?", ideal para viagem sci-fi/fantasia.`
   ],
   intenso: [
     ({ genre, tag }) => `Hora de brincar de detetive: ${genre.toLowerCase()} com ${tag} como pista principal.`,
@@ -1967,6 +1971,17 @@ function escapistMismatch(movie) {
   return actionComedy || familyAdventure || lightFranchise;
 }
 
+function speculativeEvidence(movie) {
+  const text = movieSearchText(movie);
+  const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio"]);
+  const speculativeTerms = hasAnyText(text, [
+    "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia", "utopia",
+    "futuro", "multiverso", "realidade", "tempo", "espaco", "espaço", "ia",
+    "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação"
+  ]);
+  return speculativeGenres || speculativeTerms;
+}
+
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
   const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
@@ -2018,7 +2033,7 @@ function moodScore(movie) {
 
   if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
   if (profile.requiredComplexity && !complexityEvidence(movie)) score -= 92;
-  if (activeMood === "complexo" && escapistMismatch(movie)) score -= 68;
+  if (activeMood === "complexo" && !speculativeEvidence(movie)) score -= 68;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "comfort" && Number(movie.year) && Number(movie.year) >= 2020 && !(movie.vibes || []).includes("comfort")) score -= 10;
@@ -2511,12 +2526,17 @@ function moodMismatch(movie) {
   const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
 
   if (activeMood === "complexo") {
-    const hasLightGenre = hasGenre(movie, ["Acao", "Aventura", "Comedia", "Familia", "Animacao"]);
-    const hasHeavyThinkingGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica", "Misterio", "Suspense"]);
+    const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio", "Suspense"]);
+    const speculativeTerms = hasAnyText(movieSearchText(movie), [
+      "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia", "utopia",
+      "futuro", "multiverso", "realidade", "tempo", "espaco", "espaço", "ia",
+      "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação"
+    ]);
+    const tooGrounded = !speculativeGenres && !hasVibe && !speculativeTerms;
+    const hardRealism = hasGenre(movie, ["Documentario", "Guerra"]) && !speculativeGenres;
     return hardAvoidMatches > 0
-      || !complexityEvidence(movie)
-      || escapistMismatch(movie)
-      || (hasLightGenre && !hasHeavyThinkingGenre);
+      || hardRealism
+      || tooGrounded;
   }
 
   if (activeMood === "leve") {
