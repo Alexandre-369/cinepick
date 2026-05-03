@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CinePick</title>
-    <link rel="stylesheet" href="./styles.css?v=20260503e">
+    <link rel="stylesheet" href="./styles.css?v=20260503f">
   </head>
   <body class="filters-sidebar-only">
     <main class="app-shell">
@@ -230,6 +230,20 @@
             </div>
           </details>
 
+          <details class="settings-panel watch-later-panel" open>
+            <summary>
+              <span>Ver depois</span>
+              <small>lista salva</small>
+            </summary>
+            <div class="watch-later-list" id="watch-later-list"></div>
+            <div class="watch-later-actions">
+              <button class="ghost-action" id="clear-watch-later-sidebar" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v14l-6-3-6 3z"/><path d="M9 10h6"/></svg>
+                Limpar lista
+              </button>
+            </div>
+          </details>
+
           <details class="settings-panel data-panel">
             <summary>
               <span>TMDb / IMDb</span>
@@ -274,6 +288,6 @@
       </div>
     </dialog>
 
-    <script src="./app.js?v=20260503e"></script>
+    <script src="./app.js?v=20260503f"></script>
   </body>
 </html>

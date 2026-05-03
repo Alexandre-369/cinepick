@@ -1,7 +1,7 @@
 const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
   { id: "comfort", label: "Rebobine antes de devolver", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
-  { id: "complexo", label: "Sinapse em chamas", hint: "fantasia, ficção científica e viagem especulativa", icon: "maze" },
+  { id: "complexo", label: "Há outros mundos além deste", hint: "fantasia, ficção científica e viagem especulativa", icon: "maze" },
   { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "magnifier" },
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
@@ -491,7 +491,7 @@ const moodReasonPools = {
     ({ genre, minutes }) => `É uma aposta de ${genre.toLowerCase()} em ${minutes}, boa quando a noite pede colo e não correria.`
   ],
   complexo: [
-    ({ director, tagPair }) => `Sinapse em chamas hoje: ${director} cruza ${tagPair} e abre um universo paralelo para a sessão.`,
+    ({ director, tagPair }) => `Há outros mundos além deste: ${director} cruza ${tagPair} e abre um universo paralelo para a sessão.`,
     ({ genre, decade, scoreText }) => `A pedida vem em ${genre.toLowerCase()} dos ${decade}, ${scoreText}, com boa dose de imaginação especulativa.`,
     ({ country, tag }) => `Saiu um desvio cósmico por ${country}, com ${tag}, para fugir do óbvio sem perder o fio.`,
     ({ director, genre }) => `${director} conduz ${genre.toLowerCase()} com cara de "e se...?", ideal para viagem sci-fi/fantasia.`
@@ -1627,6 +1627,8 @@ const els = {
   refreshShuffle: document.querySelector("#refresh-shuffle"),
   clearSessionSeen: document.querySelector("#clear-session-seen"),
   clearWatchLater: document.querySelector("#clear-watch-later"),
+  clearWatchLaterSidebar: document.querySelector("#clear-watch-later-sidebar"),
+  watchLaterList: document.querySelector("#watch-later-list"),
   drawerToggle: document.querySelector("#drawer-toggle"),
   drawerClose: document.querySelector("#drawer-close"),
   drawer: document.querySelector("#side-drawer"),
@@ -2742,6 +2744,17 @@ function toggleWatchLater(movie) {
 
   persistWatchLaterSet();
   return !removed;
+}
+
+function movieFromWatchLaterKey(storedKey) {
+  const key = String(storedKey || "").trim();
+  if (!key) return null;
+  const titleKey = key.split("|")[0] || "";
+  return activeCatalog().find((movie) => {
+    const keys = movieCacheKeys(movie);
+    if (keys.includes(key)) return true;
+    return movieTitleKeys(movie).includes(titleKey);
+  }) || null;
 }
 
 function activeCatalog() {
@@ -3998,6 +4011,45 @@ function renderSessionStats() {
     <div class="session-stat"><strong>${watchLaterCount}</strong><span>ver depois</span></div>
     <div class="session-stat"><strong>${profileWatchedCount}</strong><span>vistos perfil</span></div>
   `;
+  renderWatchLaterList();
+}
+
+function renderWatchLaterList() {
+  if (!els.watchLaterList) return;
+  const seenMovieKeys = new Set();
+  const movies = [...watchLaterSet]
+    .reverse()
+    .map((key) => movieFromWatchLaterKey(key))
+    .filter((movie) => {
+      if (!movie) return false;
+      const key = movieKey(movie.title, movie.year);
+      if (seenMovieKeys.has(key)) return false;
+      seenMovieKeys.add(key);
+      return true;
+    })
+    .slice(0, 14);
+
+  if (!movies.length) {
+    els.watchLaterList.innerHTML = `
+      <div class="watch-later-empty">
+        <p>Sua lista está vazia por enquanto.</p>
+        <small>Use o botão "Ver depois" no card principal para guardar filmes.</small>
+      </div>
+    `;
+    return;
+  }
+
+  els.watchLaterList.innerHTML = movies.map((movie) => `
+    <article class="watch-later-item">
+      <button class="watch-later-open" type="button" data-open-details="${movieDomKey(movie)}">
+        <strong>${movie.title}</strong>
+        <span>${movie.year} · ${displayText(movie.country)}</span>
+      </button>
+      <button class="watch-later-remove" type="button" data-remove-watch-later="${movieDomKey(movie)}" aria-label="Remover ${movie.title} da lista">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v14l-6-3-6 3z"/><path d="M9 10h6"/></svg>
+      </button>
+    </article>
+  `).join("");
 }
 
 async function importProfileFiles(files) {
@@ -4554,16 +4606,39 @@ bindInstantPress(els.clearSessionSeen, () => {
   scheduleRender(true);
 });
 
-bindInstantPress(els.clearWatchLater, () => {
+function clearWatchLaterQueue() {
   if (!watchLaterSet.size) {
     els.syncStatus.textContent = "Sua lista 'ver depois' já está vazia.";
-    return;
+    return false;
   }
   watchLaterSet = new Set();
   persistWatchLaterSet();
   renderSessionStats();
   els.syncStatus.textContent = "Lista 'ver depois' limpa.";
   render();
+  return true;
+}
+
+bindInstantPress(els.clearWatchLater, () => {
+  clearWatchLaterQueue();
+});
+
+bindInstantPress(els.clearWatchLaterSidebar, () => {
+  clearWatchLaterQueue();
+});
+
+els.watchLaterList?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-watch-later]");
+  if (removeButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    pulsePressState(removeButton);
+    const movie = movieFromDomKey(removeButton.dataset.removeWatchLater);
+    if (!movie) return;
+    toggleWatchLater(movie);
+    els.syncStatus.textContent = `"${movie.title}" removido de Ver depois.`;
+    render();
+  }
 });
 
 els.presetGrid?.addEventListener("click", (event) => {
