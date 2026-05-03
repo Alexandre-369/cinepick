@@ -1471,6 +1471,7 @@ let currentHeroKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
 const attemptedHeroPosterKeys = new Set();
+const attemptedPosterRecoveryKeys = new Set();
 let priorityPosterHydrationStarted = "";
 let priorityPosterHydrationInFlight = false;
 let nextPriorityHydrationAt = 0;
@@ -1825,7 +1826,8 @@ function posterImgMarkup(movie, { loading = "lazy", decoding = "async", fetchpri
   const src = choosePosterSrc(candidates, variant);
   const srcset = posterSrcSet(candidates);
   const sizes = variant === "dialog" ? "(max-width: 920px) 62vw, 240px" : "(max-width: 920px) 74vw, 200px";
-  return `<img class="poster-img" src="${src}" ${srcset ? `srcset="${srcset}" sizes="${sizes}"` : ""} data-poster-candidates="${candidates.join("||")}" alt="Capa de ${movie.title}" loading="${loading}" decoding="${decoding}" fetchpriority="${fetchpriority}">`;
+  const movieKeyEncoded = encodeURIComponent(movieKey(movie.title, movie.year));
+  return `<img class="poster-img" src="${src}" ${srcset ? `srcset="${srcset}" sizes="${sizes}"` : ""} data-movie-key="${movieKeyEncoded}" data-poster-candidates="${candidates.join("||")}" alt="Capa de ${movie.title}" loading="${loading}" decoding="${decoding}" fetchpriority="${fetchpriority}">`;
 }
 
 function preloadPosterAsset(movie) {
@@ -3227,26 +3229,37 @@ async function omdbFetch(movie) {
   return payload;
 }
 
+function hasValidPosterUrl(value) {
+  const text = String(value || "").trim();
+  return Boolean(text && text !== "N/A");
+}
+
 function rottenTomatoesFromOmdb(payload) {
   const rating = (payload.Ratings || []).find((item) => item.Source === "Rotten Tomatoes")?.Value || "";
   return Number(rating.replace("%", "")) || 0;
 }
 
-async function enrichRatingsFromOmdb(movie) {
+async function enrichRatingsFromOmdb(movie, { forcePoster = false } = {}) {
   const payload = await omdbFetch(movie);
   if (!payload) return false;
 
   const imdb = Math.round((Number(payload.imdbRating) || 0) * 10);
   const rt = rottenTomatoesFromOmdb(payload);
+  const poster = hasValidPosterUrl(payload.Poster) ? String(payload.Poster).trim() : "";
+  let posterApplied = false;
   if (imdb) movie.imdb = imdb;
   if (rt) {
     movie.rt = rt;
     movie.rtSource = "omdb";
   }
+  if (poster && (forcePoster || !movie.posterUrl)) {
+    movie.posterUrl = poster;
+    posterApplied = true;
+  }
   movie.imdbId = payload.imdbID || movie.imdbId || "";
   movie.source = movie.source && movie.source.includes("tmdb") ? "tmdb-omdb" : "curated-omdb";
   cacheMovieEnhancement(movie);
-  return Boolean(imdb || rt);
+  return Boolean(imdb || rt || posterApplied);
 }
 
 async function directorIdForQuery(query) {
@@ -3569,7 +3582,14 @@ async function findPosterForMovie(movie) {
     if (match) break;
   }
 
-  if (!match) return false;
+  if (!match) {
+    const recovered = await enrichRatingsFromOmdb(movie, { forcePoster: true }).catch(() => false);
+    if (recovered && movie.posterUrl) {
+      cacheMovieEnhancement(movie);
+      return true;
+    }
+    return false;
+  }
   const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids,watch/providers", language: "pt-BR" }));
   movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
   if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
@@ -3586,6 +3606,21 @@ async function findPosterForMovie(movie) {
   await enrichRatingsFromOmdb(movie).catch(() => false);
   cacheMovieEnhancement(movie);
   return true;
+}
+
+function recoverPosterAfterImageError(movieKeyValue) {
+  if (!movieKeyValue || attemptedPosterRecoveryKeys.has(movieKeyValue)) return;
+  attemptedPosterRecoveryKeys.add(movieKeyValue);
+  const movie = activeCatalog().find((item) => movieKey(item.title, item.year) === movieKeyValue);
+  if (!movie) return;
+
+  findPosterForMovie(movie)
+    .then((found) => {
+      if (!found) return;
+      updateProviderFilter();
+      requestBackgroundRender(true);
+    })
+    .catch(() => false);
 }
 
 function ensureHeroPoster(movie) {
@@ -4587,6 +4622,8 @@ document.addEventListener("error", (event) => {
     return;
   }
 
+  const movieKeyValue = decodeURIComponent(image.dataset.movieKey || "");
+  recoverPosterAfterImageError(movieKeyValue);
   image.closest(".has-official-poster")?.classList.remove("has-official-poster");
   image.remove();
 }, true);
