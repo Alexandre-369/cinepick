@@ -440,6 +440,44 @@ button:focus-visible {
   padding: 16px 20px 20px;
 }
 
+.filters-sidebar-only .drawer-shell {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.filters-sidebar-only .drawer-header,
+.filters-sidebar-only .session-panel,
+.filters-sidebar-only .profile-panel,
+.filters-sidebar-only .data-panel {
+  display: none;
+}
+
+.filters-sidebar-only .drawer-body {
+  gap: 0;
+  padding: 8px;
+}
+
+.filters-sidebar-only .drawer-body .settings-panel {
+  margin: 0;
+}
+
+.filters-sidebar-only .settings-panel {
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(14, 14, 14, .94);
+}
+
+.filters-sidebar-only .settings-panel summary {
+  min-height: 64px;
+  padding-inline: 20px;
+}
+
+.filters-sidebar-only .settings-panel summary span {
+  font-size: .98rem;
+}
+
+.filters-sidebar-only .settings-panel summary small {
+  font-size: .76rem;
+}
+
 .drawer-body .settings-panel {
   background: rgba(20, 20, 19, .9);
 }
