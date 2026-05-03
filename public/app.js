@@ -1,8 +1,8 @@
 const moods = [
   { id: "leve", label: "Let's put a smile on that face!", hint: "comédia, charme e zero peso na consciência", icon: "spark" },
   { id: "comfort", label: "Rebobine antes de devolver", hint: "aconchego, memória afetiva, cheiro de locadora", icon: "blanket" },
-  { id: "complexo", label: "Sinapse em chamas", hint: "mind game, camadas e conversa até de madrugada", icon: "maze" },
   { id: "intenso", label: "Elementar, meu caro Watson", hint: "whodunit, pistas, crimes e investigação", icon: "magnifier" },
+  { id: "fantasia", label: "Portais e paradoxos", hint: "fantasia, ficção científica e mundos improváveis", icon: "orbital" },
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
   { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e explosão coreografada", icon: "bolt" },
@@ -251,6 +251,7 @@ const displayNames = {
   leve: "leve",
   complexo: "complexo",
   intenso: "intenso",
+  fantasia: "fantasia",
   sensivel: "sensível",
   terror: "terror",
   surpresa: "surpresa"
@@ -258,6 +259,8 @@ const displayNames = {
 
 const moodAliasMap = {
   comfort: ["comfort", "nostalgia"],
+  intenso: ["intenso"],
+  fantasia: ["fantasia", "complexo"],
   terror: ["terror", "intenso"]
 };
 
@@ -275,6 +278,13 @@ const sessionPresets = [
     mode: "mood",
     mood: "intenso",
     filters: { genre: "Misterio", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
+  },
+  {
+    id: "fantasia-sf",
+    label: "Portais & sci-fi",
+    mode: "mood",
+    mood: "fantasia",
+    filters: { genre: "Ficcao cientifica", duration: "qualquer", decade: "qualquer", country: "qualquer", provider: "qualquer" }
   },
   {
     id: "terror",
@@ -428,20 +438,24 @@ const moodProfiles = {
     oldBonus: true,
     longMoviePenalty: 155
   },
-  complexo: {
-    preferredGenres: ["Drama", "Ficcao cientifica", "Misterio", "Documentario"],
-    avoidGenres: ["Familia", "Animacao", "Comedia", "Acao", "Aventura"],
-    hardAvoidGenres: ["Familia", "Animacao"],
-    conflictingVibes: ["comfort", "leve"],
-    keywords: ["tempo", "memoria", "sonho", "identidade", "misterio", "obsessao", "politica", "conspiracao", "paranoia", "luto", "metafisica", "filosofia"],
-    requiredComplexity: true
-  },
   intenso: {
     preferredGenres: ["Suspense", "Crime", "Misterio", "Drama"],
     avoidGenres: ["Acao", "Aventura", "Familia", "Animacao", "Comedia", "Romance", "Musica"],
     hardAvoidGenres: ["Acao", "Aventura", "Familia", "Animacao", "Musica"],
     conflictingVibes: ["comfort"],
     keywords: ["whodunit", "detetive", "detective", "investigacao", "investigação", "pistas", "suspeito", "suspeitos", "serial", "noir", "crime", "mistério", "misterio"],
+    requiredPositive: true
+  },
+  fantasia: {
+    preferredGenres: ["Ficcao cientifica", "Fantasia", "Misterio", "Suspense", "Animacao"],
+    avoidGenres: ["Documentario", "Guerra", "Musica"],
+    hardAvoidGenres: ["Documentario"],
+    conflictingVibes: ["comfort"],
+    keywords: [
+      "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia", "futuro",
+      "multiverso", "realidade", "tempo", "espaco", "espaço", "magia", "mito",
+      "universo", "cyberpunk", "alien", "portal", "paradoxo"
+    ],
     requiredPositive: true
   },
   sensivel: {
@@ -486,17 +500,17 @@ const moodReasonPools = {
     ({ tagPair, decade }) => `Tem jeito de rebobinar e se aninhar: ${tagPair}, recorte dos ${decade}, pouca aspereza.`,
     ({ genre, minutes }) => `É uma aposta de ${genre.toLowerCase()} em ${minutes}, boa quando a noite pede colo e não correria.`
   ],
-  complexo: [
-    ({ director, tagPair }) => `Para pensar, a força está em ${director} cruzando ${tagPair}.`,
-    ({ genre, decade, scoreText }) => `A base é ${genre.toLowerCase()} dos ${decade}, ${scoreText}, com camadas suficientes para render conversa depois.`,
-    ({ country, tag }) => `A escolha abre uma porta menos óbvia: ${country}, ${tag}, e mais pergunta do que resposta pronta.`,
-    ({ director, genre }) => `${director} faz ${genre.toLowerCase()} com densidade, bom para quando a cabeça quer mastigar o filme.`
-  ],
   intenso: [
     ({ genre, tag }) => `Hora de brincar de detetive: ${genre.toLowerCase()} com ${tag} como pista principal.`,
-    ({ director, minutes }) => `${director} conduz ${minutes} de suspeitas, viradas e cara de "quem fez isso?".`,
+    ({ director, minutes }) => `${director} conduz ${minutes} de pistas, camadas e aquele gosto de teoria no banho.`,
     ({ country, decade, tagPair }) => `O caso vem de ${country}, recorte dos ${decade}, cruzando ${tagPair}.`,
     ({ scoreText, genre }) => `É uma escolha ${scoreText} de ${genre.toLowerCase()}, para caçar detalhes quadro a quadro.`
+  ],
+  fantasia: [
+    ({ genre, tag }) => `Hoje a viagem é especulativa: ${genre.toLowerCase()} com ${tag} na linha de frente.`,
+    ({ director, minutes }) => `${director} entrega ${minutes} de mundo alternativo, hipótese maluca e boas possibilidades.`,
+    ({ country, decade, tagPair }) => `A escolha mistura ficção/fantasia de ${country}, recorte dos ${decade}, e ${tagPair}.`,
+    ({ scoreText, genre }) => `É uma pedida ${scoreText} de ${genre.toLowerCase()}, ideal para sair do real sem virar bagunça.`
   ],
   sensivel: [
     ({ tagPair, director }) => `Para um humor mais sensível, ${director} trabalha ${tagPair} sem pressa.`,
@@ -1617,6 +1631,8 @@ const els = {
   tmdbStatus: document.querySelector("#tmdb-status"),
   dataDiagnostics: document.querySelector("#data-diagnostics"),
   sessionStats: document.querySelector("#session-stats"),
+  savedCount: document.querySelector("#saved-count"),
+  savedList: document.querySelector("#saved-list"),
   presetGrid: document.querySelector("#preset-grid"),
   compactSidebar: document.querySelector("#compact-sidebar"),
   refreshShuffle: document.querySelector("#refresh-shuffle"),
@@ -1633,6 +1649,14 @@ const els = {
   dialogClose: document.querySelector("#dialog-close"),
   dialogContent: document.querySelector("#movie-dialog-content")
 };
+
+const minimalCleanMode = document.body.classList.contains("minimal-clean");
+if (minimalCleanMode && els.drawer) {
+  els.drawer.classList.add("is-open");
+  els.drawer.setAttribute("aria-hidden", "false");
+  if (els.drawerBackdrop) els.drawerBackdrop.hidden = true;
+  document.body.classList.remove("drawer-open");
+}
 
 els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
 els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
@@ -2016,7 +2040,7 @@ function moodScore(movie) {
 
   if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
   if (profile.requiredComplexity && !complexityEvidence(movie)) score -= 92;
-  if (activeMood === "complexo" && escapistMismatch(movie)) score -= 68;
+  if (activeMood === "intenso" && escapistMismatch(movie)) score -= 68;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "comfort" && Number(movie.year) && Number(movie.year) >= 2020 && !(movie.vibes || []).includes("comfort")) score -= 10;
@@ -2508,15 +2532,6 @@ function moodMismatch(movie) {
   const hasVibe = movieHasMoodVibe(movie, activeMood);
   const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
 
-  if (activeMood === "complexo") {
-    const hasLightGenre = hasGenre(movie, ["Acao", "Aventura", "Comedia", "Familia", "Animacao"]);
-    const hasHeavyThinkingGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica", "Misterio", "Suspense"]);
-    return hardAvoidMatches > 0
-      || !complexityEvidence(movie)
-      || escapistMismatch(movie)
-      || (hasLightGenre && !hasHeavyThinkingGenre);
-  }
-
   if (activeMood === "leve") {
     return hasConflictingVibe || hardAvoidMatches > 0 || lightMoodMismatch(movie) || (!preferredMatches && !hasVibe);
   }
@@ -2533,6 +2548,17 @@ function moodMismatch(movie) {
     ]);
     const tooActionHeavy = hasGenre(movie, ["Acao", "Aventura"]) && !detectiveGenres;
     return hasConflictingVibe || hardAvoidMatches > 0 || tooActionHeavy || (!preferredMatches && !hasVibe && !detectiveTerms);
+  }
+
+  if (activeMood === "fantasia") {
+    const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia"]);
+    const speculativeTerms = hasAnyText(movieSearchText(movie), [
+      "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia",
+      "futuro", "multiverso", "realidade", "tempo", "espaco", "espaço", "ia", "alien",
+      "magia", "mito", "portal", "paradoxo", "cyberpunk", "universo"
+    ]);
+    const tooGrounded = !speculativeGenres && !hasVibe && !speculativeTerms;
+    return hasConflictingVibe || hardAvoidMatches > 0 || tooGrounded;
   }
 
   if (activeMood === "terror") {
@@ -3945,6 +3971,53 @@ function renderSessionStats() {
   `;
 }
 
+function movieFromStoredKey(storedKey) {
+  if (!storedKey) return null;
+  return activeCatalog().find((movie) => {
+    const keys = movieCacheKeys(movie);
+    const titleKeys = movieTitleKeys(movie);
+    return keys.includes(storedKey) || titleKeys.some((titleKey) => storedKey.startsWith(`${titleKey}|`));
+  }) || null;
+}
+
+function watchLaterMovies(limit = 40) {
+  const list = [];
+  const seen = new Set();
+  for (const storedKey of watchLaterSet) {
+    const movie = movieFromStoredKey(storedKey);
+    if (!movie) continue;
+    const key = movieKey(movie.title, movie.year);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    list.push(movie);
+    if (list.length >= limit) break;
+  }
+  return list;
+}
+
+function renderSavedWatchLater() {
+  if (!els.savedList || !els.savedCount) return;
+  const saved = watchLaterMovies();
+  els.savedCount.textContent = String(saved.length);
+
+  if (!saved.length) {
+    els.savedList.innerHTML = `<p class="saved-empty">Ainda não há filmes salvos.</p>`;
+    return;
+  }
+
+  els.savedList.innerHTML = saved.map((movie) => `
+    <article class="saved-item">
+      <button class="saved-open" type="button" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
+        <span>${movie.title}</span>
+        <small>${movie.year} • ${displayText(movie.genre)}</small>
+      </button>
+      <button class="saved-remove" type="button" data-saved-remove="${movieDomKey(movie)}" aria-label="Remover ${movie.title} dos salvos">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v14l-6-3-6 3z"/><path d="M9 10h6"/></svg>
+      </button>
+    </article>
+  `).join("");
+}
+
 async function importProfileFiles(files) {
   const csvFiles = [...files].filter((file) => file.name.toLowerCase().endsWith(".csv"));
   if (!csvFiles.length) return;
@@ -3970,6 +4043,7 @@ function moodIconSvg(icon) {
     rewind: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7l-6 5 6 5V7zM19 7l-6 5 6 5V7z"/></svg>',
     moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z"/></svg>',
     maze: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 4v4h4V6h4v6h-4v4h6"/><path d="M8 20v-6h4v2h4v4"/></svg>',
+    orbital: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><ellipse cx="12" cy="12" rx="8.2" ry="3.8"/><ellipse cx="12" cy="12" rx="3.8" ry="8.2" transform="rotate(25 12 12)"/></svg>',
     magnifier: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/><path d="M9.2 11.2l1.2 1.2 2.4-2.4"/></svg>',
     heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
     bolt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
@@ -4386,9 +4460,11 @@ async function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
   renderSessionStats();
+  renderSavedWatchLater();
   renderPresets();
   if (activeMode === "mood") renderMoods();
   renderDataDiagnostics();
+  if (minimalCleanMode) return;
   const list = recommendationListForRender(advance);
   if (activeMode === "roulette") {
     const selected = list.find((movie) => movie.title === roulettePick) || list[0];
@@ -4526,6 +4602,23 @@ els.presetGrid?.addEventListener("click", (event) => {
 
 els.compactSidebar?.addEventListener("change", () => {
   applyCompactSidebar(Boolean(els.compactSidebar.checked));
+});
+
+els.savedList?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-saved-remove]");
+  if (!removeButton) return;
+  const movie = movieFromDomKey(removeButton.dataset.savedRemove);
+  if (!movie) return;
+  toggleWatchLater(movie);
+  els.syncStatus.textContent = `"${movie.title}" removido de Ver depois.`;
+  renderSavedWatchLater();
+  render();
+});
+
+els.savedList?.addEventListener("pointerdown", (event) => {
+  const button = event.target.closest(".saved-open, .saved-remove");
+  if (!button) return;
+  pulsePressState(button);
 });
 
 document.querySelectorAll(".settings-panel").forEach((panel) => {

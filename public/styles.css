@@ -817,15 +817,223 @@ button:focus-visible {
 }
 
 .field-label {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  min-height: 26px;
+  padding-left: 34px;
   gap: 6px;
 }
 
 .field-label svg {
+  position: absolute;
+  left: 7px;
+  top: 50%;
   width: 14px;
   height: 14px;
-  opacity: .82;
+  opacity: .92;
+  transform: translateY(-50%);
+  stroke-width: 1.9;
+}
+
+.field-label::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, .16), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .01));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 8px 16px rgba(0, 0, 0, .25);
+  transform: translateY(-50%);
+  content: "";
+}
+
+.saved-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(18, 18, 17, .82);
+  margin-top: 6px;
+  padding: 12px 14px;
+}
+
+.saved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.saved-head h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: .95rem;
+  font-weight: 900;
+}
+
+.saved-head span {
+  display: inline-flex;
+  min-width: 28px;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(86, 182, 168, .34);
+  border-radius: 999px;
+  background: rgba(86, 182, 168, .1);
+  color: #d5eee9;
+  font-size: .74rem;
+  font-weight: 900;
+}
+
+.saved-list {
+  display: grid;
+  gap: 8px;
+}
+
+.saved-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 8px;
+}
+
+.saved-open,
+.saved-remove {
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  background: #11110f;
+  color: var(--ink);
+}
+
+.saved-open {
+  display: grid;
+  gap: 4px;
+  min-height: 54px;
+  align-content: center;
+  justify-items: start;
+  padding: 8px 10px;
+  text-align: left;
+  transition: transform .16s ease, border-color .18s ease, background .18s ease;
+}
+
+.saved-open span {
+  overflow: hidden;
+  width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.saved-open small {
+  color: #9e978b;
+  font-size: .7rem;
+  font-weight: 700;
+}
+
+.saved-remove {
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  color: #d2cbc0;
+  transition: transform .16s ease, border-color .18s ease, color .18s ease, background .18s ease;
+}
+
+.saved-remove svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.9;
+}
+
+.saved-open:hover,
+.saved-open:focus-visible,
+.saved-remove:hover,
+.saved-remove:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(86, 182, 168, .48);
+  background: rgba(19, 28, 27, .78);
+}
+
+.saved-empty {
+  margin: 0;
+  color: #938b7d;
+  font-size: .8rem;
+}
+
+body.minimal-clean .app-shell {
+  display: none;
+}
+
+body.minimal-clean .drawer-backdrop {
+  display: none !important;
+}
+
+body.minimal-clean .side-drawer {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  z-index: 1;
+  width: min(760px, calc(100vw - 16px));
+  margin: 10px auto 16px;
+  transform: none;
+  pointer-events: auto;
+}
+
+body.minimal-clean .drawer-shell {
+  grid-template-rows: minmax(0, 1fr);
+  height: auto;
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(16, 16, 15, .96);
+}
+
+body.minimal-clean .drawer-header,
+body.minimal-clean .session-panel,
+body.minimal-clean .profile-panel,
+body.minimal-clean .data-panel {
+  display: none;
+}
+
+body.minimal-clean .drawer-body {
+  padding: 0;
+}
+
+body.minimal-clean .drawer-body .settings-panel,
+body.minimal-clean .saved-panel {
+  margin: 0;
+}
+
+body.minimal-clean .settings-panel {
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(15, 15, 14, .92);
+}
+
+body.minimal-clean .settings-panel summary {
+  min-height: 60px;
+  padding-inline: 18px;
+}
+
+body.minimal-clean .settings-panel summary span {
+  font-size: .84rem;
+}
+
+body.minimal-clean .settings-panel summary small {
+  font-size: .68rem;
+  letter-spacing: .02em;
+}
+
+body.minimal-clean .saved-panel {
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(15, 15, 14, .92);
 }
 
 .wide-field {
