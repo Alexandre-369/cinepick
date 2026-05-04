@@ -3842,6 +3842,18 @@ function spawnButtonRipple(button, sourceEvent) {
   window.setTimeout(() => ripple.remove(), 460);
 }
 
+function applyWatchLaterButtonFeedback(button, saved) {
+  if (!button) return;
+  button.classList.toggle("is-saved", saved);
+  button.classList.add("is-primed");
+  button.setAttribute("aria-pressed", String(saved));
+  const label = button.querySelector("span");
+  if (label) label.textContent = saved ? "Guardado" : "Ver depois";
+  window.setTimeout(() => {
+    button.classList.remove("is-primed");
+  }, 420);
+}
+
 function bindInstantPress(button, handler) {
   if (!button) return;
   let pointerHandled = false;
@@ -4827,6 +4839,7 @@ els.hero.addEventListener("pointerdown", (event) => {
       const movie = movieFromDomKey(watchLaterButton.dataset.watchLater);
       if (!movie) return;
       const isNowSaved = toggleWatchLater(movie);
+      applyWatchLaterButtonFeedback(watchLaterButton, isNowSaved);
       els.syncStatus.textContent = isNowSaved
         ? `"${movie.title}" foi para Ver depois.`
         : `"${movie.title}" removido de Ver depois.`;
@@ -4870,6 +4883,7 @@ els.hero.addEventListener("click", (event) => {
     const movie = movieFromDomKey(watchLaterButton.dataset.watchLater);
     if (!movie) return;
     const isNowSaved = toggleWatchLater(movie);
+    applyWatchLaterButtonFeedback(watchLaterButton, isNowSaved);
     els.syncStatus.textContent = isNowSaved
       ? `"${movie.title}" foi para Ver depois.`
       : `"${movie.title}" removido de Ver depois.`;
