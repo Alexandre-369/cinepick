@@ -6,7 +6,7 @@ const moods = [
   { id: "sensivel", label: "Afeto sem filtro", hint: "bonito, humano e um cisco no olho", icon: "heart" },
   { id: "terror", label: "Apague a luz", hint: "terror, paranoia e decisões péssimas em corredores", icon: "moon" },
   { id: "acao", label: "Tiro, porrada e bomba", hint: "ritmo, fuga e explosão coreografada", icon: "bolt" },
-  { id: "surpresa", label: "Desvio elegante", hint: "fora da curva, estranho do bem, risco calculado", icon: "dice" }
+  { id: "surpresa", label: "Indicado em festival que você nunca ouviu falar", hint: "fora da curva, estranho do bem, risco calculado", icon: "dice" }
 ];
 
 const genreIds = {
