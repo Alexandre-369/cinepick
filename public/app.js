@@ -1431,7 +1431,43 @@ const extraCuratedMovies = [
   ["REC", 2007, "Terror", 78, "Espanha", "Jaume Balaguero", 74, 90, ["terror", "intenso"], ["predio", "caos", "infectados"], false],
   ["The Orphanage", 2007, "Terror", 105, "Espanha", "J. A. Bayona", 74, 87, ["terror", "sensivel"], ["casa", "infancia", "fantasma"], false],
   ["The Witch", 2015, "Terror", 92, "Estados Unidos", "Robert Eggers", 69, 91, ["terror", "complexo"], ["folclore", "paranoia", "familia"], true],
-  ["It Follows", 2014, "Terror", 100, "Estados Unidos", "David Robert Mitchell", 68, 95, ["terror", "surpresa"], ["suspense", "paranoia", "juventude"], true]
+  ["It Follows", 2014, "Terror", 100, "Estados Unidos", "David Robert Mitchell", 68, 95, ["terror", "surpresa"], ["suspense", "paranoia", "juventude"], true],
+  ["Back to the Future", 1985, "Ficcao cientifica", 116, "Estados Unidos", "Robert Zemeckis", 85, 93, ["comfort", "leve", "nostalgia"], ["tempo", "aventura", "classico"], true],
+  ["E.T. the Extra-Terrestrial", 1982, "Ficcao cientifica", 115, "Estados Unidos", "Steven Spielberg", 79, 99, ["comfort", "sensivel", "nostalgia"], ["amizade", "infancia", "classico"], true],
+  ["The Goonies", 1985, "Aventura", 114, "Estados Unidos", "Richard Donner", 78, 77, ["comfort", "leve", "nostalgia"], ["infancia", "aventura", "anos 80"], false],
+  ["Stand by Me", 1986, "Drama", 89, "Estados Unidos", "Rob Reiner", 82, 92, ["comfort", "sensivel", "nostalgia"], ["amizade", "infancia", "memoria"], true],
+  ["The Princess Bride", 1987, "Fantasia", 98, "Estados Unidos", "Rob Reiner", 80, 96, ["comfort", "leve", "nostalgia"], ["fantasia", "aventura", "romance"], true],
+  ["Ferris Bueller's Day Off", 1986, "Comedia", 103, "Estados Unidos", "John Hughes", 78, 83, ["comfort", "leve", "nostalgia"], ["juventude", "escola", "anos 80"], false],
+  ["Ghostbusters", 1984, "Comedia", 105, "Estados Unidos", "Ivan Reitman", 78, 95, ["comfort", "leve", "nostalgia"], ["fantasma", "anos 80", "classico"], true],
+  ["Groundhog Day", 1993, "Comedia", 101, "Estados Unidos", "Harold Ramis", 80, 94, ["comfort", "leve", "nostalgia"], ["tempo", "comedia", "classico"], true],
+  ["Big", 1988, "Comedia", 104, "Estados Unidos", "Penny Marshall", 73, 98, ["comfort", "leve", "nostalgia"], ["infancia", "fantasia", "anos 80"], false],
+  ["When Harry Met Sally", 1989, "Romance", 96, "Estados Unidos", "Rob Reiner", 76, 90, ["comfort", "leve", "nostalgia"], ["romance", "Nova York", "classico"], true],
+  ["Sleepless in Seattle", 1993, "Romance", 105, "Estados Unidos", "Nora Ephron", 68, 75, ["comfort", "nostalgia", "sensivel"], ["romance", "radio", "anos 90"], false],
+  ["You've Got Mail", 1998, "Romance", 119, "Estados Unidos", "Nora Ephron", 67, 69, ["comfort", "leve", "nostalgia"], ["romance", "livraria", "internet antiga"], false],
+  ["Notting Hill", 1999, "Romance", 124, "Reino Unido", "Roger Michell", 72, 83, ["comfort", "leve", "nostalgia"], ["romance", "Londres", "classico"], true],
+  ["Before Sunrise", 1995, "Romance", 101, "Estados Unidos", "Richard Linklater", 81, 100, ["comfort", "sensivel", "nostalgia"], ["conversa", "juventude", "Viena"], true],
+  ["Before Sunset", 2004, "Romance", 80, "Estados Unidos", "Richard Linklater", 81, 95, ["comfort", "sensivel", "nostalgia"], ["conversa", "Paris", "tempo"], true],
+  ["Amelie", 2001, "Romance", 122, "Franca", "Jean-Pierre Jeunet", 83, 89, ["comfort", "leve", "nostalgia"], ["Paris", "fantasia", "encanto"], true],
+  ["Cinema Paradiso", 1988, "Drama", 124, "Italia", "Giuseppe Tornatore", 85, 90, ["comfort", "sensivel", "nostalgia"], ["cinema", "infancia", "Sicilia"], true],
+  ["Roman Holiday", 1953, "Romance", 118, "Estados Unidos", "William Wyler", 80, 95, ["comfort", "leve", "nostalgia"], ["Roma", "classico", "romance"], true],
+  ["Singin' in the Rain", 1952, "Musica", 103, "Estados Unidos", "Stanley Donen", 83, 100, ["comfort", "leve", "nostalgia"], ["musical", "Hollywood", "classico"], true],
+  ["The Umbrellas of Cherbourg", 1964, "Romance", 91, "Franca", "Jacques Demy", 79, 97, ["comfort", "sensivel", "nostalgia"], ["musical", "amor", "classico"], false],
+  ["My Neighbor Totoro", 1988, "Animacao", 86, "Japao", "Hayao Miyazaki", 82, 94, ["comfort", "leve", "nostalgia"], ["Ghibli", "infancia", "fantasia"], true],
+  ["Castle in the Sky", 1986, "Animacao", 125, "Japao", "Hayao Miyazaki", 80, 96, ["comfort", "leve", "nostalgia"], ["Ghibli", "aventura", "fantasia"], true],
+  ["Porco Rosso", 1992, "Animacao", 94, "Japao", "Hayao Miyazaki", 78, 96, ["comfort", "leve", "nostalgia"], ["Ghibli", "aviacao", "aventura"], false],
+  ["Only Yesterday", 1991, "Animacao", 118, "Japao", "Isao Takahata", 77, 100, ["comfort", "sensivel", "nostalgia"], ["Ghibli", "memoria", "infancia"], false],
+  ["The Iron Giant", 1999, "Animacao", 86, "Estados Unidos", "Brad Bird", 80, 96, ["comfort", "sensivel", "nostalgia"], ["amizade", "anos 50", "animacao"], true],
+  ["The Breakfast Club", 1985, "Drama", 97, "Estados Unidos", "John Hughes", 78, 87, ["comfort", "leve", "nostalgia"], ["escola", "adolescencia", "anos 80"], false],
+  ["Lisbela e o Prisioneiro", 2003, "Romance", 106, "Brasil", "Guel Arraes", 78, 82, ["comfort", "leve", "nostalgia"], ["Brasil", "romance", "comedia"], false],
+  ["Bye Bye Brasil", 1979, "Drama", 110, "Brasil", "Carlos Diegues", 74, 88, ["nostalgia", "sensivel", "surpresa"], ["estrada", "Brasil", "anos 70"], false],
+  ["Dona Flor e Seus Dois Maridos", 1976, "Comedia", 111, "Brasil", "Bruno Barreto", 72, 84, ["comfort", "leve", "nostalgia"], ["Brasil", "classico", "romance"], false],
+  ["Rear Window", 1954, "Misterio", 112, "Estados Unidos", "Alfred Hitchcock", 85, 98, ["intenso", "nostalgia", "complexo"], ["detetive", "janela", "classico"], true],
+  ["Charade", 1963, "Misterio", 113, "Estados Unidos", "Stanley Donen", 79, 94, ["intenso", "leve", "nostalgia"], ["golpe", "romance", "Paris"], false],
+  ["The Third Man", 1949, "Misterio", 104, "Reino Unido", "Carol Reed", 81, 99, ["intenso", "nostalgia", "complexo"], ["noir", "classico", "guerra fria"], true],
+  ["Alien", 1979, "Terror", 117, "Reino Unido", "Ridley Scott", 84, 93, ["terror", "intenso", "nostalgia"], ["espaco", "claustrofobia", "classico"], true],
+  ["The Thing", 1982, "Terror", 109, "Estados Unidos", "John Carpenter", 82, 84, ["terror", "intenso", "nostalgia"], ["paranoia", "neve", "classico"], true],
+  ["Blade Runner", 1982, "Ficcao cientifica", 117, "Estados Unidos", "Ridley Scott", 81, 89, ["complexo", "nostalgia", "surpresa"], ["cyberpunk", "neo-noir", "classico"], true],
+  ["Brazil", 1985, "Ficcao cientifica", 132, "Reino Unido", "Terry Gilliam", 79, 98, ["complexo", "nostalgia", "surpresa"], ["distopia", "burocracia", "cult"], false]
 ];
 
 function createCuratedMovie([title, year, genre, duration, country, director, imdb, rt, vibes, tags, favoriteSignal]) {
@@ -2014,6 +2050,29 @@ function comfortMoodMismatch(movie) {
   return grimDrama || hasHarshTerms || isTooLong || conflictVibe;
 }
 
+function comfortNostalgiaWeight(movie) {
+  const year = Number(movie.year || 0);
+  const text = movieSearchText(movie);
+  const hasNostalgiaSignal = (movie.vibes || []).includes("nostalgia") || hasAnyText(text, [
+    "nostalgia", "classico", "clássico", "retro", "locadora", "infancia", "infância",
+    "anos 70", "anos 80", "anos 90", "anos 2000", "memoria", "memória", "rebobina"
+  ]);
+  let score = 0;
+
+  if (year) {
+    if (year <= 2004) score += 26;
+    else if (year <= 2014) score += 8;
+    else if (year <= 2019) score -= 12;
+    else score -= 22;
+  }
+
+  if (hasNostalgiaSignal) score += 14;
+  if (year >= 2015 && !hasNostalgiaSignal) score -= 10;
+  if ((movie.vibes || []).includes("comfort") && (movie.vibes || []).includes("nostalgia")) score += 10;
+
+  return score;
+}
+
 function moodScore(movie) {
   if (activeMode !== "mood") return 0;
 
@@ -2038,9 +2097,9 @@ function moodScore(movie) {
   if (activeMood === "complexo" && !speculativeEvidence(movie)) score -= 68;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
-  if (activeMood === "comfort" && Number(movie.year) && Number(movie.year) >= 2020 && !(movie.vibes || []).includes("comfort")) score -= 10;
+  if (activeMood === "comfort") score += comfortNostalgiaWeight(movie);
   if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
-  if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 16;
+  if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 20;
   if (activeMood === "surpresa") {
     if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
     if (ratingAverage(movie) >= 78) score += 8;
