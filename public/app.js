@@ -465,7 +465,7 @@ const moodProfiles = {
     preferredGenres: ["Acao", "Aventura", "Ficcao cientifica", "Fantasia", "Faroeste", "Guerra", "Crime", "Suspense"],
     avoidGenres: ["Romance", "Musica", "Documentario", "Drama"],
     hardAvoidGenres: ["Documentario"],
-    keywords: ["perseguicao", "perseguição", "aventura", "guerra", "fuga", "assalto", "energia", "missao", "missão", "explosao", "explosão", "corrida", "coreografia", "adrenalina"],
+    keywords: ["perseguicao", "perseguição", "aventura", "guerra", "fuga", "assalto", "energia", "missao", "missão", "explosao", "explosão", "corrida", "coreografia", "adrenalina", "super-heroi", "super heroi", "marvel", "vingadores", "avengers", "katana", "vinganca", "vingança"],
     longMoviePenalty: 170
   },
   surpresa: {
@@ -2020,6 +2020,82 @@ function speculativeEvidence(movie) {
   return speculativeGenres || speculativeTerms;
 }
 
+function superheroActionSignal(movie) {
+  const text = movieSearchText(movie);
+  const franchiseGenres = hasGenre(movie, ["Acao", "Aventura", "Ficcao cientifica", "Fantasia"]);
+  const superheroTerms = hasAnyText(text, [
+    "marvel", "avengers", "vingadores", "iron man", "homem de ferro", "captain america", "capitao america",
+    "thor", "hulk", "black widow", "viuva negra", "doctor strange", "doutor estranho",
+    "guardians", "guardioes", "guardiões", "black panther", "pantera negra",
+    "ant-man", "homem-formiga", "spider-man", "homem-aranha", "deadpool", "x-men",
+    "justice league", "liga da justica", "batman", "superman", "aquaman", "flash", "shazam"
+  ]);
+  return franchiseGenres && superheroTerms;
+}
+
+function conceptualSciFiSignal(movie) {
+  const text = movieSearchText(movie);
+  return hasGenre(movie, ["Ficcao cientifica"]) && hasAnyText(text, [
+    "cyberpunk", "distopia", "utopia", "identidade", "memoria", "memória", "existencial",
+    "android", "androide", "androide", "replicante", "realidade", "simulacao", "simulação",
+    "filosofia", "metafisica", "metafísica", "paradoxo", "futuro"
+  ]);
+}
+
+function hasHorrorSignal(movie) {
+  return hasAnyText(movieSearchText(movie), [
+    "terror", "horror", "slasher", "assombrado", "assombrada", "sobrenatural",
+    "fantasma", "demonio", "demônio", "possessao", "possessão", "maldição", "maldicao",
+    "pesadelo", "ritual", "macabro", "maligno", "entidade"
+  ]);
+}
+
+function enforceMoodCalibration(movie) {
+  if (!movie) return;
+  const vibes = new Set(movie.vibes || []);
+  const title = normalize(movie.title || "");
+  let changed = false;
+
+  if (superheroActionSignal(movie)) {
+    if (!vibes.has("acao")) {
+      vibes.add("acao");
+      changed = true;
+    }
+    if (vibes.has("complexo")) {
+      vibes.delete("complexo");
+      changed = true;
+    }
+  }
+
+  if (title.includes("kill bill")) {
+    if (!vibes.has("acao")) {
+      vibes.add("acao");
+      changed = true;
+    }
+    if (vibes.has("terror")) {
+      vibes.delete("terror");
+      changed = true;
+    }
+  }
+
+  if (title.includes("blade runner") || conceptualSciFiSignal(movie)) {
+    if (!vibes.has("complexo")) {
+      vibes.add("complexo");
+      changed = true;
+    }
+  }
+
+  if (!hasGenre(movie, ["Terror"]) && !hasHorrorSignal(movie) && vibes.has("terror")) {
+    vibes.delete("terror");
+    changed = true;
+  }
+
+  if (changed) {
+    movie.vibes = [...vibes];
+    clearMovieDerivedCache(movie);
+  }
+}
+
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
   const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
@@ -2095,11 +2171,15 @@ function moodScore(movie) {
   if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
   if (profile.requiredComplexity && !complexityEvidence(movie)) score -= 92;
   if (activeMood === "complexo" && !speculativeEvidence(movie)) score -= 68;
+  if (activeMood === "complexo" && superheroActionSignal(movie)) score -= 86;
+  if (activeMood === "complexo" && hasGenre(movie, ["Acao", "Aventura"]) && !complexityEvidence(movie) && !conceptualSciFiSignal(movie)) score -= 34;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "comfort") score += comfortNostalgiaWeight(movie);
   if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
   if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 20;
+  if (activeMood === "acao" && superheroActionSignal(movie)) score += 40;
+  if (activeMood === "terror" && hasGenre(movie, ["Acao"]) && !hasGenre(movie, ["Terror"])) score -= 40;
   if (activeMood === "surpresa") {
     if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
     if (ratingAverage(movie) >= 78) score += 8;
@@ -2595,8 +2675,12 @@ function moodMismatch(movie) {
     ]);
     const tooGrounded = !speculativeGenres && !hasVibe && !speculativeTerms;
     const hardRealism = hasGenre(movie, ["Documentario", "Guerra"]) && !speculativeGenres;
+    const superheroBlockbuster = superheroActionSignal(movie);
+    const actionWithoutHeadroom = hasGenre(movie, ["Acao", "Aventura"]) && !complexityEvidence(movie) && !conceptualSciFiSignal(movie) && !hasVibe;
     return hardAvoidMatches > 0
       || hardRealism
+      || superheroBlockbuster
+      || actionWithoutHeadroom
       || tooGrounded;
   }
 
@@ -2619,8 +2703,14 @@ function moodMismatch(movie) {
   }
 
   if (activeMood === "terror") {
-    const horrorGenres = hasGenre(movie, ["Terror", "Suspense", "Misterio"]);
-    return hasConflictingVibe || hardAvoidMatches > 0 || (!horrorGenres && !hasVibe);
+    const horrorGenre = hasGenre(movie, ["Terror"]);
+    const horrorTerms = hasAnyText(movieSearchText(movie), [
+      "terror", "horror", "slasher", "assombrado", "assombrada", "sobrenatural",
+      "fantasma", "demonio", "demônio", "possessao", "possessão", "maldição", "maldicao",
+      "pesadelo", "ritual", "macabro", "paranoia", "maligno"
+    ]);
+    const psychologicalHorror = hasGenre(movie, ["Suspense", "Misterio"]) && horrorTerms;
+    return hasConflictingVibe || hardAvoidMatches > 0 || (!horrorGenre && !psychologicalHorror && !hasVibe);
   }
 
   if (activeMood === "acao") {
@@ -2822,6 +2912,7 @@ function activeCatalog() {
 
   const catalog = useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
   mergeCatalogEnhancements(catalog);
+  catalog.forEach((movie) => enforceMoodCalibration(movie));
   catalogCacheSignature = signature;
   catalogCacheList = catalog;
   return catalogCacheList;
@@ -3509,7 +3600,7 @@ function mapTmdbMovie(movie, details) {
     imdbId: details.external_ids?.imdb_id || "",
     providers: providersFromDetails(details),
     watchUrl: watchUrlFromDetails(details),
-    vibes: inferVibes(genres, movie.overview || "", releaseYear),
+    vibes: inferVibes(genres, movie.overview || "", releaseYear, movie.title || movie.original_title || ""),
     tags: tagsForMovie(movie, details, genre, director, country),
     seen: false,
     favoriteSignal: false,
@@ -3532,13 +3623,20 @@ function colorPairForMovie(seed) {
   return palette[Math.abs(Number(seed) || 0) % palette.length];
 }
 
-function inferVibes(genres, overview, year = 0) {
+function inferVibes(genres, overview, year = 0, title = "") {
   const genreList = Array.isArray(genres) ? genres : [genres];
-  const text = normalize(`${genreList.join(" ")} ${overview}`);
+  const text = normalize(`${title} ${genreList.join(" ")} ${overview}`);
   const vibes = new Set();
   const hasGentleGenre = text.includes("comedia") || text.includes("familia") || text.includes("animacao") || text.includes("romance") || text.includes("musica");
   const hasHeavyGenre = text.includes("crime") || text.includes("suspense") || text.includes("thriller") || text.includes("terror") || text.includes("guerra");
   const hasEscapistMix = (text.includes("acao") && text.includes("comedia")) || (text.includes("familia") && text.includes("aventura"));
+  const hasSuperheroFranchiseSignal = hasAnyText(text, [
+    "marvel", "avengers", "vingadores", "iron man", "homem de ferro", "captain america", "capitao america",
+    "thor", "hulk", "black widow", "viuva negra", "doctor strange", "doutor estranho",
+    "guardians", "guardioes", "guardiões", "black panther", "pantera negra",
+    "ant-man", "homem-formiga", "spider-man", "homem-aranha", "deadpool", "x-men",
+    "justice league", "liga da justica", "batman", "superman", "aquaman", "flash", "shazam"
+  ]);
   const hasComplexSignal = hasAnyText(text, [
     "ficcao cientifica", "documentario", "memoria", "tempo", "identidade", "sonho", "obsessao",
     "politica", "paranoia", "filosofia", "metafisica", "existencial", "surreal"
@@ -3550,10 +3648,14 @@ function inferVibes(genres, overview, year = 0) {
   if (hasGentleGenre || (text.includes("aventura") && !hasHeavyGenre)) vibes.add("leve");
   if (text.includes("romance") || text.includes("drama") || text.includes("familia")) vibes.add("sensivel");
   if (hasHeavyGenre || text.includes("misterio")) vibes.add("intenso");
-  if (hasComplexSignal && !hasEscapistMix) vibes.add("complexo");
+  if (hasComplexSignal && !hasEscapistMix && !hasSuperheroFranchiseSignal) vibes.add("complexo");
   if (text.includes("familia") || text.includes("amizade") || text.includes("animacao") || text.includes("romance")) vibes.add("comfort");
   if (hasHorrorSignal) vibes.add("terror");
   if (text.includes("acao") || text.includes("aventura") || text.includes("faroeste") || text.includes("guerra")) vibes.add("acao");
+  if (hasSuperheroFranchiseSignal) {
+    vibes.add("acao");
+    vibes.delete("complexo");
+  }
   if (text.includes("documentario") || text.includes("estranho") || text.includes("surreal") || text.includes("misterio") || text.includes("terror")) vibes.add("surpresa");
   if (Number(year) && Number(year) < 2005) vibes.add("nostalgia");
   return [...(vibes.size ? vibes : new Set(["comfort"]))];
