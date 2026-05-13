@@ -1681,11 +1681,13 @@ const els = {
   dialogContent: document.querySelector("#movie-dialog-content")
 };
 
-els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
-els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
+if (els.tmdbToken) els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
+if (els.omdbKey) els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
 const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
-els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
-useTmdb = els.useTmdb.checked;
+if (els.useTmdb) {
+  els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
+  useTmdb = els.useTmdb.checked;
+}
 const storedCompactSidebar = localStorage.getItem(compactSidebarKey);
 const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
 if (els.compactSidebar) els.compactSidebar.checked = compactSidebarEnabled;
@@ -3258,7 +3260,7 @@ function selectRouletteMovie(list) {
 }
 
 function tmdbHeaders() {
-  const token = els.tmdbToken.value.trim();
+  const token = els.tmdbToken?.value.trim() || "";
   if (!token) return null;
   return {
     "x-tmdb-token": token.startsWith("Bearer ") ? token : `Bearer ${token}`,
@@ -3267,7 +3269,7 @@ function tmdbHeaders() {
 }
 
 function omdbHeaders() {
-  const key = els.omdbKey.value.trim();
+  const key = els.omdbKey?.value.trim() || "";
   if (!key) return {};
   return { "x-omdb-key": key };
 }
@@ -3415,7 +3417,7 @@ async function tmdbFetch(path, params = new URLSearchParams()) {
 }
 
 async function omdbFetch(movie) {
-  const key = els.omdbKey.value.trim();
+  const key = els.omdbKey?.value.trim() || "";
   if (key) localStorage.setItem("cinepick_omdb_key", key);
 
   const params = new URLSearchParams();
@@ -3740,7 +3742,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
   const previousCatalog = [...tmdbMovies];
   const canRenderProgressively = !auto && previousCatalog.length < 200;
 
-  const token = els.tmdbToken.value.trim();
+  const token = els.tmdbToken?.value.trim() || "";
   if (token) {
     localStorage.setItem("cinepick_tmdb_token", token);
   }
@@ -3902,7 +3904,7 @@ function recoverPosterAfterImageError(movieKeyValue) {
 
 function ensureHeroPoster(movie) {
   if (!movie || movie.posterUrl) return;
-  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
   const key = movieKey(movie.title, movie.year);
   if (attemptedHeroPosterKeys.has(key)) return;
@@ -3918,7 +3920,7 @@ function ensureHeroPoster(movie) {
 }
 
 async function hydrateCuratedPosters() {
-  const token = els.tmdbToken.value.trim();
+  const token = els.tmdbToken?.value.trim() || "";
   if (token) localStorage.setItem("cinepick_tmdb_token", token);
 
   els.hydratePosters.disabled = true;
@@ -3958,7 +3960,7 @@ async function hydratePriorityPosters() {
 
   const signature = `${activeMode}|${activeMood}|${currentHeroKey}|${useTmdb}|${els.genre.value}|${els.country.value}|${els.decade.value}|${els.provider.value}`;
   if (priorityPosterHydrationInFlight || priorityPosterHydrationStarted === signature) return;
-  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
   priorityPosterHydrationInFlight = true;
   priorityPosterHydrationStarted = signature;
@@ -4013,7 +4015,7 @@ async function hydrateCatalogPostersInBackground() {
   const missingCount = activeCatalog().filter((movie) => !movie.posterUrl).length;
   const signature = `${useTmdb}|${activeCatalog().length}|${missingCount}`;
   if (catalogPosterHydrationInFlight || catalogPosterHydrationStarted === signature) return;
-  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
   catalogPosterHydrationInFlight = true;
   catalogPosterHydrationStarted = signature;
@@ -4066,17 +4068,16 @@ async function hydrateOverviewForMovie(movie) {
     const hydrated = await resolveOverviewFromTmdb(movie, movie.tmdbId, movie.originalLanguage).catch(() => false);
     if (hydrated && hasValidOverview(movie.overview)) return true;
   }
-
-  const recovered = await findPosterForMovie(movie).catch(() => false);
-  return Boolean(recovered && hasValidOverview(movie.overview));
+  return false;
 }
 
 async function hydrateMissingOverviewsInBackground() {
   const now = Date.now();
   if (now < nextOverviewHydrationAt) return;
-  nextOverviewHydrationAt = now + 7600;
+  nextOverviewHydrationAt = now + 30000;
+  if (!useTmdb) return;
 
-  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
 
   const missingOverviewCount = activeCatalog().filter((movie) => !hasValidOverview(movie.overview)).length;
@@ -4087,7 +4088,7 @@ async function hydrateMissingOverviewsInBackground() {
 
   const candidates = activeCatalog()
     .filter((movie) => !hasValidOverview(movie.overview))
-    .slice(0, 72);
+    .slice(0, 24);
 
   if (!candidates.length) {
     overviewHydrationInFlight = false;
@@ -4098,8 +4099,8 @@ async function hydrateMissingOverviewsInBackground() {
   let hydrated = 0;
 
   try {
-    for (let index = 0; index < candidates.length; index += 3) {
-      const batch = candidates.slice(index, index + 3);
+    for (let index = 0; index < candidates.length; index += 2) {
+      const batch = candidates.slice(index, index + 2);
       const results = await Promise.all(batch.map((movie) => hydrateOverviewForMovie(movie).catch(() => false)));
       const batchHydrated = results.filter(Boolean).length;
       hydrated += batchHydrated;
@@ -4111,6 +4112,7 @@ async function hydrateMissingOverviewsInBackground() {
 
     if (!hydrated) {
       els.tmdbStatus.textContent = previousStatus;
+      overviewHydrationStarted = "";
     } else {
       requestBackgroundRender(true);
     }
@@ -4797,7 +4799,7 @@ function scheduleBackgroundHydrationTasks() {
   runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
   runWhenIdle(() => hydratePriorityPosters(), 260);
   runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
-  runWhenIdle(() => hydrateMissingOverviewsInBackground(), 2400);
+  if (useTmdb) runWhenIdle(() => hydrateMissingOverviewsInBackground(), 3200);
 }
 
 function setDrawerOpen(open) {
@@ -4885,7 +4887,7 @@ els.moods.addEventListener("pointerdown", (event) => {
   });
 });
 
-els.syncDemo.addEventListener("click", () => {
+els.syncDemo?.addEventListener("click", () => {
   profileLoaded = true;
   profileData.watched.add(movieKey("Eternal Sunshine of the Spotless Mind", 2004));
   profileData.watched.add(movieKey("Inception", 2010));
@@ -4898,7 +4900,7 @@ els.syncDemo.addEventListener("click", () => {
   render();
 });
 
-els.profileFiles.addEventListener("change", (event) => {
+els.profileFiles?.addEventListener("change", (event) => {
   importProfileFiles(event.target.files);
 });
 
@@ -5069,15 +5071,15 @@ els.dialog?.addEventListener("click", (event) => {
   if (event.target === els.dialog) els.dialog.close();
 });
 
-els.loadTmdb.addEventListener("click", () => {
+els.loadTmdb?.addEventListener("click", () => {
   searchTmdbAndHydrate();
 });
 
-els.hydratePosters.addEventListener("click", () => {
+els.hydratePosters?.addEventListener("click", () => {
   hydrateCuratedPosters();
 });
 
-els.useTmdb.addEventListener("change", () => {
+els.useTmdb?.addEventListener("change", () => {
   useTmdb = els.useTmdb.checked;
   localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
 
