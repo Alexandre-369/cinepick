@@ -115,6 +115,7 @@ const tmdbCatalogConfig = {
   limit: 1280,
   batchSize: 16,
   omdbEnrichLimit: 36,
+  overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
 
@@ -1517,6 +1518,9 @@ let priorityPosterHydrationInFlight = false;
 let nextPriorityHydrationAt = 0;
 let catalogPosterHydrationStarted = "";
 let catalogPosterHydrationInFlight = false;
+let overviewHydrationStarted = "";
+let overviewHydrationInFlight = false;
+let nextOverviewHydrationAt = 0;
 let renderQueued = false;
 let pendingAdvanceRender = false;
 let moodRenderKey = "";
@@ -2389,6 +2393,8 @@ function mergeMovieEnhancements(primary, candidate) {
     posterUrl: primary.posterUrl || candidate.posterUrl || "",
     backdropUrl: primary.backdropUrl || candidate.backdropUrl || "",
     imdbId: primary.imdbId || candidate.imdbId || "",
+    tmdbId: primary.tmdbId || candidate.tmdbId || 0,
+    originalLanguage: primary.originalLanguage || candidate.originalLanguage || "",
     tmdbVotes: primary.tmdbVotes || candidate.tmdbVotes || 0,
     providers: dedupeProviders(primary.providers?.length ? primary.providers : candidate.providers || []),
     watchUrl: primary.watchUrl || candidate.watchUrl || "",
@@ -2409,6 +2415,8 @@ function applyMovieEnhancements(target, enhanced) {
   target.posterUrl = target.posterUrl || enhanced.posterUrl || "";
   target.backdropUrl = target.backdropUrl || enhanced.backdropUrl || "";
   target.imdbId = target.imdbId || enhanced.imdbId || "";
+  target.tmdbId = target.tmdbId || enhanced.tmdbId || 0;
+  target.originalLanguage = target.originalLanguage || enhanced.originalLanguage || "";
   target.tmdbVotes = target.tmdbVotes || enhanced.tmdbVotes || 0;
   target.providers = dedupeProviders(target.providers?.length ? target.providers : enhanced.providers || []);
   target.watchUrl = target.watchUrl || enhanced.watchUrl || "";
@@ -2733,6 +2741,9 @@ function applyPosterCache() {
     movie.imdb = enhancement.imdb || movie.imdb;
     movie.tmdbVotes = enhancement.tmdbVotes || movie.tmdbVotes;
     movie.imdbId = enhancement.imdbId || movie.imdbId;
+    movie.tmdbId = enhancement.tmdbId || movie.tmdbId || 0;
+    movie.originalLanguage = enhancement.originalLanguage || movie.originalLanguage || "";
+    movie.overview = movie.overview || enhancement.overview || "";
     movie.providers = dedupeProviders(enhancement.providers || movie.providers);
     movie.watchUrl = enhancement.watchUrl || movie.watchUrl || "";
     movie.source = enhancement.source || movie.source || "curated-tmdb-poster";
@@ -2757,6 +2768,9 @@ function cacheMovieEnhancement(movie) {
     rtSource: movie.rtSource,
     tmdbVotes: movie.tmdbVotes,
     imdbId: movie.imdbId,
+    tmdbId: movie.tmdbId || 0,
+    originalLanguage: movie.originalLanguage || "",
+    overview: movie.overview || "",
     providers: dedupeProviders(movie.providers || []),
     watchUrl: movie.watchUrl,
     source: movie.source
@@ -2794,6 +2808,9 @@ function restoreTmdbCatalogCache() {
   tmdbMovies.forEach((movie) => {
     movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
     movie.providers = dedupeProviders(movie.providers || []);
+    movie.tmdbId = Number(movie.tmdbId || 0);
+    movie.originalLanguage = movie.originalLanguage || "";
+    movie.overview = movie.overview || "";
   });
   updateProviderFilter();
   els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos no cache. Ative o catálogo expandido quando quiser.`;
@@ -2812,7 +2829,10 @@ async function restoreCatalogSeed() {
     tmdbMovies = seed.movies.map((movie) => ({
       ...movie,
       providers: dedupeProviders(movie.providers || []),
-      rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb")
+      rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb"),
+      tmdbId: Number(movie.tmdbId || 0),
+      originalLanguage: movie.originalLanguage || "",
+      overview: movie.overview || ""
     }));
     updateProviderFilter();
     cacheTmdbCatalog();
@@ -3417,6 +3437,52 @@ function hasValidPosterUrl(value) {
   return Boolean(text && text !== "N/A");
 }
 
+function hasValidOverview(value) {
+  const text = String(value || "").trim();
+  if (!text || text === "N/A") return false;
+  return text.length >= 18;
+}
+
+function pickOverview(...values) {
+  for (const value of values) {
+    if (hasValidOverview(value)) return String(value).trim();
+  }
+  return "";
+}
+
+async function resolveOverviewFromTmdb(movie, tmdbId, originalLanguage = "") {
+  if (!movie || !tmdbId || hasValidOverview(movie.overview)) return false;
+  const languageCandidates = [];
+  const addLanguage = (value) => {
+    const language = String(value || "").trim();
+    if (!language) return;
+    if (languageCandidates.some((item) => normalize(item) === normalize(language))) return;
+    languageCandidates.push(language);
+  };
+
+  addLanguage("pt-BR");
+  addLanguage("en-US");
+  addLanguage(originalLanguage || movie.originalLanguage || "");
+  if (originalLanguage && !String(originalLanguage).includes("-")) {
+    addLanguage(`${originalLanguage}-${String(originalLanguage).toUpperCase()}`);
+  }
+
+  for (const language of languageCandidates) {
+    try {
+      const details = await tmdbFetch(`/movie/${tmdbId}`, new URLSearchParams({ language }));
+      const overview = pickOverview(details?.overview);
+      if (!overview) continue;
+      movie.overview = overview;
+      cacheMovieEnhancement(movie);
+      return true;
+    } catch {
+      // ignore fallback failures and continue trying other languages
+    }
+  }
+
+  return false;
+}
+
 function rottenTomatoesFromOmdb(payload) {
   const rating = (payload.Ratings || []).find((item) => item.Source === "Rotten Tomatoes")?.Value || "";
   return Number(rating.replace("%", "")) || 0;
@@ -3429,7 +3495,9 @@ async function enrichRatingsFromOmdb(movie, { forcePoster = false } = {}) {
   const imdb = Math.round((Number(payload.imdbRating) || 0) * 10);
   const rt = rottenTomatoesFromOmdb(payload);
   const poster = hasValidPosterUrl(payload.Poster) ? String(payload.Poster).trim() : "";
+  const plot = pickOverview(payload.Plot);
   let posterApplied = false;
+  let overviewApplied = false;
   if (imdb) movie.imdb = imdb;
   if (rt) {
     movie.rt = rt;
@@ -3439,10 +3507,14 @@ async function enrichRatingsFromOmdb(movie, { forcePoster = false } = {}) {
     movie.posterUrl = poster;
     posterApplied = true;
   }
+  if (plot && !hasValidOverview(movie.overview)) {
+    movie.overview = plot;
+    overviewApplied = true;
+  }
   movie.imdbId = payload.imdbID || movie.imdbId || "";
   movie.source = movie.source && movie.source.includes("tmdb") ? "tmdb-omdb" : "curated-omdb";
   cacheMovieEnhancement(movie);
-  return Boolean(imdb || rt || posterApplied);
+  return Boolean(imdb || rt || posterApplied || overviewApplied);
 }
 
 async function directorIdForQuery(query) {
@@ -3592,12 +3664,14 @@ function mapTmdbMovie(movie, details) {
     country,
     director,
     genres,
-    overview: movie.overview || "",
+    overview: pickOverview(movie.overview, details.overview),
     imdb: vote,
     rt: vote,
     rtSource: "tmdb",
     tmdbVotes: movie.vote_count || 0,
     imdbId: details.external_ids?.imdb_id || "",
+    tmdbId: movie.id || details.id || 0,
+    originalLanguage: movie.original_language || details.original_language || "",
     providers: providersFromDetails(details),
     watchUrl: watchUrlFromDetails(details),
     vibes: inferVibes(genres, movie.overview || "", releaseYear, movie.title || movie.original_title || ""),
@@ -3689,6 +3763,9 @@ async function loadTmdbCatalog({ auto = false } = {}) {
       const nextMovies = await Promise.all(batch.map(async (movie, offset) => {
         const details = await tmdbFetch(`/movie/${movie.id}`, new URLSearchParams({ append_to_response: "credits,external_ids,watch/providers", language: "pt-BR" }));
         const mapped = mapTmdbMovie(movie, details);
+        if (index + offset < tmdbCatalogConfig.overviewEnrichLimit && !hasValidOverview(mapped.overview)) {
+          await resolveOverviewFromTmdb(mapped, movie.id, movie.original_language).catch(() => false);
+        }
         if (index + offset < tmdbCatalogConfig.omdbEnrichLimit) {
           await enrichRatingsFromOmdb(mapped).catch(() => false);
         }
@@ -3794,9 +3871,15 @@ async function findPosterForMovie(movie) {
   }
   movie.tmdbVotes = match.vote_count || movie.tmdbVotes || 0;
   movie.imdbId = details.external_ids?.imdb_id || movie.imdbId || "";
+  movie.tmdbId = Number(match.id || movie.tmdbId || 0);
+  movie.originalLanguage = movie.originalLanguage || match.original_language || details.original_language || "";
+  movie.overview = pickOverview(movie.overview, match.overview, details.overview);
   movie.providers = providersFromDetails(details);
   movie.watchUrl = watchUrlFromDetails(details) || movie.watchUrl || "";
   movie.source = movie.source || "curated-tmdb-poster";
+  if (!hasValidOverview(movie.overview)) {
+    await resolveOverviewFromTmdb(movie, movie.tmdbId, movie.originalLanguage).catch(() => false);
+  }
   await enrichRatingsFromOmdb(movie).catch(() => false);
   cacheMovieEnhancement(movie);
   return true;
@@ -3969,6 +4052,72 @@ async function hydrateCatalogPostersInBackground() {
     els.tmdbStatus.textContent = previousStatus;
   } finally {
     catalogPosterHydrationInFlight = false;
+  }
+}
+
+async function hydrateOverviewForMovie(movie) {
+  if (!movie || hasValidOverview(movie.overview)) return false;
+  if (movie.imdbId) {
+    await enrichRatingsFromOmdb(movie).catch(() => false);
+    if (hasValidOverview(movie.overview)) return true;
+  }
+
+  if (movie.tmdbId) {
+    const hydrated = await resolveOverviewFromTmdb(movie, movie.tmdbId, movie.originalLanguage).catch(() => false);
+    if (hydrated && hasValidOverview(movie.overview)) return true;
+  }
+
+  const recovered = await findPosterForMovie(movie).catch(() => false);
+  return Boolean(recovered && hasValidOverview(movie.overview));
+}
+
+async function hydrateMissingOverviewsInBackground() {
+  const now = Date.now();
+  if (now < nextOverviewHydrationAt) return;
+  nextOverviewHydrationAt = now + 7600;
+
+  const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !els.tmdbToken.value.trim();
+  if (staticLocalhost) return;
+
+  const missingOverviewCount = activeCatalog().filter((movie) => !hasValidOverview(movie.overview)).length;
+  const signature = `${useTmdb}|${activeCatalog().length}|${missingOverviewCount}`;
+  if (overviewHydrationInFlight || overviewHydrationStarted === signature) return;
+  overviewHydrationInFlight = true;
+  overviewHydrationStarted = signature;
+
+  const candidates = activeCatalog()
+    .filter((movie) => !hasValidOverview(movie.overview))
+    .slice(0, 72);
+
+  if (!candidates.length) {
+    overviewHydrationInFlight = false;
+    return;
+  }
+
+  const previousStatus = els.tmdbStatus.textContent;
+  let hydrated = 0;
+
+  try {
+    for (let index = 0; index < candidates.length; index += 3) {
+      const batch = candidates.slice(index, index + 3);
+      const results = await Promise.all(batch.map((movie) => hydrateOverviewForMovie(movie).catch(() => false)));
+      const batchHydrated = results.filter(Boolean).length;
+      hydrated += batchHydrated;
+      if (batchHydrated) {
+        els.tmdbStatus.textContent = `${hydrated} sinopses oficiais adicionadas ao catálogo.`;
+        requestBackgroundRender();
+      }
+    }
+
+    if (!hydrated) {
+      els.tmdbStatus.textContent = previousStatus;
+    } else {
+      requestBackgroundRender(true);
+    }
+  } catch {
+    els.tmdbStatus.textContent = previousStatus;
+  } finally {
+    overviewHydrationInFlight = false;
   }
 }
 
@@ -4456,7 +4605,7 @@ function renderMovieDialog(movie) {
     .slice(0, 8)
     .map((tag) => `<span class="pill">${displayText(tag)}</span>`)
     .join("");
-  const overview = movie.overview
+  const overview = hasValidOverview(movie.overview)
     ? `<p class="dialog-overview">${movie.overview}</p>`
     : `<p class="dialog-overview">Sem sinopse oficial por enquanto, mas os sinais principais já estão no painel: gênero, período, origem, notas e disponibilidade no Brasil.</p>`;
 
@@ -4644,6 +4793,13 @@ function render() {
   scheduleRender(false);
 }
 
+function scheduleBackgroundHydrationTasks() {
+  runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
+  runWhenIdle(() => hydratePriorityPosters(), 260);
+  runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
+  runWhenIdle(() => hydrateMissingOverviewsInBackground(), 2400);
+}
+
 function setDrawerOpen(open) {
   if (!els.drawer || !els.drawerBackdrop) return;
   els.drawer.classList.remove("is-peeking");
@@ -4678,17 +4834,13 @@ async function renderWithAdvance(advance) {
     }
     renderHero(selected);
     renderShortlist(list);
-    runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
-    runWhenIdle(() => hydratePriorityPosters(), 260);
-    runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
+    scheduleBackgroundHydrationTasks();
     return;
   }
 
   renderHero(list[0]);
   renderShortlist(list);
-  runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
-  runWhenIdle(() => hydratePriorityPosters(), 260);
-  runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
+  scheduleBackgroundHydrationTasks();
 }
 
 els.modeTabs.forEach((button) => {
