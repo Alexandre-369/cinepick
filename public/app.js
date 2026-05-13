@@ -263,7 +263,7 @@ const displayNames = {
 
 const moodAliasMap = {
   comfort: ["comfort", "nostalgia"],
-  terror: ["terror", "intenso"]
+  terror: ["terror"]
 };
 
 const sessionPresets = [
@@ -436,7 +436,7 @@ const moodProfiles = {
   complexo: {
     preferredGenres: ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio", "Suspense"],
     avoidGenres: ["Documentario", "Guerra", "Crime", "Musica"],
-    hardAvoidGenres: ["Documentario", "Guerra"],
+    hardAvoidGenres: ["Documentario", "Guerra", "Crime"],
     conflictingVibes: ["comfort"],
     keywords: [
       "ficcao", "ficção", "cientifica", "científica", "fantasia", "multiverso",
@@ -459,11 +459,11 @@ const moodProfiles = {
     keywords: ["familia", "amor", "luto", "memoria", "infancia", "solidão", "solidao"]
   },
   terror: {
-    preferredGenres: ["Terror", "Suspense", "Misterio", "Crime", "Ficcao cientifica"],
+    preferredGenres: ["Terror", "Suspense", "Misterio"],
     avoidGenres: ["Familia", "Animacao", "Comedia", "Musica"],
     hardAvoidGenres: ["Familia", "Animacao", "Musica"],
     conflictingVibes: ["comfort", "leve"],
-    keywords: ["terror", "fantasma", "demonio", "demônio", "paranoia", "slasher", "sobrenatural", "culto", "maldição", "maldicao", "casa", "pesadelo"],
+    keywords: ["terror", "fantasma", "demonio", "demônio", "slasher", "sobrenatural", "culto", "maldição", "maldicao", "casa", "pesadelo"],
     longMoviePenalty: 135
   },
   acao: {
@@ -2731,10 +2731,12 @@ function moodMismatch(movie) {
     const hardRealism = hasGenre(movie, ["Documentario", "Guerra"]) && !speculativeGenres;
     const superheroBlockbuster = superheroActionSignal(movie);
     const actionWithoutHeadroom = hasGenre(movie, ["Acao", "Aventura"]) && !complexityEvidence(movie) && !conceptualSciFiSignal(movie) && !hasVibe;
+    const missingSpeculation = !speculativeEvidence(movie);
     return hardAvoidMatches > 0
       || hardRealism
       || superheroBlockbuster
       || actionWithoutHeadroom
+      || missingSpeculation
       || tooGrounded;
   }
 
@@ -2761,10 +2763,11 @@ function moodMismatch(movie) {
     const horrorTerms = hasAnyText(movieSearchText(movie), [
       "terror", "horror", "slasher", "assombrado", "assombrada", "sobrenatural",
       "fantasma", "demonio", "demônio", "possessao", "possessão", "maldição", "maldicao",
-      "pesadelo", "ritual", "macabro", "paranoia", "maligno"
+      "pesadelo", "ritual", "macabro", "maligno"
     ]);
     const psychologicalHorror = hasGenre(movie, ["Suspense", "Misterio"]) && horrorTerms;
-    return hasConflictingVibe || hardAvoidMatches > 0 || (!horrorGenre && !psychologicalHorror && !hasVibe);
+    const terrorProof = horrorGenre || psychologicalHorror || (hasVibe && horrorTerms);
+    return hasConflictingVibe || hardAvoidMatches > 0 || !terrorProof;
   }
 
   if (activeMood === "acao") {
