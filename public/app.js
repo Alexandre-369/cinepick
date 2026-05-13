@@ -140,6 +140,8 @@ const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
 const hasHttpProtocol = window.location.protocol === "http:" || window.location.protocol === "https:";
 const isStaticFileMode = window.location.protocol === "file:";
+const rapidSessionMode = true;
+const rapidSessionIdleMs = 2200;
 
 const displayNames = {
   Acao: "Ação",
@@ -1530,6 +1532,8 @@ let presetRenderKey = "";
 let nextBackgroundRenderAt = 0;
 let renderRafScheduled = false;
 let renderInFlight = false;
+let lastUiInteractionAt = Date.now();
+let delayedHydrationTimer = 0;
 // Instant UI first: local ranking is fast enough for our current catalog size.
 // Worker path stays available for future experiments, but starts disabled to avoid
 // click latency from message serialization on every interaction.
@@ -2045,6 +2049,24 @@ function superheroActionSignal(movie) {
   return franchiseGenres && superheroTerms;
 }
 
+function marvelUniverseSignal(movie) {
+  const text = movieSearchText(movie);
+  return hasAnyText(text, [
+    "marvel", "avengers", "vingadores", "iron man", "homem de ferro", "captain america", "capitao america",
+    "thor", "hulk", "black widow", "viuva negra", "doctor strange", "doutor estranho",
+    "guardians", "guardioes", "guardiões", "black panther", "pantera negra",
+    "ant-man", "homem-formiga", "spider-man", "homem-aranha"
+  ]);
+}
+
+function killBillSignal(movie) {
+  return normalize(movie.title || "").includes("kill bill");
+}
+
+function bladeRunnerSignal(movie) {
+  return normalize(movie.title || "").includes("blade runner");
+}
+
 function conceptualSciFiSignal(movie) {
   const text = movieSearchText(movie);
   return hasGenre(movie, ["Ficcao cientifica"]) && hasAnyText(text, [
@@ -2065,7 +2087,6 @@ function hasHorrorSignal(movie) {
 function enforceMoodCalibration(movie) {
   if (!movie) return;
   const vibes = new Set(movie.vibes || []);
-  const title = normalize(movie.title || "");
   let changed = false;
 
   if (superheroActionSignal(movie)) {
@@ -2079,9 +2100,13 @@ function enforceMoodCalibration(movie) {
     }
   }
 
-  if (title.includes("kill bill")) {
+  if (killBillSignal(movie)) {
     if (!vibes.has("acao")) {
       vibes.add("acao");
+      changed = true;
+    }
+    if (vibes.has("complexo")) {
+      vibes.delete("complexo");
       changed = true;
     }
     if (vibes.has("terror")) {
@@ -2090,9 +2115,13 @@ function enforceMoodCalibration(movie) {
     }
   }
 
-  if (title.includes("blade runner") || conceptualSciFiSignal(movie)) {
+  if (bladeRunnerSignal(movie) || conceptualSciFiSignal(movie)) {
     if (!vibes.has("complexo")) {
       vibes.add("complexo");
+      changed = true;
+    }
+    if (vibes.has("terror")) {
+      vibes.delete("terror");
       changed = true;
     }
   }
@@ -2173,7 +2202,10 @@ function moodScore(movie) {
   const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
   let score = 0;
 
-  if (moodMismatch(movie)) score -= 120;
+  if (moodMismatch(movie)) {
+    const hardMismatchMoods = new Set(["complexo", "intenso", "terror", "acao"]);
+    score -= hardMismatchMoods.has(activeMood) ? 220 : 140;
+  }
   if (hasVibe) score += 44;
   score += Math.min(preferredMatches, 3) * 22;
   score += Math.min(keywordMatches, 3) * 8;
@@ -2183,14 +2215,20 @@ function moodScore(movie) {
   if (profile.requiredPositive && !hasVibe && !preferredMatches && !keywordMatches) score -= 46;
   if (profile.requiredComplexity && !complexityEvidence(movie)) score -= 92;
   if (activeMood === "complexo" && !speculativeEvidence(movie)) score -= 68;
-  if (activeMood === "complexo" && superheroActionSignal(movie)) score -= 86;
+  if (activeMood === "complexo" && superheroActionSignal(movie)) score -= 160;
+  if (activeMood === "complexo" && marvelUniverseSignal(movie)) score -= 180;
+  if (activeMood === "complexo" && killBillSignal(movie)) score -= 140;
   if (activeMood === "complexo" && hasGenre(movie, ["Acao", "Aventura"]) && !complexityEvidence(movie) && !conceptualSciFiSignal(movie)) score -= 34;
+  if (activeMood === "complexo" && (conceptualSciFiSignal(movie) || bladeRunnerSignal(movie))) score += 56;
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "comfort") score += comfortNostalgiaWeight(movie);
   if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
   if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 20;
-  if (activeMood === "acao" && superheroActionSignal(movie)) score += 40;
+  if (activeMood === "acao" && superheroActionSignal(movie)) score += 62;
+  if (activeMood === "acao" && marvelUniverseSignal(movie)) score += 66;
+  if (activeMood === "acao" && killBillSignal(movie)) score += 74;
+  if (activeMood === "acao" && conceptualSciFiSignal(movie) && !superheroActionSignal(movie)) score -= 24;
   if (activeMood === "terror" && hasGenre(movie, ["Acao"]) && !hasGenre(movie, ["Terror"])) score -= 40;
   if (activeMood === "surpresa") {
     if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
@@ -3236,6 +3274,16 @@ function reasonFor(movie) {
   return `${opening} ${detail}${profileText}`;
 }
 
+function dynamicFallbackOverview(movie) {
+  const context = movieReasonContext(movie);
+  const providers = dedupeProviders(movie.providers || []);
+  const providerText = providers.length
+    ? `Disponível em ${providers.slice(0, 2).map((provider) => displayText(provider)).join(" e ")}.`
+    : `${unavailableStreamingLabel}.`;
+  const vibeText = context.tagPair ? `Vibe dominante: ${context.tagPair}.` : "";
+  return `${reasonFor(movie)} ${vibeText} ${providerText}`.replace(/\s+/g, " ").trim();
+}
+
 function selectRouletteMovie(list) {
   if (!list.length) {
     roulettePick = "";
@@ -4151,6 +4199,25 @@ function runWhenIdle(callback, timeout = 1600) {
   window.setTimeout(callback, timeout);
 }
 
+function markUserInteraction() {
+  lastUiInteractionAt = Date.now();
+}
+
+function canRunSecondaryHydration() {
+  if (!rapidSessionMode) return true;
+  return Date.now() - lastUiInteractionAt >= rapidSessionIdleMs;
+}
+
+function scheduleDelayedHydrationSweep() {
+  if (!rapidSessionMode || delayedHydrationTimer) return;
+  const waitMs = Math.max(180, rapidSessionIdleMs - (Date.now() - lastUiInteractionAt) + 140);
+  delayedHydrationTimer = window.setTimeout(() => {
+    delayedHydrationTimer = 0;
+    if (document.visibilityState !== "visible") return;
+    scheduleBackgroundHydrationTasks();
+  }, waitMs);
+}
+
 function pulsePressState(element) {
   if (!element) return;
   element.classList.add("is-pressed");
@@ -4629,7 +4696,7 @@ function renderMovieDialog(movie) {
     .join("");
   const overview = hasValidOverview(movie.overview)
     ? `<p class="dialog-overview">${movie.overview}</p>`
-    : `<p class="dialog-overview">Sem sinopse oficial por enquanto, mas os sinais principais já estão no painel: gênero, período, origem, notas e disponibilidade no Brasil.</p>`;
+    : `<p class="dialog-overview">${dynamicFallbackOverview(movie)}</p>`;
 
   els.dialogContent.innerHTML = `
     <div class="dialog-grid">
@@ -4818,6 +4885,10 @@ function render() {
 function scheduleBackgroundHydrationTasks() {
   if (!hasHttpProtocol || document.visibilityState === "hidden") return;
   runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
+  if (!canRunSecondaryHydration()) {
+    scheduleDelayedHydrationSweep();
+    return;
+  }
   runWhenIdle(() => hydratePriorityPosters(), 260);
   runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
   if (useTmdb) runWhenIdle(() => hydrateMissingOverviewsInBackground(), 3200);
@@ -4865,6 +4936,14 @@ async function renderWithAdvance(advance) {
   renderShortlist(list);
   scheduleBackgroundHydrationTasks();
 }
+
+document.addEventListener("pointerdown", () => {
+  markUserInteraction();
+}, true);
+
+document.addEventListener("keydown", (event) => {
+  if (!event.repeat) markUserInteraction();
+}, true);
 
 els.modeTabs.forEach((button) => {
   bindInstantPress(button, () => {
