@@ -138,6 +138,8 @@ const recommendationTimeMemoryKey = "cinepick_recommendation_time_memory_v1";
 const recommendationTimeMemoryDays = 21;
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
 const ultraFastCatalogDefault = true;
+const hasHttpProtocol = window.location.protocol === "http:" || window.location.protocol === "https:";
+const isStaticFileMode = window.location.protocol === "file:";
 
 const displayNames = {
   Acao: "Ação",
@@ -1687,6 +1689,10 @@ const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
 if (els.useTmdb) {
   els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
   useTmdb = els.useTmdb.checked;
+}
+if (!hasHttpProtocol) {
+  useTmdb = false;
+  if (els.useTmdb) els.useTmdb.checked = false;
 }
 const storedCompactSidebar = localStorage.getItem(compactSidebarKey);
 const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
@@ -3404,6 +3410,9 @@ async function fetchCatalogPages(requests) {
 }
 
 async function tmdbFetch(path, params = new URLSearchParams()) {
+  if (!hasHttpProtocol) {
+    throw new Error("TMDb indisponível em arquivo local. Abra em localhost ou Vercel.");
+  }
   const headers = tmdbHeaders();
   const url = new URL("/api/tmdb", window.location.origin);
   url.searchParams.set("path", path);
@@ -3417,6 +3426,7 @@ async function tmdbFetch(path, params = new URLSearchParams()) {
 }
 
 async function omdbFetch(movie) {
+  if (!hasHttpProtocol) return null;
   const key = els.omdbKey?.value.trim() || "";
   if (key) localStorage.setItem("cinepick_omdb_key", key);
 
@@ -3904,6 +3914,7 @@ function recoverPosterAfterImageError(movieKeyValue) {
 
 function ensureHeroPoster(movie) {
   if (!movie || movie.posterUrl) return;
+  if (!hasHttpProtocol) return;
   const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
   const key = movieKey(movie.title, movie.year);
@@ -3920,6 +3931,12 @@ function ensureHeroPoster(movie) {
 }
 
 async function hydrateCuratedPosters() {
+  if (!hasHttpProtocol) {
+    if (els.tmdbStatus) {
+      els.tmdbStatus.textContent = "Modo arquivo local detectado. Abra via localhost/Vercel para buscar capas e notas.";
+    }
+    return;
+  }
   const token = els.tmdbToken?.value.trim() || "";
   if (token) localStorage.setItem("cinepick_tmdb_token", token);
 
@@ -3954,6 +3971,7 @@ async function hydrateCuratedPosters() {
 }
 
 async function hydratePriorityPosters() {
+  if (!hasHttpProtocol) return;
   const now = Date.now();
   if (now < nextPriorityHydrationAt) return;
   nextPriorityHydrationAt = now + 4200;
@@ -4012,6 +4030,7 @@ async function hydratePriorityPosters() {
 }
 
 async function hydrateCatalogPostersInBackground() {
+  if (!hasHttpProtocol) return;
   const missingCount = activeCatalog().filter((movie) => !movie.posterUrl).length;
   const signature = `${useTmdb}|${activeCatalog().length}|${missingCount}`;
   if (catalogPosterHydrationInFlight || catalogPosterHydrationStarted === signature) return;
@@ -4072,6 +4091,7 @@ async function hydrateOverviewForMovie(movie) {
 }
 
 async function hydrateMissingOverviewsInBackground() {
+  if (!hasHttpProtocol) return;
   const now = Date.now();
   if (now < nextOverviewHydrationAt) return;
   nextOverviewHydrationAt = now + 30000;
@@ -4796,6 +4816,7 @@ function render() {
 }
 
 function scheduleBackgroundHydrationTasks() {
+  if (!hasHttpProtocol || document.visibilityState === "hidden") return;
   runWhenIdle(() => prewarmNextRecommendation(filteredMovies()), 120);
   runWhenIdle(() => hydratePriorityPosters(), 260);
   runWhenIdle(() => hydrateCatalogPostersInBackground(), 1800);
@@ -5072,14 +5093,34 @@ els.dialog?.addEventListener("click", (event) => {
 });
 
 els.loadTmdb?.addEventListener("click", () => {
+  if (!hasHttpProtocol) {
+    if (els.tmdbStatus) {
+      els.tmdbStatus.textContent = "Modo arquivo local detectado. Use localhost/Vercel para atualizar TMDb/IMDb.";
+    }
+    return;
+  }
   searchTmdbAndHydrate();
 });
 
 els.hydratePosters?.addEventListener("click", () => {
+  if (!hasHttpProtocol) {
+    if (els.tmdbStatus) {
+      els.tmdbStatus.textContent = "Modo arquivo local detectado. Use localhost/Vercel para buscar capas.";
+    }
+    return;
+  }
   hydrateCuratedPosters();
 });
 
 els.useTmdb?.addEventListener("change", () => {
+  if (!hasHttpProtocol) {
+    if (els.useTmdb) els.useTmdb.checked = false;
+    useTmdb = false;
+    if (els.tmdbStatus) {
+      els.tmdbStatus.textContent = "Catálogo TMDb desativado em arquivo local. Abra em localhost/Vercel para ativar.";
+    }
+    return;
+  }
   useTmdb = els.useTmdb.checked;
   localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
 
@@ -5215,7 +5256,11 @@ els.hero.addEventListener("click", (event) => {
 
 updateProviderFilter();
 render();
-if (useTmdb) {
+if (isStaticFileMode) {
+  if (els.tmdbStatus) {
+    els.tmdbStatus.textContent = "Você está em arquivo local. Para tudo funcionar 100%, abra em localhost ou no link da Vercel.";
+  }
+} else if (useTmdb) {
   runWhenIdle(async () => {
     const restoredInitialCatalog = restoreTmdbCatalogCache();
     const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
