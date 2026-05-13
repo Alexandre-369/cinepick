@@ -2027,12 +2027,16 @@ function escapistMismatch(movie) {
 
 function speculativeEvidence(movie) {
   const text = movieSearchText(movie);
-  const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio"]);
+  const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia"]);
+  const mysteryWithoutSpeculation = hasGenre(movie, ["Misterio", "Suspense", "Crime"])
+    && !hasGenre(movie, ["Ficcao cientifica", "Fantasia"]);
   const speculativeTerms = hasAnyText(text, [
     "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia", "utopia",
-    "futuro", "multiverso", "realidade", "tempo", "espaco", "espaço", "ia",
-    "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação"
+    "futuro", "multiverso", "realidade alternativa", "espaco", "espaço", "ia",
+    "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação",
+    "viagem no tempo", "time loop", "linha do tempo"
   ]);
+  if (mysteryWithoutSpeculation && !speculativeTerms) return false;
   return speculativeGenres || speculativeTerms;
 }
 
@@ -2728,6 +2732,9 @@ function moodMismatch(movie) {
       "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação"
     ]);
     const tooGrounded = !speculativeGenres && !hasVibe && !speculativeTerms;
+    const investigativeButNotSpeculative = hasGenre(movie, ["Misterio", "Suspense", "Crime"])
+      && !hasGenre(movie, ["Ficcao cientifica", "Fantasia"])
+      && !speculativeEvidence(movie);
     const hardRealism = hasGenre(movie, ["Documentario", "Guerra"]) && !speculativeGenres;
     const superheroBlockbuster = superheroActionSignal(movie);
     const actionWithoutHeadroom = hasGenre(movie, ["Acao", "Aventura"]) && !complexityEvidence(movie) && !conceptualSciFiSignal(movie) && !hasVibe;
@@ -2736,6 +2743,7 @@ function moodMismatch(movie) {
       || hardRealism
       || superheroBlockbuster
       || actionWithoutHeadroom
+      || investigativeButNotSpeculative
       || missingSpeculation
       || tooGrounded;
   }
