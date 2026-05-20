@@ -3903,25 +3903,41 @@ async function searchTmdbAndHydrate() {
 }
 
 async function findPosterForMovie(movie) {
+  if (!movie) return false;
+  if (movie.posterUrl) return true;
+
+  // Fast path for fresh sessions: OMDb often returns a usable poster quickly by imdbId.
+  if (movie.imdbId) {
+    const quickRecovered = await enrichRatingsFromOmdb(movie, { forcePoster: true }).catch(() => false);
+    if (quickRecovered && movie.posterUrl) {
+      cacheMovieEnhancement(movie);
+      return true;
+    }
+  }
+
   const queries = posterQueriesForMovie(movie);
   let match = null;
 
-  for (const query of queries) {
-    for (const language of ["pt-BR", "en-US"]) {
-      for (const yearMode of ["year", "primary_release_year", "loose"]) {
-        const params = new URLSearchParams({
-          query,
-          language,
-          include_adult: "false"
-        });
-        if (yearMode !== "loose") params.set(yearMode, String(movie.year));
-        const result = await tmdbFetch("/search/movie", params);
-        match = bestPosterMatch(result.results, movie, queries);
+  try {
+    for (const query of queries) {
+      for (const language of ["pt-BR", "en-US"]) {
+        for (const yearMode of ["year", "primary_release_year", "loose"]) {
+          const params = new URLSearchParams({
+            query,
+            language,
+            include_adult: "false"
+          });
+          if (yearMode !== "loose") params.set(yearMode, String(movie.year));
+          const result = await tmdbFetch("/search/movie", params);
+          match = bestPosterMatch(result.results, movie, queries);
+          if (match) break;
+        }
         if (match) break;
       }
       if (match) break;
     }
-    if (match) break;
+  } catch {
+    // Keep going to OMDb fallback below; TMDb may fail transiently in first-load sessions.
   }
 
   if (!match) {
