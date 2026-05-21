@@ -1830,12 +1830,15 @@ function titleAliasesFor(title) {
 
 function tmdbPosterCandidates(url) {
   if (!url || !String(url).includes("image.tmdb.org/t/p/")) return [url].filter(Boolean);
+  const base = String(url);
+  const replaceSize = (size) => base.replace(/\/(w\d+|original)\//, `/${size}/`);
   return [
-    String(url).replace("/w500/", "/w500/"),
-    String(url).replace("/w500/", "/w342/"),
-    String(url).replace("/w500/", "/w300/"),
-    String(url).replace("/w500/", "/w185/"),
-    String(url).replace("/w500/", "/original/")
+    replaceSize("w500"),
+    replaceSize("w780"),
+    replaceSize("w342"),
+    replaceSize("w300"),
+    replaceSize("w185"),
+    replaceSize("original")
   ];
 }
 
@@ -1857,12 +1860,14 @@ function choosePosterSrc(candidates, variant = "hero") {
   if (!candidates.length) return "";
   if (variant === "dialog") {
     return candidates.find((url) => url.includes("/w500/"))
+      || candidates.find((url) => url.includes("/w780/"))
       || candidates.find((url) => url.includes("/w342/"))
       || candidates[0];
   }
 
-  return candidates.find((url) => url.includes("/w342/"))
-    || candidates.find((url) => url.includes("/w300/"))
+  return candidates.find((url) => url.includes("/w500/"))
+    || candidates.find((url) => url.includes("/w780/"))
+    || candidates.find((url) => url.includes("/w342/"))
     || candidates[0];
 }
 
@@ -1885,7 +1890,10 @@ function posterImgMarkup(movie, { loading = "lazy", decoding = "async", fetchpri
   const srcset = posterSrcSet(candidates);
   const sizes = variant === "dialog" ? "(max-width: 920px) 62vw, 240px" : "(max-width: 920px) 74vw, 200px";
   const movieKeyEncoded = encodeURIComponent(movieKey(movie.title, movie.year));
-  return `<img class="poster-img" src="${src}" ${srcset ? `srcset="${srcset}" sizes="${sizes}"` : ""} data-movie-key="${movieKeyEncoded}" data-poster-candidates="${candidates.join("||")}" alt="Capa de ${movie.title}" loading="${loading}" decoding="${decoding}" fetchpriority="${fetchpriority}">`;
+  const responsiveAttrs = variant === "hero"
+    ? ""
+    : (srcset ? `srcset="${srcset}" sizes="${sizes}"` : "");
+  return `<img class="poster-img" src="${src}" ${responsiveAttrs} data-movie-key="${movieKeyEncoded}" data-poster-candidates="${candidates.join("||")}" alt="Capa de ${movie.title}" loading="${loading}" decoding="${decoding}" fetchpriority="${fetchpriority}">`;
 }
 
 function preloadPosterAsset(movie) {
