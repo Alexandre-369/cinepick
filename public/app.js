@@ -1517,6 +1517,8 @@ let recommendationQueue = [];
 let recommendationSignature = "";
 const attemptedHeroPosterKeys = new Set();
 const attemptedPosterRecoveryKeys = new Set();
+const heroPosterRetryAt = new Map();
+let visiblePosterHydrationSignature = "";
 let priorityPosterHydrationStarted = "";
 let priorityPosterHydrationInFlight = false;
 let nextPriorityHydrationAt = 0;
@@ -4001,16 +4003,47 @@ function ensureHeroPoster(movie) {
   const staticLocalhost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && !(els.tmdbToken?.value.trim() || "");
   if (staticLocalhost) return;
   const key = movieKey(movie.title, movie.year);
+  const retryAt = Number(heroPosterRetryAt.get(key) || 0);
+  if (retryAt && Date.now() < retryAt) return;
   if (attemptedHeroPosterKeys.has(key)) return;
   attemptedHeroPosterKeys.add(key);
 
   findPosterForMovie(movie)
     .then((found) => {
-      if (!found) return;
+      if (!found) {
+        attemptedHeroPosterKeys.delete(key);
+        heroPosterRetryAt.set(key, Date.now() + 2400);
+        return;
+      }
+      heroPosterRetryAt.delete(key);
       updateProviderFilter();
       requestBackgroundRender(true);
     })
-    .catch(() => false);
+    .catch(() => {
+      attemptedHeroPosterKeys.delete(key);
+      heroPosterRetryAt.set(key, Date.now() + 2400);
+      return false;
+    });
+}
+
+async function hydrateVisiblePostersBurst(list = [], scope = "main") {
+  if (!hasHttpProtocol || !Array.isArray(list) || !list.length) return;
+  const candidates = list.filter((movie) => movie && !movie.posterUrl).slice(0, 4);
+  if (!candidates.length) return;
+  const signature = `${scope}|${useTmdb}|${candidates.map((movie) => movieKey(movie.title, movie.year)).join(",")}`;
+  if (visiblePosterHydrationSignature === signature) return;
+  visiblePosterHydrationSignature = signature;
+
+  let found = 0;
+  for (const movie of candidates) {
+    const ok = await findPosterForMovie(movie).catch(() => false);
+    if (ok) found += 1;
+  }
+
+  if (found) {
+    updateProviderFilter();
+    requestBackgroundRender(true);
+  }
 }
 
 async function hydrateCuratedPosters() {
@@ -4963,12 +4996,14 @@ async function renderWithAdvance(advance) {
     }
     renderHero(selected);
     renderShortlist(list);
+    if (list.length) runWhenIdle(() => hydrateVisiblePostersBurst(list, "roulette"), 90);
     scheduleBackgroundHydrationTasks();
     return;
   }
 
   renderHero(list[0]);
   renderShortlist(list);
+  if (list.length) runWhenIdle(() => hydrateVisiblePostersBurst(list, "mood"), 90);
   scheduleBackgroundHydrationTasks();
 }
 
