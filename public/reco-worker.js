@@ -72,8 +72,17 @@ function movieSearchText(movie) {
   return movie.__searchText;
 }
 
+function normalizeSearchPhrase(value) {
+  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function hasAnyText(text, terms) {
-  return terms.some((term) => text.includes(normalize(term)));
+  const haystack = ` ${normalizeSearchPhrase(text)} `;
+  return terms.some((term) => {
+    const needle = normalizeSearchPhrase(term);
+    if (!needle) return false;
+    return haystack.includes(` ${needle} `);
+  });
 }
 
 function moodAliases(mood, moodAliasMap) {
@@ -131,10 +140,38 @@ function escapistMismatch(movie) {
   return actionComedy || familyAdventure || lightFranchise;
 }
 
+function speculativeEvidence(movie) {
+  const text = movieSearchText(movie);
+  const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia"]);
+  const mysteryWithoutSpeculation = hasGenre(movie, ["Misterio", "Suspense", "Crime"])
+    && !hasGenre(movie, ["Ficcao cientifica", "Fantasia"]);
+  const speculativeTerms = hasAnyText(text, [
+    "ficcao", "cientifica", "fantasia", "distopia", "utopia", "futuro", "multiverso",
+    "realidade alternativa", "espaco", "ia", "alien", "magia", "mito", "portal",
+    "paradoxo", "cyberpunk", "simulacao", "viagem no tempo", "time loop", "linha do tempo"
+  ]);
+  if (mysteryWithoutSpeculation && !speculativeTerms) return false;
+  return speculativeGenres || speculativeTerms;
+}
+
+function superheroActionSignal(movie) {
+  const text = movieSearchText(movie);
+  return hasGenre(movie, ["Acao", "Aventura", "Ficcao cientifica", "Fantasia"]) && hasAnyText(text, [
+    "marvel", "avengers", "vingadores", "iron man", "homem de ferro", "captain america", "capitao america",
+    "thor", "hulk", "black widow", "viuva negra", "doctor strange", "doutor estranho",
+    "guardians", "guardioes", "black panther", "pantera negra", "ant man", "homem aranha",
+    "spider man", "deadpool", "x men", "justice league", "liga da justica", "batman", "superman"
+  ]);
+}
+
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
   const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
+  const hasActionGenre = hasGenre(movie, ["Acao"]);
+  const hasComedyRelief = hasGenre(movie, ["Comedia", "Aventura", "Animacao", "Familia"])
+    || hasAnyText(text, ["comedia", "humor", "satira", "zoeira", "buddy", "heist", "familia"]);
   const isMostlyDrama = hasGenre(movie, ["Drama"]) && !hasLightGenre;
+  const isHardAction = hasActionGenre && !hasComedyRelief;
   const isBroodingRomance = hasGenre(movie, ["Romance"]) && hasAnyText(text, [
     "luto", "melancolia", "melancólico", "melancolico", "tragico", "trágico", "obsessao", "obsessão",
     "culpa", "trauma", "vinganca", "vingança", "sombrio", "gótico", "gotico", "depressao", "depressão"
@@ -145,7 +182,7 @@ function lightMoodMismatch(movie) {
   ]);
   const tooLongWithoutRelief = Number(movie.duration || 0) > 132 && !hasLightGenre;
   const hasMismatchVibe = (movie.vibes || []).some((vibe) => ["complexo", "intenso", "sensivel"].includes(vibe)) && !(movie.vibes || []).includes("leve");
-  return isMostlyDrama || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
+  return isMostlyDrama || isHardAction || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
 }
 
 function comfortMoodMismatch(movie) {
@@ -172,9 +209,11 @@ function moodMismatch(movie, state) {
 
   if (state.activeMood === "complexo") {
     const hasLightGenre = hasGenre(movie, ["Acao", "Aventura", "Comedia", "Familia", "Animacao"]);
-    const hasHeavyThinkingGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica", "Misterio", "Suspense"]);
+    const hasHeavyThinkingGenre = hasGenre(movie, ["Drama", "Documentario", "Ficcao cientifica", "Fantasia", "Misterio", "Suspense"]);
     return hardAvoidMatches > 0
       || !complexityEvidence(movie)
+      || !speculativeEvidence(movie)
+      || superheroActionSignal(movie)
       || escapistMismatch(movie)
       || (hasLightGenre && !hasHeavyThinkingGenre);
   }
@@ -252,7 +291,7 @@ function moodScore(movie, state) {
   const preferredMatches = genreMatchCount(movie, profile.preferredGenres || []);
   const avoidMatches = genreMatchCount(movie, profile.avoidGenres || []);
   const hardAvoidMatches = genreMatchCount(movie, profile.hardAvoidGenres || []);
-  const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => hasAnyText(text, [keyword])).length;
   let score = 0;
 
   if (moodMismatch(movie, state)) score -= 120;
@@ -285,7 +324,7 @@ function moodCollectionScore(movie, state) {
   const profile = state.moodProfiles[state.activeMood] || {};
   const hasVibe = movieHasMoodVibe(movie, state.activeMood, state.moodAliasMap);
   const preferredMatches = genreMatchCount(movie, profile.preferredGenres || []);
-  const keywordMatches = (profile.keywords || []).filter((keyword) => movieSearchText(movie).includes(normalize(keyword))).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => hasAnyText(movieSearchText(movie), [keyword])).length;
 
   if (profile.requiredComplexity && !complexityEvidence(movie)) return -28;
   if (hasVibe) return 28;
@@ -327,7 +366,8 @@ function computeItems(movies, state) {
     }
     if (filters.hideWatched && state.profileLoaded && (movie.seen || watchedSet.has(movie.key))) score -= 100;
     score -= freshnessPenalty(movie, history);
-    score += shuffleNoise(movie, state) * (profile.surpriseMode ? 132 : (state.activeMode === "roulette" ? 118 : 78));
+    const randomWeight = profile.surpriseMode ? 154 : (state.activeMode === "roulette" ? 146 : 112);
+    score += shuffleNoise(movie, state) * randomWeight;
 
     scored.push({
       key: movie.key,

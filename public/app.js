@@ -111,7 +111,7 @@ const countryCodes = {
 };
 
 const tmdbCatalogConfig = {
-  cacheVersion: 13,
+  cacheVersion: 14,
   limit: 1280,
   batchSize: 16,
   omdbEnrichLimit: 36,
@@ -125,9 +125,9 @@ const catalogSorts = ["vote_count.desc", "popularity.desc", "vote_average.desc",
 const recommendationHistoryKey = "cinepick_recommendation_history_v2";
 const recommendationHistoryLimit = 520;
 const moodRecommendationHistoryKey = "cinepick_mood_recommendation_history_v1";
-const moodRecommendationHistoryLimit = 280;
+const moodRecommendationHistoryLimit = 420;
 const watchLaterKey = "cinepick_watch_later_v1";
-const posterCacheKey = "cinepick_poster_cache_v3";
+const posterCacheKey = "cinepick_poster_cache_v4";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
 const compactSidebarKey = "cinepick_compact_sidebar_v1";
@@ -363,6 +363,7 @@ const posterTitleAliases = {
   "Portrait of a Lady on Fire": ["Retrato de uma Jovem em Chamas"],
   "Punch-Drunk Love": ["Embriagado de Amor"],
   "Rafiki": ["Rafiki: Amigas para Sempre"],
+  "Raw": ["Grave"],
   "Pixote": ["Pixote: A Lei do Mais Fraco"],
   "Santiago": ["Santiago: Uma Reflexão Sobre o Material Bruto"],
   "Shoplifters": ["Assunto de Família"],
@@ -434,9 +435,9 @@ const moodProfiles = {
     longMoviePenalty: 155
   },
   complexo: {
-    preferredGenres: ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio", "Suspense"],
-    avoidGenres: ["Documentario", "Guerra", "Crime", "Musica"],
-    hardAvoidGenres: ["Documentario", "Guerra", "Crime"],
+    preferredGenres: ["Ficcao cientifica", "Fantasia", "Animacao"],
+    avoidGenres: ["Documentario", "Guerra", "Crime", "Musica", "Acao", "Aventura"],
+    hardAvoidGenres: ["Documentario", "Guerra", "Crime", "Acao"],
     conflictingVibes: ["comfort"],
     keywords: [
       "ficcao", "ficção", "cientifica", "científica", "fantasia", "multiverso",
@@ -1199,7 +1200,7 @@ const extraCuratedMovies = [
   ["Touki Bouki", 1973, "Drama", 95, "Senegal", "Djibril Diop Mambety", 70, 89, ["surpresa", "complexo", "nostalgia"], ["Senegal", "road movie", "rebeldia"], false],
   ["Black Girl", 1966, "Drama", 65, "Senegal", "Ousmane Sembene", 74, 96, ["complexo", "sensivel", "nostalgia"], ["colonialismo", "diaspora", "curta"], true],
   ["Xala", 1975, "Comedia", 123, "Senegal", "Ousmane Sembene", 72, 89, ["complexo", "leve", "nostalgia"], ["satira", "pos-colonial", "elite"], false],
-  ["Moolaade", 2004, "Drama", 124, "Senegal", "Ousmane Sembene", 77, 99, ["sensivel", "complexo"], ["comunidade", "mulheres", "tradicao"], false],
+  ["Moolaade", 2004, "Drama", 124, "Senegal", "Ousmane Sembene", 77, 99, ["sensivel", "intenso"], ["comunidade", "mulheres", "tradicao"], false],
   ["Yeelen", 1987, "Drama", 105, "Mali", "Souleymane Cisse", 69, 88, ["surpresa", "complexo", "nostalgia"], ["mito", "magia", "Mali"], false],
   ["Timbuktu", 2014, "Drama", 96, "Mauritania", "Abderrahmane Sissako", 71, 99, ["sensivel", "complexo", "intenso"], ["ocupacao", "poesia", "Sahel"], false],
   ["Bamako", 2006, "Drama", 115, "Mali", "Abderrahmane Sissako", 67, 81, ["complexo", "surpresa"], ["politica", "tribunal", "Africa"], false],
@@ -1407,7 +1408,7 @@ const extraCuratedMovies = [
   ["Police Story", 1985, "Acao", 100, "Hong Kong", "Jackie Chan", 75, 93, ["acao", "leve"], ["dublês", "comedia fisica", "ritmo"], false],
   ["RRR", 2022, "Acao", 182, "India", "S. S. Rajamouli", 78, 95, ["acao", "surpresa"], ["epico", "amizade", "energia"], true],
   ["The Night Comes for Us", 2018, "Acao", 121, "Indonesia", "Timo Tjahjanto", 69, 91, ["acao", "terror"], ["gangue", "adrenalina", "violencia"], false],
-  ["Die Hard", 1988, "Acao", 132, "Estados Unidos", "John McTiernan", 82, 94, ["acao", "leve"], ["predio", "resgate", "classico"], true],
+  ["Die Hard", 1988, "Acao", 132, "Estados Unidos", "John McTiernan", 82, 94, ["acao", "intenso"], ["predio", "resgate", "classico"], true],
   ["Point Break", 1991, "Acao", 122, "Estados Unidos", "Kathryn Bigelow", 73, 69, ["acao", "leve"], ["assalto", "surf", "perseguicao"], false],
   ["Run Lola Run", 1998, "Acao", 81, "Alemanha", "Tom Tykwer", 76, 94, ["acao", "complexo"], ["corrida", "tempo", "energia"], true],
   ["The Villainess", 2017, "Acao", 124, "Coreia do Sul", "Jung Byung-gil", 66, 84, ["acao", "intenso"], ["vinganca", "coreografia", "espionagem"], false],
@@ -1472,7 +1473,39 @@ const extraCuratedMovies = [
   ["Alien", 1979, "Terror", 117, "Reino Unido", "Ridley Scott", 84, 93, ["terror", "intenso", "nostalgia"], ["espaco", "claustrofobia", "classico"], true],
   ["The Thing", 1982, "Terror", 109, "Estados Unidos", "John Carpenter", 82, 84, ["terror", "intenso", "nostalgia"], ["paranoia", "neve", "classico"], true],
   ["Blade Runner", 1982, "Ficcao cientifica", 117, "Estados Unidos", "Ridley Scott", 81, 89, ["complexo", "nostalgia", "surpresa"], ["cyberpunk", "neo-noir", "classico"], true],
-  ["Brazil", 1985, "Ficcao cientifica", 132, "Reino Unido", "Terry Gilliam", 79, 98, ["complexo", "nostalgia", "surpresa"], ["distopia", "burocracia", "cult"], false]
+  ["Brazil", 1985, "Ficcao cientifica", 132, "Reino Unido", "Terry Gilliam", 79, 98, ["complexo", "nostalgia", "surpresa"], ["distopia", "burocracia", "cult"], false],
+  ["Arrival", 2016, "Ficcao cientifica", 116, "Estados Unidos", "Denis Villeneuve", 79, 94, ["complexo", "sensivel"], ["alien", "linguagem", "tempo"], true],
+  ["Contact", 1997, "Ficcao cientifica", 150, "Estados Unidos", "Robert Zemeckis", 74, 68, ["complexo", "nostalgia"], ["espaco", "fe", "mensagem"], false],
+  ["Dark City", 1998, "Ficcao cientifica", 100, "Estados Unidos", "Alex Proyas", 76, 75, ["complexo", "nostalgia", "surpresa"], ["neo-noir", "memoria", "cidade"], false],
+  ["Moon", 2009, "Ficcao cientifica", 97, "Reino Unido", "Duncan Jones", 79, 90, ["complexo", "sensivel"], ["solidao", "identidade", "espaco"], true],
+  ["Source Code", 2011, "Ficcao cientifica", 93, "Estados Unidos", "Duncan Jones", 75, 92, ["complexo", "acao"], ["tempo", "investigacao", "loop"], false],
+  ["Gattaca", 1997, "Ficcao cientifica", 106, "Estados Unidos", "Andrew Niccol", 78, 82, ["complexo", "nostalgia"], ["genetica", "futuro", "destino"], true],
+  ["Minority Report", 2002, "Ficcao cientifica", 145, "Estados Unidos", "Steven Spielberg", 76, 89, ["complexo", "acao"], ["precrime", "futuro", "perseguicao"], true],
+  ["Akira", 1988, "Animacao", 124, "Japao", "Katsuhiro Otomo", 80, 91, ["complexo", "nostalgia", "surpresa"], ["cyberpunk", "distopia", "Tóquio"], true],
+  ["Ghost in the Shell", 1995, "Animacao", 83, "Japao", "Mamoru Oshii", 79, 95, ["complexo", "nostalgia"], ["cyberpunk", "identidade", "ia"], true],
+  ["Metropolis", 2001, "Animacao", 113, "Japao", "Rintaro", 72, 86, ["complexo", "nostalgia"], ["futuro", "robos", "cidade"], false],
+  ["Nausicaa of the Valley of the Wind", 1984, "Animacao", 117, "Japao", "Hayao Miyazaki", 80, 90, ["complexo", "comfort", "nostalgia"], ["fantasia", "ecologia", "aventura"], true],
+  ["Stalker", 1979, "Ficcao cientifica", 162, "Russia", "Andrei Tarkovsky", 82, 100, ["complexo", "nostalgia", "surpresa"], ["zona", "filosofia", "metafisica"], true],
+  ["Solaris", 1972, "Ficcao cientifica", 167, "Russia", "Andrei Tarkovsky", 80, 92, ["complexo", "nostalgia"], ["espaco", "memoria", "existencial"], true],
+  ["District 9", 2009, "Ficcao cientifica", 112, "Africa do Sul", "Neill Blomkamp", 79, 90, ["complexo", "acao"], ["alien", "apartheid", "caos"], true],
+  ["Snowpiercer", 2013, "Ficcao cientifica", 126, "Coreia do Sul", "Bong Joon-ho", 71, 94, ["complexo", "acao"], ["distopia", "classe", "trem"], true],
+  ["Children of Heaven", 1997, "Drama", 89, "Ira", "Majid Majidi", 83, 83, ["comfort", "sensivel", "nostalgia"], ["infancia", "familia", "irmaos"], false],
+  ["Memories of Murder", 2003, "Crime", 132, "Coreia do Sul", "Bong Joon-ho", 81, 95, ["intenso", "complexo"], ["detetive", "serial killer", "chuva"], true],
+  ["The Host", 2006, "Terror", 120, "Coreia do Sul", "Bong Joon-ho", 71, 93, ["terror", "acao", "surpresa"], ["monstro", "familia", "rio"], false],
+  ["Train to Busan", 2016, "Terror", 118, "Coreia do Sul", "Yeon Sang-ho", 76, 95, ["terror", "acao", "intenso"], ["zumbi", "trem", "sobrevivencia"], true],
+  ["The Wailing", 2016, "Terror", 156, "Coreia do Sul", "Na Hong-jin", 74, 99, ["terror", "complexo", "intenso"], ["maldicao", "aldeia", "investigacao"], true],
+  ["Hero", 2002, "Acao", 99, "China", "Zhang Yimou", 79, 94, ["acao", "nostalgia"], ["wuxia", "imperio", "coreografia"], false],
+  ["Crouching Tiger, Hidden Dragon", 2000, "Acao", 120, "China", "Ang Lee", 79, 98, ["acao", "sensivel", "nostalgia"], ["wuxia", "romance", "honra"], true],
+  ["Infernal Affairs", 2002, "Crime", 101, "Hong Kong", "Andrew Lau", 80, 94, ["intenso", "acao"], ["policia", "infiltrado", "virada"], true],
+  ["Spider-Man: Into the Spider-Verse", 2018, "Animacao", 117, "Estados Unidos", "Bob Persichetti", 84, 97, ["acao", "leve", "complexo"], ["multiverso", "marvel", "animacao"], true],
+  ["Spider-Man: Across the Spider-Verse", 2023, "Animacao", 140, "Estados Unidos", "Joaquim Dos Santos", 86, 95, ["acao", "complexo"], ["multiverso", "marvel", "animacao"], true],
+  ["Guardians of the Galaxy", 2014, "Acao", 121, "Estados Unidos", "James Gunn", 80, 92, ["acao", "leve"], ["marvel", "espaco", "humor"], true],
+  ["Captain America: The Winter Soldier", 2014, "Acao", 136, "Estados Unidos", "Anthony Russo", 77, 90, ["acao", "intenso"], ["marvel", "espionagem", "conspiracao"], true],
+  ["Thor: Ragnarok", 2017, "Acao", 130, "Estados Unidos", "Taika Waititi", 79, 93, ["acao", "leve"], ["marvel", "espaco", "comedia"], true],
+  ["Kill Bill: Vol. 2", 2004, "Acao", 137, "Estados Unidos", "Quentin Tarantino", 80, 84, ["acao", "intenso"], ["vinganca", "duelo", "tarantino"], true],
+  ["The Nice Guys", 2016, "Comedia", 116, "Estados Unidos", "Shane Black", 74, 91, ["leve", "intenso"], ["detetive", "buddy", "anos 70"], false],
+  ["Kiss Kiss Bang Bang", 2005, "Comedia", 103, "Estados Unidos", "Shane Black", 75, 86, ["leve", "intenso"], ["crime", "buddy", "humor seco"], false],
+  ["The Man from U.N.C.L.E.", 2015, "Acao", 116, "Reino Unido", "Guy Ritchie", 73, 68, ["acao", "leve"], ["espionagem", "estilo", "dupla"], false]
 ];
 
 function createCuratedMovie([title, year, genre, duration, country, director, imdb, rt, vibes, tags, favoriteSignal]) {
@@ -1745,6 +1778,11 @@ function posterMatchScore(item, movie, queries) {
   const yearDelta = releaseYear ? Math.abs(releaseYear - Number(movie.year)) : 99;
   const acceptedTitles = uniqueNormalized([...queries, movie.title]).map(normalize);
   const candidateTitles = uniqueNormalized([item.title, item.original_title]).map(normalize);
+  const movieTitleKey = normalize(String(movie.title || ""));
+  const shortTitle = movieTitleKey.length > 0 && movieTitleKey.length <= 5;
+  const candidateHasFranchiseNoise = candidateTitles.some((candidate) => hasAnyText(candidate, [
+    "wwe", "smackdown", "raw and smackdown", "episode", "season", "volume", "part"
+  ]));
   let score = 0;
 
   if (yearDelta === 0) score += 90;
@@ -1754,8 +1792,10 @@ function posterMatchScore(item, movie, queries) {
   candidateTitles.forEach((candidate) => {
     if (acceptedTitles.includes(candidate)) score += 60;
     else if (acceptedTitles.some((title) => title.includes(candidate) || candidate.includes(title))) score += 24;
+    if (shortTitle && !acceptedTitles.includes(candidate) && candidate.split(" ").length >= 4) score -= 34;
   });
 
+  if (candidateHasFranchiseNoise && !hasAnyText(movieTitleKey, ["wwe", "smackdown"])) score -= 160;
   score += Math.min(18, Number(item.vote_count || 0) / 450);
   score += Math.min(12, Number(item.popularity || 0) / 18);
   return score;
@@ -1766,6 +1806,49 @@ function bestPosterMatch(results, movie, queries) {
     .map((item) => ({ item, score: posterMatchScore(item, movie, queries) }))
     .filter(({ score }) => score > 15)
     .sort((a, b) => b.score - a.score)[0]?.item || null;
+}
+
+function titlesStrictlyMatch(movie, match, details = {}, queries = []) {
+  const accepted = new Set(uniqueNormalized([...queries, movie.title, ...titleAliasesFor(movie.title)]).map(normalize));
+  const candidates = uniqueNormalized([
+    match?.title,
+    match?.original_title,
+    details?.title,
+    details?.original_title
+  ]).map(normalize);
+
+  return candidates.some((candidate) => accepted.has(candidate));
+}
+
+function directorsLookCompatible(expected, actual) {
+  const expectedKey = normalize(expected);
+  const actualKey = normalize(actual);
+  if (!expectedKey || !actualKey) return true;
+  if (expectedKey === actualKey) return true;
+
+  const expectedParts = expectedKey.split(" ").filter((part) => part.length >= 3);
+  const actualParts = actualKey.split(" ").filter((part) => part.length >= 3);
+  const shared = expectedParts.filter((part) => actualParts.includes(part)).length;
+  return shared >= Math.max(1, Math.min(expectedParts.length, actualParts.length) - 1);
+}
+
+function posterMatchIsTrusted(movie, match, details = {}, queries = []) {
+  if (!match?.poster_path) return false;
+
+  const matchYear = Number((match.release_date || "").slice(0, 4)) || 0;
+  const movieYear = Number(movie.year || 0);
+  const yearDelta = matchYear && movieYear ? Math.abs(matchYear - movieYear) : 0;
+  if (yearDelta > 2) return false;
+
+  const strictTitle = titlesStrictlyMatch(movie, match, details, queries);
+  const normalizedTitle = normalize(String(movie.title || ""));
+  if (normalizedTitle.length <= 5 && !strictTitle) return false;
+
+  const matchedDirector = (details.credits?.crew || []).find((person) => person.job === "Director")?.name || "";
+  if (movie.director && matchedDirector && !directorsLookCompatible(movie.director, matchedDirector)) return false;
+
+  if (!strictTitle && yearDelta >= 2) return false;
+  return true;
 }
 
 function ratingAverage(movie) {
@@ -1993,8 +2076,17 @@ function genreMatchCount(movie, genres = []) {
   return genres.filter((genre) => hasGenre(movie, [genre])).length;
 }
 
+function normalizeSearchPhrase(value) {
+  return normalize(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function hasAnyText(text, terms) {
-  return terms.some((term) => text.includes(normalize(term)));
+  const haystack = ` ${normalizeSearchPhrase(text)} `;
+  return terms.some((term) => {
+    const needle = normalizeSearchPhrase(term);
+    if (!needle) return false;
+    return haystack.includes(` ${needle} `);
+  });
 }
 
 function complexityEvidence(movie) {
@@ -2101,6 +2193,7 @@ function hasHorrorSignal(movie) {
 function enforceMoodCalibration(movie) {
   if (!movie) return;
   const vibes = new Set(movie.vibes || []);
+  const text = movieSearchText(movie);
   let changed = false;
 
   if (superheroActionSignal(movie)) {
@@ -2140,6 +2233,14 @@ function enforceMoodCalibration(movie) {
     }
   }
 
+  const hardActionWithoutRelief = hasGenre(movie, ["Acao"])
+    && !hasGenre(movie, ["Comedia", "Familia", "Animacao", "Aventura"])
+    && !hasAnyText(text, ["comedia", "humor", "buddy", "satira"]);
+  if (hardActionWithoutRelief && vibes.has("leve")) {
+    vibes.delete("leve");
+    changed = true;
+  }
+
   if (!hasGenre(movie, ["Terror"]) && !hasHorrorSignal(movie) && vibes.has("terror")) {
     vibes.delete("terror");
     changed = true;
@@ -2154,7 +2255,11 @@ function enforceMoodCalibration(movie) {
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
   const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
+  const hasActionGenre = hasGenre(movie, ["Acao"]);
+  const hasComedyRelief = hasGenre(movie, ["Comedia", "Aventura", "Animacao", "Familia"])
+    || hasAnyText(text, ["comedia", "humor", "satira", "zoeira", "buddy", "heist", "familia"]);
   const isMostlyDrama = hasGenre(movie, ["Drama"]) && !hasLightGenre;
+  const isHardAction = hasActionGenre && !hasComedyRelief;
   const isBroodingRomance = hasGenre(movie, ["Romance"]) && hasAnyText(text, [
     "luto", "melancolia", "melancólico", "melancolico", "tragico", "trágico", "obsessao", "obsessão",
     "culpa", "trauma", "vinganca", "vingança", "sombrio", "gótico", "gotico", "depressao", "depressão"
@@ -2165,7 +2270,7 @@ function lightMoodMismatch(movie) {
   ]);
   const tooLongWithoutRelief = movieDuration(movie) > 132 && !hasLightGenre;
   const hasMismatchVibe = (movie.vibes || []).some((vibe) => ["complexo", "intenso", "sensivel"].includes(vibe)) && !(movie.vibes || []).includes("leve");
-  return isMostlyDrama || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
+  return isMostlyDrama || isHardAction || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
 }
 
 function comfortMoodMismatch(movie) {
@@ -2213,7 +2318,7 @@ function moodScore(movie) {
   const preferredMatches = genreMatchCount(movie, profile.preferredGenres);
   const avoidMatches = genreMatchCount(movie, profile.avoidGenres);
   const hardAvoidMatches = genreMatchCount(movie, profile.hardAvoidGenres);
-  const keywordMatches = (profile.keywords || []).filter((keyword) => text.includes(normalize(keyword))).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => hasAnyText(text, [keyword])).length;
   let score = 0;
 
   if (moodMismatch(movie)) {
@@ -2259,7 +2364,7 @@ function moodCollectionScore(movie) {
   const profile = moodProfiles[activeMood] || {};
   const hasVibe = movieHasMoodVibe(movie, activeMood);
   const preferredMatches = genreMatchCount(movie, profile.preferredGenres);
-  const keywordMatches = (profile.keywords || []).filter((keyword) => movieSearchText(movie).includes(normalize(keyword))).length;
+  const keywordMatches = (profile.keywords || []).filter((keyword) => hasAnyText(movieSearchText(movie), [keyword])).length;
 
   if (profile.requiredComplexity && !complexityEvidence(movie)) return -28;
   if (hasVibe) return 28;
@@ -2409,15 +2514,17 @@ function diversityPenalty(movie, selected) {
 function weightedShuffle(list, scope = "weighted") {
   if (!list.length) return [];
   const minScore = Math.min(...list.map((movie) => movie.score));
+  const exponent = activeMode === "roulette" ? 0.48 : 0.58;
 
   return list
     .map((movie) => {
       const normalizedScore = Math.max(1, movie.score - minScore + 10);
-      const weight = Math.pow(normalizedScore, activeMode === "roulette" ? 0.62 : 0.72);
+      const weight = Math.pow(normalizedScore, exponent);
       const random = Math.max(0.0001, seededUnit(movie, scope));
+      const jitter = (seededUnit(movie, `${scope}-jitter`) - 0.5) * 0.25;
       return {
         movie,
-        sortKey: -Math.log(random) / weight
+        sortKey: (-Math.log(random) / weight) + jitter
       };
     })
     .sort((a, b) => a.sortKey - b.sortKey)
@@ -2735,13 +2842,13 @@ function moodMismatch(movie) {
   const hasConflictingVibe = (movie.vibes || []).some((vibe) => (profile.conflictingVibes || []).includes(vibe));
 
   if (activeMood === "complexo") {
-    const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia", "Animacao", "Misterio", "Suspense"]);
+    const speculativeGenres = hasGenre(movie, ["Ficcao cientifica", "Fantasia", "Animacao"]);
     const speculativeTerms = hasAnyText(movieSearchText(movie), [
       "ficcao", "ficção", "cientifica", "científica", "fantasia", "distopia", "utopia",
       "futuro", "multiverso", "realidade", "tempo", "espaco", "espaço", "ia",
       "alien", "magia", "mito", "portal", "paradoxo", "cyberpunk", "simulacao", "simulação"
     ]);
-    const tooGrounded = !speculativeGenres && !hasVibe && !speculativeTerms;
+    const tooGrounded = !speculativeGenres && !speculativeTerms;
     const investigativeButNotSpeculative = hasGenre(movie, ["Misterio", "Suspense", "Crime"])
       && !hasGenre(movie, ["Ficcao cientifica", "Fantasia"])
       && !speculativeEvidence(movie);
@@ -3028,7 +3135,8 @@ function scoreMovie(movie) {
   if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
   score -= freshnessPenalty(movie);
 
-  return score + shuffleNoise(movie) * (profile.surpriseMode ? 132 : (activeMode === "roulette" ? 118 : 78));
+  const randomWeight = profile.surpriseMode ? 154 : (activeMode === "roulette" ? 146 : 112);
+  return score + shuffleNoise(movie) * randomWeight;
 }
 
 function filteredStateSignature(catalogLength) {
@@ -3106,7 +3214,7 @@ function getRecoWorker() {
   if (recoWorker) return recoWorker;
 
   try {
-    recoWorker = new Worker("./reco-worker.js");
+    recoWorker = new Worker("./reco-worker.js?v=20260521a");
   } catch {
     workerEnabled = false;
     return null;
@@ -3958,7 +4066,15 @@ async function findPosterForMovie(movie) {
     }
     return false;
   }
-  const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids,watch/providers", language: "pt-BR" }));
+  const details = await tmdbFetch(`/movie/${match.id}`, new URLSearchParams({ append_to_response: "external_ids,watch/providers,credits", language: "pt-BR" }));
+  if (!posterMatchIsTrusted(movie, match, details, queries)) {
+    const recovered = await enrichRatingsFromOmdb(movie, { forcePoster: true }).catch(() => false);
+    if (recovered && movie.posterUrl) {
+      cacheMovieEnhancement(movie);
+      return true;
+    }
+    return false;
+  }
   movie.posterUrl = `https://image.tmdb.org/t/p/w500${match.poster_path}`;
   if (match.backdrop_path) movie.backdropUrl = `https://image.tmdb.org/t/p/w780${match.backdrop_path}`;
   movie.imdb = Math.round((match.vote_average || movie.imdb / 10) * 10);
