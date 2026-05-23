@@ -1875,6 +1875,19 @@ function formatRuntime(minutes) {
   return minutes ? `${minutes} min` : "n/d";
 }
 
+function movieColorPair(movie) {
+  const colors = Array.isArray(movie?.colors) ? movie.colors.filter(Boolean) : [];
+  if (colors.length >= 2) return [colors[0], colors[1]];
+
+  const fallback = colorPairForMovie(
+    (String(movie?.title || "").length * 13)
+      + Number(movie?.year || 0)
+      + Number(movie?.duration || 0)
+      + Number(movie?.tmdbId || 0)
+  );
+  return [colors[0] || fallback[0], colors[1] || fallback[1]];
+}
+
 function normalize(value) {
   return String(value || "")
     .normalize("NFD")
@@ -2997,6 +3010,7 @@ async function loadCatalogSeedSnapshot() {
       return seed.movies.map((movie) => ({
         ...movie,
         providers: dedupeProviders(movie.providers || []),
+        colors: movieColorPair(movie),
         rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb"),
         tmdbId: Number(movie.tmdbId || 0),
         originalLanguage: movie.originalLanguage || "",
@@ -3020,6 +3034,7 @@ function restoreTmdbCatalogCache() {
   tmdbMovies.forEach((movie) => {
     movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
     movie.providers = dedupeProviders(movie.providers || []);
+    movie.colors = movieColorPair(movie);
     movie.tmdbId = Number(movie.tmdbId || 0);
     movie.originalLanguage = movie.originalLanguage || "";
     movie.overview = movie.overview || "";
@@ -3963,7 +3978,8 @@ function providerBrandMark(provider) {
 
 function dedupeProviders(providers = []) {
   const seen = new Set();
-  return providers
+  const source = Array.isArray(providers) ? providers : [providers];
+  return source
     .map(canonicalProviderName)
     .filter((provider) => {
       const key = normalize(provider);
@@ -5037,6 +5053,7 @@ function applyCompactSidebar(enabled) {
 function renderMovieDialog(movie) {
   if (!movie || !els.dialog || !els.dialogContent) return;
   const providers = dedupeProviders(movie.providers || []);
+  const colors = movieColorPair(movie);
   const providerLinks = providerLinksForMovie(movie, 6);
   const whyBlock = whyThisMovieMarkup(movie, { variant: "dialog", open: true });
   const tags = uniqueNormalized([...(movie.genres || []), ...(movie.tags || []), ...(movie.vibes || [])])
@@ -5050,7 +5067,7 @@ function renderMovieDialog(movie) {
 
   els.dialogContent.innerHTML = `
     <div class="dialog-grid">
-      <div class="dialog-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}">
+      <div class="dialog-poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${colors[0]}; --poster-b: ${colors[1]}">
         ${posterImgMarkup(movie, { loading: "lazy", decoding: "async", fetchpriority: "auto", variant: "dialog" })}
         <span>${movie.year}</span>
       </div>
@@ -5091,6 +5108,7 @@ function renderHero(movie) {
     return;
   }
 
+  const movieTitle = String(movie.title || "Sugestão surpresa");
   const hasOmdb = movie.source && movie.source.includes("omdb");
   const hasTmdb = movie.source && movie.source.includes("tmdb");
   const providers = dedupeProviders(movie.providers || []).slice(0, 3);
@@ -5116,25 +5134,26 @@ function renderHero(movie) {
     .filter((tag) => !hiddenForMood.has(normalize(tag)))
     .slice(0, 5);
   const tagPills = displayTags.map((tag) => `<span class="pill">${displayText(tag)}</span>`).join("");
-  const heroTitleClass = movie.title.length > 30 ? "hero-title is-long" : movie.title.length > 20 ? "hero-title is-medium" : "hero-title";
-  const posterTitleClass = movie.title.length > 28 ? "poster-title is-long" : movie.title.length > 18 ? "poster-title is-medium" : "poster-title";
+  const heroTitleClass = movieTitle.length > 30 ? "hero-title is-long" : movieTitle.length > 20 ? "hero-title is-medium" : "hero-title";
+  const posterTitleClass = movieTitle.length > 28 ? "poster-title is-long" : movieTitle.length > 18 ? "poster-title is-medium" : "poster-title";
   const watchLaterActive = isWatchLater(movie);
   const whyBlock = whyThisMovieMarkup(movie, { variant: "hero", open: false });
-  const heroKey = movieKey(movie.title, movie.year);
+  const heroKey = movieKey(movieTitle, movie.year);
+  const colors = movieColorPair(movie);
   const shouldAnimateSwap = Boolean(lastRenderedVisualKey) && lastRenderedVisualKey !== heroKey;
   if (shouldAnimateSwap) els.hero.classList.add("is-swapping");
 
   els.hero.innerHTML = `
-    <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${movie.colors[0]}; --poster-b: ${movie.colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movie.title}">
+    <div class="poster ${movie.posterUrl ? "has-official-poster" : ""}" style="--poster-a: ${colors[0]}; --poster-b: ${colors[1]}" role="button" tabindex="0" data-open-details="${movieDomKey(movie)}" title="Ver detalhes de ${movieTitle}">
       ${posterImgMarkup(movie, { loading: "eager", decoding: "async", fetchpriority: "high", variant: "hero" })}
       <span class="poster-badge">${displayText(movie.genre)}</span>
       ${watchLaterActive ? `<span class="poster-save-badge">Ver depois</span>` : ""}
       <span class="poster-director">${movie.director}</span>
       <p class="poster-year">${movie.year}</p>
-      <h2 class="${posterTitleClass}">${movie.title}</h2>
+      <h2 class="${posterTitleClass}">${movieTitle}</h2>
     </div>
     <div class="rec-copy">
-      <h2 class="${heroTitleClass}">${movie.title}</h2>
+      <h2 class="${heroTitleClass}">${movieTitle}</h2>
       <div class="movie-info-grid">
         <div class="info-tile info-wide"><span>Direção</span><strong>${movie.director}</strong></div>
         <div class="info-tile"><span>Duração</span><strong>${formatRuntime(movie.duration)}</strong></div>
@@ -5216,8 +5235,10 @@ async function flushRenderQueue() {
       pendingAdvanceRender = false;
       await renderWithAdvance(shouldAdvance);
     }
-  } catch {
-    // keep UI responsive even if an async render step fails
+  } catch (error) {
+    console.error("[cinepick] render failed", error);
+    renderHero(null);
+    renderShortlist([]);
   } finally {
     renderInFlight = false;
   }
