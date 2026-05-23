@@ -3413,6 +3413,75 @@ function dynamicFallbackOverview(movie) {
   return `${reasonFor(movie)} ${vibeText} ${providerText}`.replace(/\s+/g, " ").trim();
 }
 
+function whyThisMovieDetails(movie) {
+  const details = [];
+  const profile = moodProfiles[activeMood] || {};
+  const moodInfo = moods.find((item) => item.id === activeMood);
+  const moodLabel = moodInfo ? moodInfo.label : displayText(activeMood);
+
+  if (activeMode === "mood") {
+    details.push(`Modo atual: ${moodLabel}.`);
+
+    const preferredMatches = (profile.preferredGenres || [])
+      .filter((genre) => hasGenre(movie, [genre]))
+      .slice(0, 2)
+      .map((genre) => displayText(genre));
+    if (preferredMatches.length) {
+      details.push(`Bate com gêneros-alvo do mood: ${preferredMatches.join(" e ")}.`);
+    }
+
+    if (movieHasMoodVibe(movie, activeMood)) {
+      details.push("As vibes desse filme já convergem com o mood selecionado.");
+    }
+
+    if (activeMood === "complexo" && speculativeEvidence(movie)) {
+      details.push("Entrou por ter sinais de ficção/fantasia especulativa, que esse mood prioriza.");
+    }
+
+    if (activeMood === "acao" && superheroActionSignal(movie)) {
+      details.push("Recebe bônus por assinatura de ação/franquia.");
+    }
+  } else {
+    details.push("Roleta ativa: priorizamos variedade com menos repetição recente.");
+  }
+
+  if (profileLoaded) {
+    const affinity = profileAffinity(movie);
+    if (affinity > 14) details.push("Conversa bem com seu histórico salvo.");
+  }
+
+  const providers = dedupeProviders(movie.providers || []);
+  if (providers.length) {
+    details.push(`Tem streaming disponível agora (${providers.slice(0, 2).map(displayText).join(" e ")}).`);
+  }
+
+  const average = ratingAverage(movie);
+  if (average >= 82) {
+    details.push("Também passou por um bom piso de notas (IMDb/Rotten).");
+  }
+
+  return {
+    headline: reasonFor(movie),
+    bullets: details.slice(0, 4)
+  };
+}
+
+function whyThisMovieMarkup(movie, options = {}) {
+  const { open = false, variant = "hero" } = options;
+  const explanation = whyThisMovieDetails(movie);
+  const bulletItems = explanation.bullets
+    .map((item) => `<li>${item}</li>`)
+    .join("");
+
+  return `
+    <details class="why-card why-card-${variant}"${open ? " open" : ""}>
+      <summary>Por que este filme?</summary>
+      <p>${explanation.headline}</p>
+      <ul>${bulletItems}</ul>
+    </details>
+  `;
+}
+
 function selectRouletteMovie(list) {
   if (!list.length) {
     roulettePick = "";
@@ -4873,6 +4942,7 @@ function renderMovieDialog(movie) {
   if (!movie || !els.dialog || !els.dialogContent) return;
   const providers = dedupeProviders(movie.providers || []);
   const providerLinks = providerLinksForMovie(movie, 6);
+  const whyBlock = whyThisMovieMarkup(movie, { variant: "dialog", open: true });
   const tags = uniqueNormalized([...(movie.genres || []), ...(movie.tags || []), ...(movie.vibes || [])])
     .filter((tag) => ![movie.genre, movie.country, movie.director, ...providers].map(normalize).includes(normalize(tag)))
     .slice(0, 8)
@@ -4903,6 +4973,7 @@ function renderMovieDialog(movie) {
           ${providers.length ? `<div class="provider-links">${providerLinks}</div>` : `<strong>${unavailableStreamingLabel}</strong>`}
           ${movie.watchUrl ? `<a class="dialog-helper-link" href="${movie.watchUrl}" target="_blank" rel="noopener noreferrer">Ver disponibilidade completa</a>` : ""}
         </div>
+        ${whyBlock}
         <div class="meta-line">${tags}</div>
       </div>
     </div>
@@ -4952,6 +5023,7 @@ function renderHero(movie) {
   const heroTitleClass = movie.title.length > 30 ? "hero-title is-long" : movie.title.length > 20 ? "hero-title is-medium" : "hero-title";
   const posterTitleClass = movie.title.length > 28 ? "poster-title is-long" : movie.title.length > 18 ? "poster-title is-medium" : "poster-title";
   const watchLaterActive = isWatchLater(movie);
+  const whyBlock = whyThisMovieMarkup(movie, { variant: "hero", open: false });
   const heroKey = movieKey(movie.title, movie.year);
   const shouldAnimateSwap = Boolean(lastRenderedVisualKey) && lastRenderedVisualKey !== heroKey;
   if (shouldAnimateSwap) els.hero.classList.add("is-swapping");
@@ -4993,6 +5065,7 @@ function renderHero(movie) {
           <span>${watchLaterActive ? "Guardado" : "Ver depois"}</span>
         </button>
       </div>
+      ${whyBlock}
       <div class="meta-block">
         <span class="section-label">Vibe</span>
         <div class="meta-line">

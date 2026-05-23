@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo \"Static site served from public/\""
+    "build": "echo \"Static site served from public/\"",
+    "test": "node --test tests/reco-worker.test.js"
   }
 }

@@ -1657,6 +1657,49 @@ input[type="range"] {
   margin-bottom: 18px;
 }
 
+.why-card {
+  max-width: 560px;
+  border: 1px solid rgba(231, 183, 95, .24);
+  border-radius: 8px;
+  background: rgba(231, 183, 95, .07);
+  margin: 2px 0 12px;
+  padding: 8px 11px;
+}
+
+.why-card summary {
+  color: #f2dcae;
+  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.why-card p {
+  margin: 10px 0 8px;
+  color: #ddd3c3;
+  font-size: .88rem;
+  line-height: 1.38;
+}
+
+.why-card ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding-left: 17px;
+}
+
+.why-card li {
+  color: #c3bbad;
+  font-size: .77rem;
+  line-height: 1.34;
+}
+
+.why-card-dialog {
+  max-width: 100%;
+  margin-top: 6px;
+}
+
 .score-row {
   display: grid;
   max-width: 360px;
