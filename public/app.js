@@ -2751,13 +2751,22 @@ function resetRecommendationFlow({ keepCurrent = false } = {}) {
   roulettePick = "";
 }
 
+function findIndexPreferPoster(list, predicate) {
+  const withPoster = list.findIndex((movie, index) => predicate(movie, index) && Boolean(movie.posterUrl));
+  if (withPoster >= 0) return withPoster;
+  return list.findIndex((movie, index) => predicate(movie, index));
+}
+
 function recommendationListForRender(advance = false) {
   const rankedAll = filteredMovies();
   if (!rankedAll.length) return [];
 
   if (activeMode === "roulette") {
     if (advance || !roulettePick) selectRouletteMovie(rankedAll);
-    const selected = rankedAll.find((movie) => movie.title === roulettePick) || rankedAll[0];
+    const exact = rankedAll.find((movie) => movie.title === roulettePick);
+    const selected = exact?.posterUrl
+      ? exact
+      : (rankedAll.find((movie) => movie.posterUrl && (!exact || movie.title === roulettePick)) || exact || rankedAll.find((movie) => movie.posterUrl) || rankedAll[0]);
     currentHeroKey = movieKey(selected.title, selected.year);
     rememberRecommendation(selected);
     return [selected];
@@ -2775,14 +2784,15 @@ function recommendationListForRender(advance = false) {
     return [current];
   }
 
-  const selectedIndex = recommendationQueue.findIndex((movie) => {
+  const selectedIndex = findIndexPreferPoster(recommendationQueue, (movie) => {
     const key = movieKey(movie.title, movie.year);
     if (currentHeroKey && key === currentHeroKey) return false;
     return !isRecentlyRecommended(movie, 90);
   });
-  const fallbackIndex = recommendationQueue.findIndex((movie) => !currentHeroKey || movieKey(movie.title, movie.year) !== currentHeroKey);
+  const fallbackIndex = findIndexPreferPoster(recommendationQueue, (movie) => !currentHeroKey || movieKey(movie.title, movie.year) !== currentHeroKey);
   const index = selectedIndex >= 0 ? selectedIndex : fallbackIndex;
-  const [selected] = index >= 0 ? recommendationQueue.splice(index, 1) : [rankedAll[0]];
+  const fallbackMovie = rankedAll.find((movie) => movie.posterUrl) || rankedAll[0];
+  const [selected] = index >= 0 ? recommendationQueue.splice(index, 1) : [fallbackMovie];
 
   currentHeroKey = movieKey(selected.title, selected.year);
   rememberRecommendation(selected);
@@ -4299,7 +4309,7 @@ function ensureHeroPoster(movie) {
 
 async function hydrateVisiblePostersBurst(list = [], scope = "main") {
   if (!hasHttpProtocol || !Array.isArray(list) || !list.length) return;
-  const candidates = list.filter((movie) => movie && !movie.posterUrl).slice(0, 4);
+  const candidates = list.filter((movie) => movie && !movie.posterUrl).slice(0, 8);
   if (!candidates.length) return;
   const signature = `${scope}|${useTmdb}|${candidates.map((movie) => movieKey(movie.title, movie.year)).join(",")}`;
   if (visiblePosterHydrationSignature === signature) return;
