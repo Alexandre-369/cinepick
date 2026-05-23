@@ -1657,6 +1657,8 @@ let filteredCacheSignature = "";
 let filteredCacheList = [];
 let catalogCacheSignature = "";
 let catalogCacheList = [];
+let catalogSeedSnapshotPromise = null;
+let startupPosterPrimePromise = null;
 let sessionSeenSet = new Set();
 const sessionScopeSeen = new Map();
 const preloadedPosterUrls = new Set();
@@ -2972,6 +2974,32 @@ function cacheTmdbCatalog() {
   }));
 }
 
+async function loadCatalogSeedSnapshot() {
+  if (catalogSeedSnapshotPromise) return catalogSeedSnapshotPromise;
+
+  catalogSeedSnapshotPromise = (async () => {
+    try {
+      const response = await fetch("./catalog-seed.json", { cache: "force-cache" });
+      if (!response.ok) return [];
+      const seed = await response.json();
+      if (!seed?.movies?.length) return [];
+
+      return seed.movies.map((movie) => ({
+        ...movie,
+        providers: dedupeProviders(movie.providers || []),
+        rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb"),
+        tmdbId: Number(movie.tmdbId || 0),
+        originalLanguage: movie.originalLanguage || "",
+        overview: movie.overview || ""
+      }));
+    } catch {
+      return [];
+    }
+  })();
+
+  return catalogSeedSnapshotPromise;
+}
+
 function restoreTmdbCatalogCache() {
   const cached = JSON.parse(localStorage.getItem("cinepick_tmdb_catalog") || "null");
   if (!cached?.movies?.length) return false;
@@ -2995,19 +3023,10 @@ async function restoreCatalogSeed() {
   if (tmdbMovies.length) return false;
 
   try {
-    const response = await fetch("./catalog-seed.json", { cache: "force-cache" });
-    if (!response.ok) return false;
-    const seed = await response.json();
-    if (!seed?.movies?.length) return false;
+    const snapshot = await loadCatalogSeedSnapshot();
+    if (!snapshot.length) return false;
 
-    tmdbMovies = seed.movies.map((movie) => ({
-      ...movie,
-      providers: dedupeProviders(movie.providers || []),
-      rtSource: movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb"),
-      tmdbId: Number(movie.tmdbId || 0),
-      originalLanguage: movie.originalLanguage || "",
-      overview: movie.overview || ""
-    }));
+    tmdbMovies = snapshot;
     updateProviderFilter();
     cacheTmdbCatalog();
     els.tmdbStatus.textContent = `${tmdbMovies.length} filmes preparados em modo rápido. Ative o catálogo expandido quando quiser.`;
@@ -3015,6 +3034,73 @@ async function restoreCatalogSeed() {
   } catch {
     return false;
   }
+}
+
+async function primeCuratedPostersFromSeed() {
+  if (startupPosterPrimePromise) return startupPosterPrimePromise;
+
+  startupPosterPrimePromise = (async () => {
+    if (!hasHttpProtocol || isStaticFileMode) return 0;
+
+    const missingCurated = curatedMovies.filter((movie) => !movie.posterUrl);
+    if (!missingCurated.length) return 0;
+
+    const seedMovies = tmdbMovies.length ? tmdbMovies : await loadCatalogSeedSnapshot();
+    if (!seedMovies.length) return 0;
+
+    const bestMatchByKey = new Map();
+    seedMovies.forEach((movie) => {
+      if (!hasValidPosterUrl(movie.posterUrl)) return;
+      const voteScore = Number(movie.tmdbVotes || 0);
+      movieCacheKeys(movie).forEach((key) => {
+        const current = bestMatchByKey.get(key);
+        if (!current || voteScore > Number(current.tmdbVotes || 0)) {
+          bestMatchByKey.set(key, movie);
+        }
+      });
+    });
+
+    const hydrated = [];
+    missingCurated.forEach((movie) => {
+      const match = movieCacheKeys(movie).map((key) => bestMatchByKey.get(key)).find(Boolean);
+      if (!match) return;
+      applyMovieEnhancements(movie, match);
+      if (!movie.posterUrl) return;
+      preloadPosterAsset(movie);
+      hydrated.push(movie);
+    });
+
+    if (!hydrated.length) return 0;
+
+    hydrated.forEach((movie) => {
+      const enhancement = {
+        posterUrl: movie.posterUrl,
+        backdropUrl: movie.backdropUrl,
+        imdb: movie.imdb,
+        rt: movie.rt,
+        rtSource: movie.rtSource,
+        tmdbVotes: movie.tmdbVotes,
+        imdbId: movie.imdbId,
+        tmdbId: movie.tmdbId || 0,
+        originalLanguage: movie.originalLanguage || "",
+        overview: movie.overview || "",
+        providers: dedupeProviders(movie.providers || []),
+        watchUrl: movie.watchUrl,
+        source: movie.source
+      };
+      movieCacheKeys(movie).forEach((key) => {
+        posterCache[key] = enhancement;
+      });
+    });
+
+    posterCacheSize = Object.keys(posterCache).length;
+    localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
+    catalogCacheSignature = "";
+    filteredCacheSignature = "";
+    return hydrated.length;
+  })();
+
+  return startupPosterPrimePromise;
 }
 
 function updateProviderFilter() {
@@ -5592,21 +5678,44 @@ els.hero.addEventListener("click", (event) => {
   });
 });
 
-updateProviderFilter();
-render();
-if (isStaticFileMode) {
-  if (els.tmdbStatus) {
-    els.tmdbStatus.textContent = "Você está em arquivo local. Para tudo funcionar 100%, abra em localhost ou no link da Vercel.";
+async function bootstrapInitialSession() {
+  if (!isStaticFileMode) {
+    await Promise.race([
+      primeCuratedPostersFromSeed(),
+      new Promise((resolve) => window.setTimeout(resolve, 900))
+    ]);
   }
-} else if (useTmdb) {
-  runWhenIdle(async () => {
-    const restoredInitialCatalog = restoreTmdbCatalogCache();
-    const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
-    if (restoredSeed || restoredInitialCatalog) {
-      els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
-      render();
+
+  updateProviderFilter();
+  render();
+
+  if (isStaticFileMode) {
+    if (els.tmdbStatus) {
+      els.tmdbStatus.textContent = "Você está em arquivo local. Para tudo funcionar 100%, abra em localhost ou no link da Vercel.";
     }
-  }, 2200);
-} else {
+    return;
+  }
+
+  runWhenIdle(async () => {
+    const hydrated = await primeCuratedPostersFromSeed().catch(() => 0);
+    if (!hydrated) return;
+    updateProviderFilter();
+    requestBackgroundRender(true);
+  }, 140);
+
+  if (useTmdb) {
+    runWhenIdle(async () => {
+      const restoredInitialCatalog = restoreTmdbCatalogCache();
+      const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
+      if (restoredSeed || restoredInitialCatalog) {
+        els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
+        render();
+      }
+    }, 2200);
+    return;
+  }
+
   els.tmdbStatus.textContent = "Modo ultra rápido ativo: curadoria local primeiro. Ative o catálogo expandido quando quiser.";
 }
+
+bootstrapInitialSession();
