@@ -137,7 +137,7 @@ const presetFavoritesLimit = 3;
 const recommendationTimeMemoryKey = "cinepick_recommendation_time_memory_v1";
 const recommendationTimeMemoryDays = 21;
 const unavailableStreamingLabel = "Indisponível para streaming no Brasil";
-const ultraFastCatalogDefault = true;
+const ultraFastCatalogDefault = false;
 const hasHttpProtocol = window.location.protocol === "http:" || window.location.protocol === "https:";
 const isStaticFileMode = window.location.protocol === "file:";
 const rapidSessionMode = true;
@@ -5679,6 +5679,19 @@ els.hero.addEventListener("click", (event) => {
 });
 
 async function bootstrapInitialSession() {
+  let seededCatalogReady = false;
+
+  if (!isStaticFileMode && useTmdb) {
+    seededCatalogReady = await Promise.race([
+      (async () => {
+        const restoredInitialCatalog = restoreTmdbCatalogCache();
+        if (restoredInitialCatalog) return true;
+        return restoreCatalogSeed();
+      })(),
+      new Promise((resolve) => window.setTimeout(() => resolve(false), 900))
+    ]);
+  }
+
   if (!isStaticFileMode) {
     await Promise.race([
       primeCuratedPostersFromSeed(),
@@ -5705,6 +5718,7 @@ async function bootstrapInitialSession() {
 
   if (useTmdb) {
     runWhenIdle(async () => {
+      if (seededCatalogReady) return;
       const restoredInitialCatalog = restoreTmdbCatalogCache();
       const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
       if (restoredSeed || restoredInitialCatalog) {
