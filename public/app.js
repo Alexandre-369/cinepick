@@ -1618,6 +1618,11 @@ function storageRemoveKey(key) {
   }
 }
 
+function sanitizeMovieList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((movie) => movie && typeof movie === "object");
+}
+
 function applyStorageMigration() {
   const storedVersion = Number(storageGetRaw(appStorageVersionKey, "0") || 0);
   if (storedVersion >= appStorageVersion) return;
@@ -3065,11 +3070,12 @@ async function loadCatalogSeedSnapshot() {
 
 function restoreTmdbCatalogCache() {
   const cached = storageGetJson("cinepick_tmdb_catalog", null);
-  if (!cached?.movies?.length) return false;
+  const cachedMovies = sanitizeMovieList(cached?.movies);
+  if (!cachedMovies.length) return false;
   if (cached.version !== tmdbCatalogConfig.cacheVersion) return false;
   if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
 
-  tmdbMovies = cached.movies;
+  tmdbMovies = cachedMovies;
   tmdbMovies.forEach((movie) => {
     movie.rtSource = movie.rtSource || (movie.source && movie.source.includes("omdb") ? "omdb" : "tmdb");
     movie.providers = dedupeProviders(movie.providers || []);
@@ -3168,8 +3174,18 @@ async function primeCuratedPostersFromSeed() {
 }
 
 function updateProviderFilter() {
+  if (!els.provider) return;
   const current = els.provider.value;
-  const providers = [...new Set(activeCatalog().flatMap((movie) => dedupeProviders(movie.providers || [])))]
+  let catalog = curatedMovies;
+  try {
+    catalog = activeCatalog();
+  } catch (error) {
+    console.warn("[cinepick] provider fallback after catalog error", error);
+    tmdbMovies = [];
+    catalog = curatedMovies;
+  }
+
+  const providers = [...new Set(catalog.flatMap((movie) => dedupeProviders(movie.providers || [])))]
     .sort((a, b) => a.localeCompare(b));
 
   els.provider.innerHTML = [
@@ -3251,10 +3267,12 @@ function movieFromWatchLaterKey(storedKey) {
 }
 
 function activeCatalog() {
-  const signature = `${useTmdb}|${curatedMovies.length}|${tmdbMovies.length}|${posterCacheSize}`;
+  const safeTmdbMovies = sanitizeMovieList(tmdbMovies);
+  if (safeTmdbMovies.length !== tmdbMovies.length) tmdbMovies = safeTmdbMovies;
+  const signature = `${useTmdb}|${curatedMovies.length}|${safeTmdbMovies.length}|${posterCacheSize}`;
   if (catalogCacheSignature === signature && catalogCacheList.length) return catalogCacheList;
 
-  const catalog = useTmdb && tmdbMovies.length ? [...curatedMovies, ...tmdbMovies] : curatedMovies;
+  const catalog = useTmdb && safeTmdbMovies.length ? [...curatedMovies, ...safeTmdbMovies] : curatedMovies;
   mergeCatalogEnhancements(catalog);
   catalog.forEach((movie) => enforceMoodCalibration(movie));
   catalogCacheSignature = signature;
@@ -4816,7 +4834,12 @@ function renderProfileStats() {
 
 function renderSessionStats() {
   if (!els.sessionStats) return;
-  const catalogSize = activeCatalog().length;
+  let catalogSize = curatedMovies.length;
+  try {
+    catalogSize = activeCatalog().length;
+  } catch (error) {
+    console.warn("[cinepick] session stats fallback after catalog error", error);
+  }
   const watchedInSession = sessionSeenSet.size;
   const watchLaterCount = watchLaterSet.size;
   const profileWatchedCount = profileData.watched.size;
@@ -5276,6 +5299,7 @@ async function flushRenderQueue() {
     }
   } catch (error) {
     console.error("[cinepick] render failed", error);
+    if (activeMode === "mood") renderMoods();
     renderHero(null);
     renderShortlist([]);
   } finally {
@@ -5328,9 +5352,9 @@ function setDrawerPeek(peek) {
 async function renderWithAdvance(advance) {
   document.body.dataset.mode = activeMode;
   document.body.dataset.mood = activeMood;
+  if (activeMode === "mood") renderMoods();
   renderSessionStats();
   renderPresets();
-  if (activeMode === "mood") renderMoods();
   renderDataDiagnostics();
   const list = recommendationListForRender(advance);
   if (activeMode === "roulette") {
