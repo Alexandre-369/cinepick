@@ -1579,8 +1579,47 @@ const recoWorkerPending = new Map();
 let workerCatalogSignature = "";
 let workerCatalogLite = [];
 const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
+
+function storageGetRaw(key, fallback = "") {
+  try {
+    const value = localStorage.getItem(key);
+    return value ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function storageGetJson(key, fallback) {
+  const raw = storageGetRaw(key, "");
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function storageSetRaw(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function storageRemoveKey(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function applyStorageMigration() {
-  const storedVersion = Number(localStorage.getItem(appStorageVersionKey) || 0);
+  const storedVersion = Number(storageGetRaw(appStorageVersionKey, "0") || 0);
   if (storedVersion >= appStorageVersion) return;
 
   [
@@ -1590,9 +1629,9 @@ function applyStorageMigration() {
     "cinepick_poster_cache",
     "cinepick_poster_cache_v2",
     "cinepick_tmdb_catalog"
-  ].forEach((key) => localStorage.removeItem(key));
+  ].forEach((key) => storageRemoveKey(key));
 
-  localStorage.setItem(appStorageVersionKey, String(appStorageVersion));
+  storageSetRaw(appStorageVersionKey, String(appStorageVersion));
 }
 
 applyStorageMigration();
@@ -1636,21 +1675,21 @@ function sanitizeRecommendationTimeMemory(value) {
   );
 }
 
-const legacyPosterCache = JSON.parse(localStorage.getItem("cinepick_poster_cache") || "{}");
-const posterCache = JSON.parse(localStorage.getItem(posterCacheKey) || "{}");
+const legacyPosterCache = storageGetJson("cinepick_poster_cache", {});
+const posterCache = storageGetJson(posterCacheKey, {});
 let posterCacheSize = Object.keys(posterCache).length;
-let recommendationHistory = JSON.parse(localStorage.getItem(recommendationHistoryKey) || "[]");
+let recommendationHistory = storageGetJson(recommendationHistoryKey, []);
 let moodRecommendationHistory = sanitizeMoodRecommendationHistory(
-  JSON.parse(localStorage.getItem(moodRecommendationHistoryKey) || "{}")
+  storageGetJson(moodRecommendationHistoryKey, {})
 );
 let watchLaterSet = new Set(sanitizeStoredKeyList(
-  JSON.parse(localStorage.getItem(watchLaterKey) || "[]"),
+  storageGetJson(watchLaterKey, []),
   420
 ));
 let activePresetId = "";
-let presetFavoriteIds = sanitizePresetFavoriteIds(JSON.parse(localStorage.getItem(presetFavoritesKey) || "[]"));
+let presetFavoriteIds = sanitizePresetFavoriteIds(storageGetJson(presetFavoritesKey, []));
 let recommendationTimeMemory = sanitizeRecommendationTimeMemory(
-  JSON.parse(localStorage.getItem(recommendationTimeMemoryKey) || "{}")
+  storageGetJson(recommendationTimeMemoryKey, {})
 );
 let recommendationHistoryVersion = 0;
 let filteredCacheSignature = "";
@@ -1724,9 +1763,9 @@ const els = {
   dialogContent: document.querySelector("#movie-dialog-content")
 };
 
-if (els.tmdbToken) els.tmdbToken.value = localStorage.getItem("cinepick_tmdb_token") || "";
-if (els.omdbKey) els.omdbKey.value = localStorage.getItem("cinepick_omdb_key") || "";
-const storedUseTmdb = localStorage.getItem("cinepick_use_tmdb");
+if (els.tmdbToken) els.tmdbToken.value = storageGetRaw("cinepick_tmdb_token", "");
+if (els.omdbKey) els.omdbKey.value = storageGetRaw("cinepick_omdb_key", "");
+const storedUseTmdb = storageGetRaw("cinepick_use_tmdb", "");
 if (els.useTmdb) {
   els.useTmdb.checked = storedUseTmdb ? storedUseTmdb === "true" : !ultraFastCatalogDefault;
   useTmdb = els.useTmdb.checked;
@@ -1735,11 +1774,11 @@ if (!hasHttpProtocol) {
   useTmdb = false;
   if (els.useTmdb) els.useTmdb.checked = false;
 }
-const storedCompactSidebar = localStorage.getItem(compactSidebarKey);
+const storedCompactSidebar = storageGetRaw(compactSidebarKey, "");
 const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
 if (els.compactSidebar) els.compactSidebar.checked = compactSidebarEnabled;
 applyCompactSidebar(compactSidebarEnabled);
-const storedActivePresetId = localStorage.getItem(activePresetKey) || "";
+const storedActivePresetId = storageGetRaw(activePresetKey, "");
 if (sessionPresetMap[storedActivePresetId]) activePresetId = storedActivePresetId;
 pruneRecommendationTimeMemory();
 
@@ -2431,7 +2470,7 @@ function pruneRecommendationTimeMemory(now = Date.now()) {
       return valid;
     })
   );
-  if (changed) localStorage.setItem(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
+  if (changed) storageSetRaw(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
 }
 
 function latestRecommendationTimestamp(movie) {
@@ -2504,9 +2543,9 @@ function rememberRecommendation(movie) {
     recommendationTimeMemory[cacheKey] = now;
   });
   pruneRecommendationTimeMemory(now);
-  localStorage.setItem(recommendationHistoryKey, JSON.stringify(recommendationHistory));
-  localStorage.setItem(moodRecommendationHistoryKey, JSON.stringify(moodRecommendationHistory));
-  localStorage.setItem(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
+  storageSetRaw(recommendationHistoryKey, JSON.stringify(recommendationHistory));
+  storageSetRaw(moodRecommendationHistoryKey, JSON.stringify(moodRecommendationHistory));
+  storageSetRaw(recommendationTimeMemoryKey, JSON.stringify(recommendationTimeMemory));
 }
 
 function diversityPenalty(movie, selected) {
@@ -2978,7 +3017,7 @@ function cacheMovieEnhancement(movie) {
     posterCache[key] = enhancement;
   });
   posterCacheSize = Object.keys(posterCache).length;
-  localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
+  storageSetRaw(posterCacheKey, JSON.stringify(posterCache));
   syncMovieEnhancement(movie);
 }
 
@@ -2990,7 +3029,7 @@ function syncMovieEnhancement(movie) {
 
 function cacheTmdbCatalog() {
   if (!tmdbMovies.length) return;
-  localStorage.setItem("cinepick_tmdb_catalog", JSON.stringify({
+  storageSetRaw("cinepick_tmdb_catalog", JSON.stringify({
     version: tmdbCatalogConfig.cacheVersion,
     savedAt: Date.now(),
     movies: tmdbMovies
@@ -3025,7 +3064,7 @@ async function loadCatalogSeedSnapshot() {
 }
 
 function restoreTmdbCatalogCache() {
-  const cached = JSON.parse(localStorage.getItem("cinepick_tmdb_catalog") || "null");
+  const cached = storageGetJson("cinepick_tmdb_catalog", null);
   if (!cached?.movies?.length) return false;
   if (cached.version !== tmdbCatalogConfig.cacheVersion) return false;
   if (Date.now() - Number(cached.savedAt || 0) > tmdbCatalogConfig.cacheMaxAge) return false;
@@ -3119,7 +3158,7 @@ async function primeCuratedPostersFromSeed() {
     });
 
     posterCacheSize = Object.keys(posterCache).length;
-    localStorage.setItem(posterCacheKey, JSON.stringify(posterCache));
+    storageSetRaw(posterCacheKey, JSON.stringify(posterCache));
     catalogCacheSignature = "";
     filteredCacheSignature = "";
     return hydrated.length;
@@ -3166,7 +3205,7 @@ function wasWatched(movie) {
 }
 
 function persistWatchLaterSet() {
-  localStorage.setItem(watchLaterKey, JSON.stringify([...watchLaterSet].slice(0, 420)));
+  storageSetRaw(watchLaterKey, JSON.stringify([...watchLaterSet].slice(0, 420)));
 }
 
 function isWatchLater(movie) {
@@ -3785,7 +3824,7 @@ async function tmdbFetch(path, params = new URLSearchParams()) {
 async function omdbFetch(movie) {
   if (!hasHttpProtocol) return null;
   const key = els.omdbKey?.value.trim() || "";
-  if (key) localStorage.setItem("cinepick_omdb_key", key);
+  if (key) storageSetRaw("cinepick_omdb_key", key);
 
   const params = new URLSearchParams();
   if (movie.imdbId) params.set("i", movie.imdbId);
@@ -4112,7 +4151,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
 
   const token = els.tmdbToken?.value.trim() || "";
   if (token) {
-    localStorage.setItem("cinepick_tmdb_token", token);
+    storageSetRaw("cinepick_tmdb_token", token);
   }
 
   tmdbLoadInProgress = true;
@@ -4147,7 +4186,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
         tmdbMovies = detailed;
         useTmdb = true;
         els.useTmdb.checked = true;
-        localStorage.setItem("cinepick_use_tmdb", "true");
+        storageSetRaw("cinepick_use_tmdb", "true");
         updateProviderFilter();
         cacheTmdbCatalog();
         render();
@@ -4158,7 +4197,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
     tmdbMovies = detailed.length >= previousCatalog.length ? detailed : previousCatalog;
     useTmdb = true;
     els.useTmdb.checked = true;
-    localStorage.setItem("cinepick_use_tmdb", "true");
+    storageSetRaw("cinepick_use_tmdb", "true");
     updateProviderFilter();
     cacheTmdbCatalog();
     roulettePick = "";
@@ -4169,7 +4208,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
     if (tmdbMovies.length) {
       useTmdb = true;
       els.useTmdb.checked = true;
-      localStorage.setItem("cinepick_use_tmdb", "true");
+      storageSetRaw("cinepick_use_tmdb", "true");
       els.tmdbStatus.textContent = `${error.message} Mantive o catálogo pré-carregado ativo.`;
       render();
       return false;
@@ -4177,7 +4216,7 @@ async function loadTmdbCatalog({ auto = false } = {}) {
 
     useTmdb = false;
     els.useTmdb.checked = false;
-    localStorage.setItem("cinepick_use_tmdb", "false");
+    storageSetRaw("cinepick_use_tmdb", "false");
     els.tmdbStatus.textContent = `${error.message} Mantive a curadoria local ativa.`;
     render();
     return false;
@@ -4351,7 +4390,7 @@ async function hydrateCuratedPosters() {
     return;
   }
   const token = els.tmdbToken?.value.trim() || "";
-  if (token) localStorage.setItem("cinepick_tmdb_token", token);
+  if (token) storageSetRaw("cinepick_tmdb_token", token);
 
   els.hydratePosters.disabled = true;
   els.tmdbStatus.textContent = "Buscando capas oficiais da curadoria...";
@@ -4952,8 +4991,8 @@ function setSelectValue(select, value = "qualquer") {
 }
 
 function persistPresetState() {
-  localStorage.setItem(activePresetKey, activePresetId || "");
-  localStorage.setItem(presetFavoritesKey, JSON.stringify(presetFavoriteIds.slice(0, presetFavoritesLimit)));
+  storageSetRaw(activePresetKey, activePresetId || "");
+  storageSetRaw(presetFavoritesKey, JSON.stringify(presetFavoriteIds.slice(0, presetFavoritesLimit)));
 }
 
 function setActivePreset(presetId = "") {
@@ -5047,7 +5086,7 @@ function applyQuickPreset(presetId) {
 function applyCompactSidebar(enabled) {
   document.body.classList.toggle("compact-sidebar", enabled);
   if (els.compactSidebar) els.compactSidebar.checked = enabled;
-  localStorage.setItem(compactSidebarKey, String(enabled));
+  storageSetRaw(compactSidebarKey, String(enabled));
 }
 
 function renderMovieDialog(movie) {
@@ -5577,7 +5616,7 @@ els.useTmdb?.addEventListener("change", () => {
     return;
   }
   useTmdb = els.useTmdb.checked;
-  localStorage.setItem("cinepick_use_tmdb", String(useTmdb));
+  storageSetRaw("cinepick_use_tmdb", String(useTmdb));
 
   if (useTmdb && !tmdbMovies.length) {
     els.tmdbStatus.textContent = "Clique em Atualizar para carregar filmes reais do TMDb.";
@@ -5712,24 +5751,6 @@ els.hero.addEventListener("click", (event) => {
 async function bootstrapInitialSession() {
   let seededCatalogReady = false;
 
-  if (!isStaticFileMode && useTmdb) {
-    seededCatalogReady = await Promise.race([
-      (async () => {
-        const restoredInitialCatalog = restoreTmdbCatalogCache();
-        if (restoredInitialCatalog) return true;
-        return restoreCatalogSeed();
-      })(),
-      new Promise((resolve) => window.setTimeout(() => resolve(false), 900))
-    ]);
-  }
-
-  if (!isStaticFileMode) {
-    await Promise.race([
-      primeCuratedPostersFromSeed(),
-      new Promise((resolve) => window.setTimeout(resolve, 900))
-    ]);
-  }
-
   updateProviderFilter();
   render();
 
@@ -5739,6 +5760,24 @@ async function bootstrapInitialSession() {
     }
     return;
   }
+
+  if (useTmdb) {
+    seededCatalogReady = await Promise.race([
+      (async () => {
+        const restoredInitialCatalog = restoreTmdbCatalogCache();
+        if (restoredInitialCatalog) return true;
+        return restoreCatalogSeed();
+      })(),
+      new Promise((resolve) => window.setTimeout(() => resolve(false), 900))
+    ]).catch(() => false);
+  }
+
+  await Promise.race([
+    primeCuratedPostersFromSeed().catch(() => 0),
+    new Promise((resolve) => window.setTimeout(resolve, 900))
+  ]);
+  updateProviderFilter();
+  requestBackgroundRender(true);
 
   runWhenIdle(async () => {
     const hydrated = await primeCuratedPostersFromSeed().catch(() => 0);
@@ -5763,4 +5802,8 @@ async function bootstrapInitialSession() {
   els.tmdbStatus.textContent = "Modo ultra rápido ativo: curadoria local primeiro. Ative o catálogo expandido quando quiser.";
 }
 
-bootstrapInitialSession();
+bootstrapInitialSession().catch((error) => {
+  console.error("[cinepick] bootstrap failed", error);
+  updateProviderFilter();
+  render();
+});
