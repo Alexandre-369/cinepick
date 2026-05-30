@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CinePick</title>
-    <link rel="stylesheet" href="./styles.css?v=20260529a">
+    <link rel="stylesheet" href="./styles.css?v=20260530a">
   </head>
   <body class="filters-sidebar-only">
     <main class="app-shell">
@@ -34,7 +34,17 @@
           <div class="group-title">
             <span>Humor agora</span>
           </div>
-          <div class="mood-grid" id="moods"></div>
+          <div class="mood-grid" id="moods">
+            <button class="mood-chip is-active" type="button" disabled>
+              <span class="mood-copy"><strong>Carregando...</strong><span>Preparando sugestões</span></span>
+            </button>
+            <button class="mood-chip" type="button" disabled>
+              <span class="mood-copy"><strong>Ação</strong><span>Tiro, porrada e bomba</span></span>
+            </button>
+            <button class="mood-chip" type="button" disabled>
+              <span class="mood-copy"><strong>Leve</strong><span>Comédia e conforto</span></span>
+            </button>
+          </div>
         </div>
 
         <div class="roulette-panel mode-panel" id="roulette-panel" hidden>
@@ -53,7 +63,13 @@
       </section>
 
       <section class="result-panel" aria-live="polite">
-        <article class="hero-rec" id="hero-rec"></article>
+        <article class="hero-rec" id="hero-rec">
+          <div class="rec-copy">
+            <span class="kicker">Iniciando CinePick</span>
+            <h2>Carregando recomendações...</h2>
+            <p class="reason">Se demorar mais de alguns segundos, atualize a página.</p>
+          </div>
+        </article>
       </section>
     </main>
 
@@ -288,6 +304,6 @@
       </div>
     </dialog>
 
-    <script src="./app.js?v=20260529a"></script>
+    <script src="./app.js?v=20260530a"></script>
   </body>
 </html>
