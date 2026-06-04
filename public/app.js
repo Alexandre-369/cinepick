@@ -1758,6 +1758,7 @@ const els = {
   watchLaterList: document.querySelector("#watch-later-list"),
   drawerToggle: document.querySelector("#drawer-toggle"),
   drawerClose: document.querySelector("#drawer-close"),
+  drawerFilterClose: document.querySelector("#drawer-filter-close"),
   drawer: document.querySelector("#side-drawer"),
   drawerBackdrop: document.querySelector("#drawer-backdrop"),
   reroll: document.querySelector("#reroll"),
@@ -5531,7 +5532,7 @@ document.querySelectorAll(".settings-panel").forEach((panel) => {
 });
 
 els.drawerToggle?.addEventListener("click", () => {
-  setDrawerOpen(true);
+  setDrawerOpen(!els.drawer?.classList.contains("is-open"));
 });
 
 els.drawerToggle?.addEventListener("mouseenter", () => {
@@ -5551,6 +5552,10 @@ els.drawerToggle?.addEventListener("blur", () => {
 });
 
 els.drawerClose?.addEventListener("click", () => {
+  setDrawerOpen(false);
+});
+
+els.drawerFilterClose?.addEventListener("click", () => {
   setDrawerOpen(false);
 });
 

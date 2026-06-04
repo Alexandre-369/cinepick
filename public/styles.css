@@ -441,6 +441,10 @@ button:focus-visible {
   padding: 16px 20px 20px;
 }
 
+.drawer-filter-close {
+  display: none;
+}
+
 .filters-sidebar-only .drawer-shell {
   grid-template-rows: minmax(0, 1fr);
 }
@@ -454,6 +458,30 @@ button:focus-visible {
 .filters-sidebar-only .drawer-body {
   gap: 0;
   padding: 8px;
+}
+
+.filters-sidebar-only .drawer-filter-close {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(86, 182, 168, .16), rgba(86, 182, 168, .06)),
+    rgba(14, 18, 18, .98);
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.filters-sidebar-only .drawer-filter-close svg {
+  width: 18px;
+  height: 18px;
 }
 
 .filters-sidebar-only .drawer-body .settings-panel {
