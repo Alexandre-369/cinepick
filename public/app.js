@@ -1731,6 +1731,8 @@ const els = {
   decade: document.querySelector("#decade"),
   country: document.querySelector("#country"),
   provider: document.querySelector("#provider"),
+  relaxFilters: document.querySelector("#relax-filters"),
+  filterApplyClose: document.querySelector("#filter-apply-close"),
   hideWatched: document.querySelector("#hide-watched"),
   hero: document.querySelector("#hero-rec"),
   shortlist: document.querySelector("#shortlist"),
@@ -5014,6 +5016,23 @@ function setSelectValue(select, value = "qualquer") {
   select.value = allowed.has(value) ? value : "qualquer";
 }
 
+function relaxStrictFilters({ closeDrawer = false } = {}) {
+  clearActivePreset();
+  setSelectValue(els.genre);
+  setSelectValue(els.duration);
+  setSelectValue(els.decade);
+  setSelectValue(els.country);
+  setSelectValue(els.provider);
+  shuffleSalt = Math.floor(Math.random() * 100000);
+  rerollOffset += 5 + Math.floor(Math.random() * 31);
+  resetRecommendationFlow();
+  if (els.syncStatus) {
+    els.syncStatus.textContent = "Filtros relaxados. Mantive o humor atual e busquei uma sugestão mais ampla.";
+  }
+  if (closeDrawer) setDrawerOpen(false);
+  scheduleRender(true);
+}
+
 function persistPresetState() {
   storageSetRaw(activePresetKey, activePresetId || "");
   storageSetRaw(presetFavoritesKey, JSON.stringify(presetFavoriteIds.slice(0, presetFavoritesLimit)));
@@ -5166,6 +5185,16 @@ function renderHero(movie) {
         <span class="kicker">Sem resultado perfeito</span>
         <h2>Ajuste um filtro.</h2>
         <p class="reason">A combinação atual ficou exigente demais. Abra gênero, década, nacionalidade ou duração para destravar mais filmes.</p>
+        <div class="empty-actions">
+          <button class="ghost-action" type="button" data-open-filters>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h13M4 12h16M4 17h10"/><circle cx="18" cy="7" r="1.6"/><circle cx="20" cy="12" r="1.6"/><circle cx="15" cy="17" r="1.6"/></svg>
+            Abrir ajustes
+          </button>
+          <button class="ghost-action empty-relax-action" type="button" data-relax-filters>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+            Relaxar filtros
+          </button>
+        </div>
       </div>
     `;
     return;
@@ -5525,6 +5554,14 @@ els.compactSidebar?.addEventListener("change", () => {
   applyCompactSidebar(Boolean(els.compactSidebar.checked));
 });
 
+els.relaxFilters?.addEventListener("click", () => {
+  relaxStrictFilters();
+});
+
+els.filterApplyClose?.addEventListener("click", () => {
+  setDrawerOpen(false);
+});
+
 document.querySelectorAll(".settings-panel").forEach((panel) => {
   panel.addEventListener("toggle", () => {
     if (panel.open) renderDataDiagnostics();
@@ -5696,6 +5733,11 @@ bindInstantPress(els.spin, () => {
 
 let heroPointerHandled = false;
 els.hero.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("[data-open-filters], [data-relax-filters]")) {
+    heroPointerHandled = false;
+    return;
+  }
+
   const nextButton = event.target.closest("[data-next]");
   if (nextButton) {
     heroPointerHandled = true;
@@ -5744,6 +5786,16 @@ els.hero.addEventListener("pointerdown", (event) => {
 });
 
 els.hero.addEventListener("click", (event) => {
+  if (event.target.closest("[data-open-filters]")) {
+    setDrawerOpen(true);
+    return;
+  }
+
+  if (event.target.closest("[data-relax-filters]")) {
+    relaxStrictFilters({ closeDrawer: true });
+    return;
+  }
+
   if (heroPointerHandled) {
     heroPointerHandled = false;
     event.preventDefault();

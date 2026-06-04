@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "echo \"Static site served from public/\"",
+    "catalog:audit": "node scripts/catalog-audit.mjs",
     "test": "node --test tests/reco-worker.test.js"
   }
 }
