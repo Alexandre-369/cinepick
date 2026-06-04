@@ -8,6 +8,13 @@ Use this flow before growing `public/catalog-seed.json`.
 4. Deduplicate by `tmdbId` first, then normalized `title|year`.
 5. After changing the seed, run `npm run catalog:audit` and `npm test`.
 
+Automated expansion:
+
+- `npm run catalog:expand -- --dry-run` previews additions using the production TMDb proxy.
+- `npm run catalog:expand -- --limit=96` appends a conservative batch to `public/catalog-seed.json`.
+- `npm run catalog:expand -- --base-url=https://your-domain.vercel.app --limit=120` points the script at another Vercel deployment.
+- If `npm` is unavailable, run the same scripts directly with `node scripts/catalog-audit.mjs` and `node scripts/expand-catalog-seed.mjs --limit=96`.
+
 Good next ingestion batches:
 
 - Global south and non-US picks for `surpresa`, `sensivel`, and `complexo`.

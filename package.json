@@ -5,6 +5,7 @@
   "scripts": {
     "build": "echo \"Static site served from public/\"",
     "catalog:audit": "node scripts/catalog-audit.mjs",
+    "catalog:expand": "node scripts/expand-catalog-seed.mjs",
     "test": "node --test tests/reco-worker.test.js"
   }
 }

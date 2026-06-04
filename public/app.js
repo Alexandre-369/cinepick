@@ -118,6 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
+const catalogSeedAssetVersion = "20260604a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -3049,7 +3050,7 @@ async function loadCatalogSeedSnapshot() {
 
   catalogSeedSnapshotPromise = (async () => {
     try {
-      const response = await fetch("./catalog-seed.json", { cache: "force-cache" });
+      const response = await fetch(`./catalog-seed.json?v=${catalogSeedAssetVersion}`, { cache: "force-cache" });
       if (!response.ok) return [];
       const seed = await response.json();
       if (!seed?.movies?.length) return [];
