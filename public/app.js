@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260605a";
+const catalogSeedAssetVersion = "20260605b";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -2873,7 +2873,9 @@ function recommendationListForRender(advance = false) {
 
   const current = currentHeroKey ? movieFromKey(rankedAll, currentHeroKey) : null;
   if (!advance && current) {
-    return [current];
+    if (current.posterUrl || !rankedAll.some((movie) => movie.posterUrl)) {
+      return [current];
+    }
   }
 
   const selectedIndex = findIndexPreferPoster(recommendationQueue, (movie) => {
