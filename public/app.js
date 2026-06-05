@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260604a";
+const catalogSeedAssetVersion = "20260605a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -417,12 +417,12 @@ const posterTitleAliases = {
 
 const moodProfiles = {
   leve: {
-    preferredGenres: ["Comedia", "Animacao", "Familia", "Aventura", "Musica"],
+    preferredGenres: ["Comedia", "Romance", "Musica", "Aventura", "Familia"],
     avoidGenres: ["Drama", "Crime", "Terror", "Suspense", "Guerra", "Misterio"],
     hardAvoidGenres: ["Crime", "Terror", "Guerra"],
     conflictingVibes: ["intenso", "complexo"],
     requiredPositive: true,
-    keywords: ["rapido", "rápido", "fofo", "aventura", "amizade", "musica", "música", "bondade", "pop", "caos", "humor"],
+    keywords: ["rapido", "rápido", "fofo", "aventura", "amizade", "musica", "música", "romance", "bondade", "pop", "caos", "humor"],
     longMoviePenalty: 130
   },
   comfort: {
@@ -2317,10 +2317,9 @@ function enforceMoodCalibration(movie) {
 
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
-  const hasLightGenre = hasGenre(movie, ["Comedia", "Animacao", "Familia", "Aventura", "Musica"]);
+  const hasLightGenre = hasGenre(movie, ["Comedia", "Romance", "Musica", "Aventura", "Familia", "Animacao"]);
   const hasActionGenre = hasGenre(movie, ["Acao"]);
-  const hasComedyRelief = hasGenre(movie, ["Comedia", "Aventura", "Animacao", "Familia"])
-    || hasAnyText(text, ["comedia", "humor", "satira", "zoeira", "buddy", "heist", "familia"]);
+  const hasComedyRelief = lightMoodReliefEvidence(movie) || hasGenre(movie, ["Aventura"]);
   const isMostlyDrama = hasGenre(movie, ["Drama"]) && !hasLightGenre;
   const isHardAction = hasActionGenre && !hasComedyRelief;
   const isBroodingRomance = hasGenre(movie, ["Romance"]) && hasAnyText(text, [
@@ -2334,6 +2333,34 @@ function lightMoodMismatch(movie) {
   const tooLongWithoutRelief = movieDuration(movie) > 132 && !hasLightGenre;
   const hasMismatchVibe = (movie.vibes || []).some((vibe) => ["complexo", "intenso", "sensivel"].includes(vibe)) && !(movie.vibes || []).includes("leve");
   return isMostlyDrama || isHardAction || isBroodingRomance || hasHeavyTerms || tooLongWithoutRelief || hasMismatchVibe;
+}
+
+function lightMoodReliefEvidence(movie) {
+  const text = movieSearchText(movie);
+  return hasGenre(movie, ["Comedia", "Musica", "Romance"])
+    || hasAnyText(text, [
+      "comedia", "comédia", "humor", "satira", "sátira", "zoeira", "buddy", "heist",
+      "trapalhada", "divertido", "leve", "romance", "musica", "música", "amizade"
+    ]);
+}
+
+function lightAnimationDominancePenalty(movie) {
+  if (!hasGenre(movie, ["Animacao"])) return 0;
+
+  const hasRelief = lightMoodReliefEvidence(movie);
+  const isFamilyAnimation = hasGenre(movie, ["Familia"]);
+  let penalty = hasRelief ? 12 : 40;
+
+  if (isFamilyAnimation && !hasRelief) penalty += 12;
+  if ((movie.vibes || []).includes("comfort") && !(movie.vibes || []).includes("leve")) penalty += 10;
+
+  return penalty;
+}
+
+function liveActionLightBonus(movie) {
+  if (hasGenre(movie, ["Animacao"])) return 0;
+  if (!hasGenre(movie, ["Comedia", "Romance", "Musica"])) return 0;
+  return lightMoodReliefEvidence(movie) ? 18 : 8;
 }
 
 function comfortMoodMismatch(movie) {
@@ -2405,7 +2432,11 @@ function moodScore(movie) {
   if (profile.longMoviePenalty && movieDuration(movie) > profile.longMoviePenalty) score -= 14;
   if (profile.oldBonus && Number(movie.year) && Number(movie.year) < 2005) score += 14;
   if (activeMood === "comfort") score += comfortNostalgiaWeight(movie);
-  if (activeMood === "leve" && (movie.vibes || []).includes("complexo")) score -= 18;
+  if (activeMood === "leve") {
+    score += liveActionLightBonus(movie);
+    score -= lightAnimationDominancePenalty(movie);
+    if ((movie.vibes || []).includes("complexo")) score -= 18;
+  }
   if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 20;
   if (activeMood === "acao" && superheroActionSignal(movie)) score += 62;
   if (activeMood === "acao" && marvelUniverseSignal(movie)) score += 66;

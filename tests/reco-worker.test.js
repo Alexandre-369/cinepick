@@ -25,6 +25,15 @@ function baseState(overrides = {}) {
     activeMood: "complexo",
     moodAliasMap: {},
     moodProfiles: {
+      leve: {
+        preferredGenres: ["Comedia", "Romance", "Musica", "Aventura", "Familia"],
+        avoidGenres: ["Drama", "Crime", "Terror", "Suspense", "Guerra", "Misterio"],
+        hardAvoidGenres: ["Crime", "Terror", "Guerra"],
+        conflictingVibes: ["intenso", "complexo"],
+        requiredPositive: true,
+        keywords: ["rapido", "fofo", "aventura", "amizade", "musica", "romance", "humor"],
+        longMoviePenalty: 130
+      },
       complexo: {
         preferredGenres: ["Ficcao cientifica", "Fantasia", "Animacao"],
         avoidGenres: ["Documentario", "Guerra", "Crime", "Musica", "Acao", "Aventura"],
@@ -145,4 +154,55 @@ test("computeItems filters mismatched movie in complex mood", () => {
   const resultKeys = Array.from(results, (item) => item.key);
   assert.equal(resultKeys.length, 1);
   assert.equal(resultKeys[0], "allowed-key");
+});
+
+test("light mood prefers live-action comedy over generic family animation", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "leve", sessionSeed: "light-test", shuffleSalt: "stable", rerollOffset: 0 });
+  const genericAnimation = movie({
+    key: "generic-animation",
+    title: "Generic Family Animation",
+    genre: "Animacao",
+    genres: ["Animacao", "Familia", "Aventura"],
+    vibes: ["comfort"],
+    tags: ["familia", "aventura"],
+    overview: "uma jornada familiar colorida sobre coragem"
+  });
+  const liveComedy = movie({
+    key: "live-comedy",
+    title: "Live Comedy",
+    genre: "Comedia",
+    genres: ["Comedia", "Romance"],
+    vibes: ["leve"],
+    tags: ["humor", "romance"],
+    overview: "comedia leve, romance e humor de amizade"
+  });
+
+  assert.ok(worker.moodScore(liveComedy, state) > worker.moodScore(genericAnimation, state));
+});
+
+test("light mood still welcomes animated comedy with explicit humor", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "leve" });
+  const animatedComedy = movie({
+    key: "animated-comedy",
+    title: "Animated Comedy",
+    genre: "Animacao",
+    genres: ["Animacao", "Comedia", "Aventura"],
+    vibes: ["leve"],
+    tags: ["humor", "satira"],
+    overview: "animação com comedia, humor rapido e satira"
+  });
+  const genericAnimation = movie({
+    key: "generic-animation",
+    title: "Generic Family Animation",
+    genre: "Animacao",
+    genres: ["Animacao", "Familia"],
+    vibes: ["comfort"],
+    tags: ["familia"],
+    overview: "uma fantasia familiar aconchegante"
+  });
+
+  assert.equal(worker.moodMismatch(animatedComedy, state), false);
+  assert.ok(worker.moodScore(animatedComedy, state) > worker.moodScore(genericAnimation, state));
 });
