@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260605b";
+const catalogSeedAssetVersion = "20260617a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -2349,9 +2349,9 @@ function lightAnimationDominancePenalty(movie) {
 
   const hasRelief = lightMoodReliefEvidence(movie);
   const isFamilyAnimation = hasGenre(movie, ["Familia"]);
-  let penalty = hasRelief ? 12 : 40;
+  let penalty = hasRelief ? 30 : 60;
 
-  if (isFamilyAnimation && !hasRelief) penalty += 12;
+  if (isFamilyAnimation) penalty += hasRelief ? 12 : 20;
   if ((movie.vibes || []).includes("comfort") && !(movie.vibes || []).includes("leve")) penalty += 10;
 
   return penalty;
@@ -2464,6 +2464,74 @@ function moodCollectionScore(movie) {
   if (hasVibe) return 28;
   if (preferredMatches || keywordMatches) return 12;
   return -18;
+}
+
+function qualityScore(movie) {
+  const average = ratingAverage(movie);
+  if (!average) return -6;
+
+  let score = Math.max(-14, Math.min(24, Math.round((average - 70) * 0.72)));
+  const votes = Number(movie.tmdbVotes || 0);
+
+  if (votes >= 20000) score += 6;
+  else if (votes >= 6000) score += 3;
+  else if (votes > 0 && votes < 250) score -= 5;
+
+  return score;
+}
+
+function availabilityScore(movie) {
+  let score = 0;
+  if (movie.posterUrl) score += 12;
+  if (movie.backdropUrl) score += 3;
+  if ((movie.providers || []).length) score += 5;
+  if (movie.watchUrl) score += 2;
+  return score;
+}
+
+function activeFilterScore(movie) {
+  let score = 0;
+  if (hasGenre(movie, [els.genre.value])) score += 15;
+  if (movieDuration(movie) && durationMatches(els.duration.value, movieDuration(movie)) && els.duration.value !== "qualquer") score += 10;
+  if (els.decade.value === movie.decade) score += 10;
+  if (els.country.value === movie.country) score += 10;
+  if (els.provider.value !== "qualquer" && (movie.providers || []).includes(els.provider.value)) score += 8;
+  return score;
+}
+
+function surpriseScore(movie, profile = moodProfiles[activeMood] || {}) {
+  if (activeMode !== "mood" || !profile.surpriseMode) return 0;
+  let score = seededUnit(movie, "surprise-score") * 38;
+  if (ratingAverage(movie) > 88) score -= 12;
+  if (Number(movie.year) && Number(movie.year) < 2010) score += 6;
+  return score;
+}
+
+function watchStatePenalty(movie) {
+  return els.hideWatched.checked && wasWatched(movie) && profileLoaded ? -100 : 0;
+}
+
+function recommendationScoreBreakdown(movie) {
+  const profile = moodProfiles[activeMood] || {};
+  const randomWeight = profile.surpriseMode ? 154 : (activeMode === "roulette" ? 146 : 112);
+  const layers = {
+    mood: moodScore(movie),
+    collection: moodCollectionScore(movie),
+    quality: qualityScore(movie),
+    availability: availabilityScore(movie),
+    roulette: activeMode === "roulette" ? Math.round(ratingAverage(movie) / 3) : 0,
+    profile: profileLoaded ? profileAffinity(movie) : 0,
+    filters: activeFilterScore(movie),
+    surprise: surpriseScore(movie, profile),
+    watched: watchStatePenalty(movie),
+    freshness: -freshnessPenalty(movie),
+    noise: shuffleNoise(movie) * randomWeight
+  };
+
+  return {
+    ...layers,
+    total: Object.values(layers).reduce((sum, value) => sum + value, 0)
+  };
 }
 
 function recentRecommendationIndex(movie) {
@@ -2592,16 +2660,25 @@ function diversityPenalty(movie, selected) {
   return selected.slice(0, 10).reduce((penalty, item, index) => {
     const distance = Math.max(1, index + 1);
     const sameGenre = movieGenres(movie).some((genre) => hasGenre(item, [genre]));
+    const samePrimaryGenre = normalize(movie.genre) === normalize(item.genre);
     const sameCountry = movie.country === item.country;
     const sameDecade = movie.decade === item.decade;
     const sameDirector = normalize(movie.director) === normalize(item.director);
     const sameVibe = (movie.vibes || []).some((vibe) => (item.vibes || []).includes(vibe));
+    const immediate = index === 0;
+    const sameAnimationRun = activeMood === "leve" && hasGenre(movie, ["Animacao"]) && hasGenre(item, ["Animacao"]);
     return penalty
       + (sameGenre ? 26 / distance : 0)
+      + (samePrimaryGenre ? 18 / distance : 0)
       + (sameCountry ? 16 / distance : 0)
       + (sameDecade ? 13 / distance : 0)
       + (sameDirector ? 20 / distance : 0)
-      + (sameVibe ? 12 / distance : 0);
+      + (sameVibe ? 12 / distance : 0)
+      + (sameGenre && sameCountry ? 14 / distance : 0)
+      + (sameAnimationRun ? 34 / distance : 0)
+      + (immediate && samePrimaryGenre ? 30 : 0)
+      + (immediate && sameCountry ? 18 : 0)
+      + (immediate && sameDecade ? 12 : 0);
   }, 0);
 }
 
@@ -3322,26 +3399,7 @@ function movieDuration(movie) {
 }
 
 function scoreMovie(movie) {
-  let score = 0;
-  const profile = moodProfiles[activeMood] || {};
-
-  score += moodScore(movie);
-  score += moodCollectionScore(movie);
-  if (activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
-  if (profileLoaded) score += profileAffinity(movie);
-  if (hasGenre(movie, [els.genre.value])) score += 15;
-  if (movieDuration(movie) && durationMatches(els.duration.value, movieDuration(movie)) && els.duration.value !== "qualquer") score += 10;
-  if (els.decade.value === movie.decade) score += 10;
-  if (els.country.value === movie.country) score += 10;
-  if (activeMode === "mood" && profile.surpriseMode) {
-    score += seededUnit(movie, "surprise-score") * 38;
-    if (ratingAverage(movie) > 88) score -= 12;
-  }
-  if (els.hideWatched.checked && wasWatched(movie) && profileLoaded) score -= 100;
-  score -= freshnessPenalty(movie);
-
-  const randomWeight = profile.surpriseMode ? 154 : (activeMode === "roulette" ? 146 : 112);
-  return score + shuffleNoise(movie) * randomWeight;
+  return recommendationScoreBreakdown(movie).total;
 }
 
 function filteredStateSignature(catalogLength) {
@@ -3401,6 +3459,9 @@ function workerMovieLite(movie) {
     tags: movie.tags || [],
     vibes: movie.vibes || [],
     providers: movie.providers || [],
+    posterUrl: movie.posterUrl || "",
+    backdropUrl: movie.backdropUrl || "",
+    watchUrl: movie.watchUrl || "",
     favoriteSignal: Boolean(movie.favoriteSignal),
     seen: Boolean(movie.seen)
   };

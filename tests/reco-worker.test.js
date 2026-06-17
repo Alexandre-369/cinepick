@@ -79,6 +79,9 @@ function movie(overrides = {}) {
     providers: [],
     source: "curated",
     overview: "historia sobre tempo, memoria e identidade",
+    posterUrl: "",
+    backdropUrl: "",
+    watchUrl: "",
     ...overrides
   };
 }
@@ -205,4 +208,95 @@ test("light mood still welcomes animated comedy with explicit humor", () => {
 
   assert.equal(worker.moodMismatch(animatedComedy, state), false);
   assert.ok(worker.moodScore(animatedComedy, state) > worker.moodScore(genericAnimation, state));
+});
+
+test("recommendation breakdown exposes stable scoring layers", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "leve", sessionSeed: "layers", shuffleSalt: "stable", rerollOffset: 0 });
+  const candidate = movie({
+    key: "poster-ready-comedy",
+    title: "Poster Ready Comedy",
+    genre: "Comedia",
+    genres: ["Comedia", "Romance"],
+    vibes: ["leve"],
+    tags: ["humor"],
+    posterUrl: "https://image.tmdb.org/t/p/w500/poster.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w780/backdrop.jpg",
+    providers: ["Netflix"],
+    watchUrl: "https://example.test/watch"
+  });
+
+  const breakdown = worker.recommendationScoreBreakdown(candidate, state);
+  assert.equal(typeof breakdown.total, "number");
+  assert.ok(breakdown.mood > 0);
+  assert.ok(breakdown.quality > 0);
+  assert.ok(breakdown.availability >= 20);
+  assert.ok(breakdown.noise >= 0);
+});
+
+test("availability layer prefers poster-ready recommendations", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "leve", sessionSeed: "availability", shuffleSalt: "stable", rerollOffset: 0 });
+  const bare = movie({
+    key: "bare-comedy",
+    title: "Bare Comedy",
+    genre: "Comedia",
+    genres: ["Comedia", "Romance"],
+    vibes: ["leve"],
+    tags: ["humor"]
+  });
+  const ready = movie({
+    ...bare,
+    key: "ready-comedy",
+    title: "Ready Comedy",
+    posterUrl: "https://image.tmdb.org/t/p/w500/poster.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w780/backdrop.jpg",
+    providers: ["Prime Video"],
+    watchUrl: "https://example.test/watch"
+  });
+
+  assert.ok(worker.recommendationScoreBreakdown(ready, state).total > worker.recommendationScoreBreakdown(bare, state).total);
+});
+
+test("recent history layer pushes repeated titles down", () => {
+  const worker = loadWorkerContext();
+  const repeated = movie({
+    key: "repeat-me",
+    title: "Repeat Me",
+    genre: "Comedia",
+    genres: ["Comedia"],
+    vibes: ["leve"],
+    tags: ["humor"],
+    posterUrl: "https://image.tmdb.org/t/p/w500/poster.jpg"
+  });
+  const state = baseState({
+    activeMood: "leve",
+    sessionSeed: "history",
+    shuffleSalt: "stable",
+    rerollOffset: 0,
+    recommendationHistory: ["repeat-me"]
+  });
+
+  const breakdown = worker.recommendationScoreBreakdown(repeated, state);
+  assert.ok(breakdown.freshness <= -300);
+  assert.ok(breakdown.total < worker.recommendationScoreBreakdown({ ...repeated, key: "fresh-title", title: "Fresh Title" }, { ...state, recommendationHistory: [] }).total);
+});
+
+test("light mood keeps animation as a minority in a mixed strong pool", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "leve", sessionSeed: "mixed-light", shuffleSalt: "stable", rerollOffset: 0 });
+  const pool = [
+    movie({ key: "comedy-1", title: "Comedy 1", genre: "Comedia", genres: ["Comedia", "Romance"], vibes: ["leve"], tags: ["humor"], imdb: 78, rt: 86, posterUrl: "poster" }),
+    movie({ key: "comedy-2", title: "Comedy 2", genre: "Comedia", genres: ["Comedia", "Musica"], vibes: ["leve"], tags: ["musica"], imdb: 76, rt: 84, posterUrl: "poster" }),
+    movie({ key: "romance-1", title: "Romance 1", genre: "Romance", genres: ["Romance", "Comedia"], vibes: ["leve"], tags: ["romance"], imdb: 77, rt: 83, posterUrl: "poster" }),
+    movie({ key: "music-1", title: "Music 1", genre: "Musica", genres: ["Musica", "Comedia"], vibes: ["leve"], tags: ["musica"], imdb: 75, rt: 85, posterUrl: "poster" }),
+    movie({ key: "animation-1", title: "Animation 1", genre: "Animacao", genres: ["Animacao", "Familia", "Comedia"], vibes: ["leve"], tags: ["humor"], imdb: 86, rt: 94, posterUrl: "poster" }),
+    movie({ key: "animation-2", title: "Animation 2", genre: "Animacao", genres: ["Animacao", "Familia", "Aventura"], vibes: ["comfort", "leve"], tags: ["familia"], imdb: 84, rt: 92, posterUrl: "poster" }),
+    movie({ key: "animation-3", title: "Animation 3", genre: "Animacao", genres: ["Animacao", "Comedia"], vibes: ["leve"], tags: ["humor"], imdb: 83, rt: 91, posterUrl: "poster" }),
+    movie({ key: "animation-4", title: "Animation 4", genre: "Animacao", genres: ["Animacao", "Familia"], vibes: ["comfort"], tags: ["familia"], imdb: 88, rt: 96, posterUrl: "poster" })
+  ];
+
+  const topFive = worker.computeItems(pool, state).slice(0, 5);
+  const topFiveAnimationCount = topFive.filter((item) => item.key.startsWith("animation")).length;
+  assert.ok(topFiveAnimationCount <= 2);
 });

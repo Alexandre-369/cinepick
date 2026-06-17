@@ -198,9 +198,9 @@ function lightAnimationDominancePenalty(movie) {
 
   const hasRelief = lightMoodReliefEvidence(movie);
   const isFamilyAnimation = hasGenre(movie, ["Familia"]);
-  let penalty = hasRelief ? 12 : 40;
+  let penalty = hasRelief ? 30 : 60;
 
-  if (isFamilyAnimation && !hasRelief) penalty += 12;
+  if (isFamilyAnimation) penalty += hasRelief ? 12 : 20;
   if ((movie.vibes || []).includes("comfort") && !(movie.vibes || []).includes("leve")) penalty += 10;
 
   return penalty;
@@ -363,6 +363,79 @@ function moodCollectionScore(movie, state) {
   return -18;
 }
 
+function qualityScore(movie) {
+  const average = ratingAverage(movie);
+  if (!average) return -6;
+
+  let score = Math.max(-14, Math.min(24, Math.round((average - 70) * 0.72)));
+  const votes = Number(movie.tmdbVotes || 0);
+
+  if (votes >= 20000) score += 6;
+  else if (votes >= 6000) score += 3;
+  else if (votes > 0 && votes < 250) score -= 5;
+
+  return score;
+}
+
+function availabilityScore(movie) {
+  let score = 0;
+  if (movie.posterUrl) score += 12;
+  if (movie.backdropUrl) score += 3;
+  if ((movie.providers || []).length) score += 5;
+  if (movie.watchUrl) score += 2;
+  return score;
+}
+
+function activeFilterScore(movie, filters = {}) {
+  let score = 0;
+  if (hasGenre(movie, [filters.genre])) score += 15;
+  if (Number(movie.duration || 0) && durationMatches(filters.duration, Number(movie.duration || 0)) && filters.duration !== "qualquer") score += 10;
+  if (filters.decade === movie.decade) score += 10;
+  if (filters.country === movie.country) score += 10;
+  if (filters.provider !== "qualquer" && (movie.providers || []).includes(filters.provider)) score += 8;
+  return score;
+}
+
+function surpriseScore(movie, state, profile = state.moodProfiles[state.activeMood] || {}) {
+  if (state.activeMode !== "mood" || !profile.surpriseMode) return 0;
+  let score = seededUnit(movie, state, "surprise-score") * 38;
+  if (ratingAverage(movie) > 88) score -= 12;
+  if (Number(movie.year) && Number(movie.year) < 2010) score += 6;
+  return score;
+}
+
+function watchStatePenalty(movie, state, watchedSet) {
+  return state.filters?.hideWatched && state.profileLoaded && (movie.seen || watchedSet.has(movie.key)) ? -100 : 0;
+}
+
+function recommendationScoreBreakdown(movie, state, sets = {}) {
+  const profile = state.moodProfiles[state.activeMood] || {};
+  const filters = state.filters || {};
+  const watchedSet = sets.watchedSet || new Set(state.profileWatchedKeys || []);
+  const favoriteDirectorsSet = sets.favoriteDirectorsSet || new Set(state.profileFavoriteDirectors || []);
+  const favoriteTagsSet = sets.favoriteTagsSet || new Set(state.profileFavoriteTags || []);
+  const history = state.recommendationHistory || [];
+  const randomWeight = profile.surpriseMode ? 154 : (state.activeMode === "roulette" ? 146 : 112);
+  const layers = {
+    mood: moodScore(movie, state),
+    collection: moodCollectionScore(movie, state),
+    quality: qualityScore(movie),
+    availability: availabilityScore(movie),
+    roulette: state.activeMode === "roulette" ? Math.round(ratingAverage(movie) / 3) : 0,
+    profile: state.profileLoaded ? profileAffinity(movie, state, favoriteDirectorsSet, favoriteTagsSet) : 0,
+    filters: activeFilterScore(movie, filters),
+    surprise: surpriseScore(movie, state, profile),
+    watched: watchStatePenalty(movie, state, watchedSet),
+    freshness: -freshnessPenalty(movie, history),
+    noise: shuffleNoise(movie, state) * randomWeight
+  };
+
+  return {
+    ...layers,
+    total: Object.values(layers).reduce((sum, value) => sum + value, 0)
+  };
+}
+
 function computeItems(movies, state) {
   const watchedSet = new Set(state.profileWatchedKeys || []);
   const favoriteDirectorsSet = new Set(state.profileFavoriteDirectors || []);
@@ -382,23 +455,11 @@ function computeItems(movies, state) {
     if (filters.hideWatched && state.profileLoaded && (movie.seen || watchedSet.has(movie.key))) continue;
     if (state.activeMode === "mood" && moodMismatch(movie, state)) continue;
 
-    let score = 0;
-    score += moodScore(movie, state);
-    score += moodCollectionScore(movie, state);
-    if (state.activeMode === "roulette") score += Math.round(ratingAverage(movie) / 3);
-    if (state.profileLoaded) score += profileAffinity(movie, state, favoriteDirectorsSet, favoriteTagsSet);
-    if (hasGenre(movie, [filters.genre])) score += 15;
-    if (Number(movie.duration || 0) && durationMatches(filters.duration, Number(movie.duration || 0)) && filters.duration !== "qualquer") score += 10;
-    if (filters.decade === movie.decade) score += 10;
-    if (filters.country === movie.country) score += 10;
-    if (state.activeMode === "mood" && profile.surpriseMode) {
-      score += seededUnit(movie, state, "surprise-score") * 38;
-      if (ratingAverage(movie) > 88) score -= 12;
-    }
-    if (filters.hideWatched && state.profileLoaded && (movie.seen || watchedSet.has(movie.key))) score -= 100;
-    score -= freshnessPenalty(movie, history);
-    const randomWeight = profile.surpriseMode ? 154 : (state.activeMode === "roulette" ? 146 : 112);
-    score += shuffleNoise(movie, state) * randomWeight;
+    const score = recommendationScoreBreakdown(movie, state, {
+      watchedSet,
+      favoriteDirectorsSet,
+      favoriteTagsSet
+    }).total;
 
     scored.push({
       key: movie.key,
