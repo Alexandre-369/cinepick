@@ -164,6 +164,58 @@ function superheroActionSignal(movie) {
   ]);
 }
 
+function mainstreamBlockbusterSignal(movie) {
+  const text = movieSearchText(movie);
+  const votes = Number(movie.tmdbVotes || 0);
+  const average = ratingAverage(movie);
+  const isPopular = votes >= 12000 || (votes >= 7000 && average >= 74);
+  const hasBlockbusterGenre = hasGenre(movie, ["Acao", "Aventura", "Familia", "Animacao", "Fantasia", "Ficcao cientifica"]);
+  const hasFranchiseSignal = superheroActionSignal(movie) || hasAnyText(text, [
+    "marvel", "dc", "disney", "pixar", "star wars", "jurassic", "fast furious", "velozes furiosos",
+    "harry potter", "transformers", "mission impossible", "missao impossivel", "avatar",
+    "super mario", "minecraft", "minions", "frozen", "toy story", "moana", "deadpool",
+    "batman", "superman", "spider man", "homem aranha"
+  ]);
+
+  return (isPopular && hasBlockbusterGenre) || hasFranchiseSignal;
+}
+
+function surpriseDiscoveryEvidence(movie) {
+  const text = movieSearchText(movie);
+  const country = normalize(movie.country);
+  const director = normalize(movie.director);
+  const votes = Number(movie.tmdbVotes || 0);
+  const average = ratingAverage(movie);
+  const nonHollywoodOrigin = country && country !== "estados unidos" && country !== "reino unido";
+  const festivalDirectors = [
+    "apichatpong", "abbas kiarostami", "jafar panahi", "lucrecia martel", "claire denis",
+    "glauber rocha", "kleber mendonca", "eduardo coutinho", "tsai ming", "hou hsiao",
+    "wong kar", "satoshi kon", "werner herzog", "yorgos lanthimos", "charlie kaufman",
+    "andrei tarkovsky", "ingmar bergman", "agnes varda", "sembene", "mambety",
+    "mati diop", "julia ducournau", "cristobal leon"
+  ];
+  const hasFestivalDirector = festivalDirectors.some((name) => director.includes(name));
+  const hasDiscoveryText = hasAnyText(text, [
+    "festival", "cult", "surreal", "sensorial", "metalinguagem", "politica", "política",
+    "ensaio", "experimental", "absurdo",
+    "arquivo", "mito", "colonialismo", "cinema novo", "animacao adulta", "animação adulta",
+    "plano sequencia", "plano-sequencia", "wuxia", "noir", "satira", "sátira"
+  ]);
+  const documentaryDiscovery = hasGenre(movie, ["Documentario"]) && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector);
+  const globalDramaDiscovery = hasGenre(movie, ["Drama"]) && nonHollywoodOrigin;
+  const oldOrGlobal = Number(movie.year || 0) < 2005 && nonHollywoodOrigin;
+  const modestDiscovery = votes > 0 && votes < 6500 && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector || oldOrGlobal);
+  const criticalDiscovery = average >= 74 && votes > 0 && votes < 12000 && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector || documentaryDiscovery || globalDramaDiscovery);
+
+  return hasFestivalDirector
+    || hasDiscoveryText
+    || documentaryDiscovery
+    || globalDramaDiscovery
+    || oldOrGlobal
+    || modestDiscovery
+    || criticalDiscovery;
+}
+
 function lightMoodMismatch(movie) {
   const text = movieSearchText(movie);
   const hasLightGenre = hasGenre(movie, ["Comedia", "Romance", "Musica", "Aventura", "Familia", "Animacao"]);
@@ -272,6 +324,13 @@ function moodMismatch(movie, state) {
     return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
   }
 
+  if (state.activeMood === "surpresa") {
+    return hasConflictingVibe
+      || hardAvoidMatches > 0
+      || mainstreamBlockbusterSignal(movie)
+      || !surpriseDiscoveryEvidence(movie);
+  }
+
   return false;
 }
 
@@ -341,6 +400,9 @@ function moodScore(movie, state) {
   }
   if (state.activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 16;
   if (state.activeMood === "surpresa") {
+    if (mainstreamBlockbusterSignal(movie)) score -= 180;
+    if (!surpriseDiscoveryEvidence(movie)) score -= 90;
+    if (surpriseDiscoveryEvidence(movie)) score += 42;
     if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
     if (ratingAverage(movie) >= 78) score += 8;
     if ((movie.providers || []).length) score += 4;

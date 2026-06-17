@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260617a";
+const catalogSeedAssetVersion = "20260617b";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -1547,6 +1547,7 @@ let tmdbLoadInProgress = false;
 let lastRenderedHeroKey = "";
 let lastRenderedVisualKey = "";
 let currentHeroKey = "";
+let openHeroWhyKey = "";
 let recommendationQueue = [];
 let recommendationSignature = "";
 const attemptedHeroPosterKeys = new Set();
@@ -2129,7 +2130,7 @@ function movieSearchText(movie) {
 }
 
 function hasGenre(movie, genres) {
-  if (!movie.__genreKeySet) {
+  if (!(movie.__genreKeySet instanceof Set)) {
     movie.__genreKeySet = new Set(movieGenres(movie).map(normalize));
   }
   return genres.some((genre) => movie.__genreKeySet.has(normalize(genre)));
@@ -2226,6 +2227,58 @@ function marvelUniverseSignal(movie) {
     "guardians", "guardioes", "guardiões", "black panther", "pantera negra",
     "ant-man", "homem-formiga", "spider-man", "homem-aranha"
   ]);
+}
+
+function mainstreamBlockbusterSignal(movie) {
+  const text = movieSearchText(movie);
+  const votes = Number(movie.tmdbVotes || 0);
+  const average = ratingAverage(movie);
+  const isPopular = votes >= 12000 || (votes >= 7000 && average >= 74);
+  const hasBlockbusterGenre = hasGenre(movie, ["Acao", "Aventura", "Familia", "Animacao", "Fantasia", "Ficcao cientifica"]);
+  const hasFranchiseSignal = superheroActionSignal(movie) || marvelUniverseSignal(movie) || hasAnyText(text, [
+    "marvel", "dc", "disney", "pixar", "star wars", "jurassic", "fast furious", "velozes furiosos",
+    "harry potter", "transformers", "mission impossible", "missao impossivel", "avatar",
+    "super mario", "minecraft", "minions", "frozen", "toy story", "moana", "deadpool",
+    "batman", "superman", "spider man", "homem aranha"
+  ]);
+
+  return (isPopular && hasBlockbusterGenre) || hasFranchiseSignal;
+}
+
+function surpriseDiscoveryEvidence(movie) {
+  const text = movieSearchText(movie);
+  const country = normalize(movie.country);
+  const director = normalize(movie.director);
+  const votes = Number(movie.tmdbVotes || 0);
+  const average = ratingAverage(movie);
+  const nonHollywoodOrigin = country && country !== "estados unidos" && country !== "reino unido";
+  const festivalDirectors = [
+    "apichatpong", "abbas kiarostami", "jafar panahi", "lucrecia martel", "claire denis",
+    "glauber rocha", "kleber mendonca", "eduardo coutinho", "tsai ming", "hou hsiao",
+    "wong kar", "satoshi kon", "werner herzog", "yorgos lanthimos", "charlie kaufman",
+    "andrei tarkovsky", "ingmar bergman", "agnes varda", "sembene", "mambety",
+    "mati diop", "julia ducournau", "cristobal leon"
+  ];
+  const hasFestivalDirector = festivalDirectors.some((name) => director.includes(name));
+  const hasDiscoveryText = hasAnyText(text, [
+    "festival", "cult", "surreal", "sensorial", "metalinguagem", "politica", "política",
+    "ensaio", "experimental", "absurdo",
+    "arquivo", "mito", "colonialismo", "cinema novo", "animacao adulta", "animação adulta",
+    "plano sequencia", "plano-sequencia", "wuxia", "noir", "satira", "sátira"
+  ]);
+  const documentaryDiscovery = hasGenre(movie, ["Documentario"]) && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector);
+  const globalDramaDiscovery = hasGenre(movie, ["Drama"]) && nonHollywoodOrigin;
+  const oldOrGlobal = Number(movie.year || 0) < 2005 && nonHollywoodOrigin;
+  const modestDiscovery = votes > 0 && votes < 6500 && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector || oldOrGlobal);
+  const criticalDiscovery = average >= 74 && votes > 0 && votes < 12000 && (nonHollywoodOrigin || hasDiscoveryText || hasFestivalDirector || documentaryDiscovery || globalDramaDiscovery);
+
+  return hasFestivalDirector
+    || hasDiscoveryText
+    || documentaryDiscovery
+    || globalDramaDiscovery
+    || oldOrGlobal
+    || modestDiscovery
+    || criticalDiscovery;
 }
 
 function killBillSignal(movie) {
@@ -2444,6 +2497,9 @@ function moodScore(movie) {
   if (activeMood === "acao" && conceptualSciFiSignal(movie) && !superheroActionSignal(movie)) score -= 24;
   if (activeMood === "terror" && hasGenre(movie, ["Acao"]) && !hasGenre(movie, ["Terror"])) score -= 40;
   if (activeMood === "surpresa") {
+    if (mainstreamBlockbusterSignal(movie)) score -= 180;
+    if (!surpriseDiscoveryEvidence(movie)) score -= 90;
+    if (surpriseDiscoveryEvidence(movie)) score += 42;
     if (Number(movie.year) && Number(movie.year) < 2010) score += 10;
     if (ratingAverage(movie) >= 78) score += 8;
     if ((movie.providers || []).length) score += 4;
@@ -3080,6 +3136,13 @@ function moodMismatch(movie) {
 
   if (activeMood === "acao") {
     return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+  }
+
+  if (activeMood === "surpresa") {
+    return hasConflictingVibe
+      || hardAvoidMatches > 0
+      || mainstreamBlockbusterSignal(movie)
+      || !surpriseDiscoveryEvidence(movie);
   }
 
   return false;
@@ -3740,7 +3803,7 @@ function whyThisMovieMarkup(movie, options = {}) {
     .join("");
 
   return `
-    <details class="why-card why-card-${variant}"${open ? " open" : ""}>
+    <details class="why-card why-card-${variant}" data-why-card="${variant}"${open ? " open" : ""}>
       <summary>Por que este filme?</summary>
       <p>${explanation.headline}</p>
       <ul>${bulletItems}</ul>
@@ -5274,6 +5337,7 @@ function renderMovieDialog(movie) {
 function renderHero(movie) {
   if (!movie) {
     lastRenderedVisualKey = "";
+    openHeroWhyKey = "";
     els.hero.classList.remove("is-swapping");
     els.hero.innerHTML = `
       <div class="rec-copy">
@@ -5324,8 +5388,8 @@ function renderHero(movie) {
   const heroTitleClass = movieTitle.length > 30 ? "hero-title is-long" : movieTitle.length > 20 ? "hero-title is-medium" : "hero-title";
   const posterTitleClass = movieTitle.length > 28 ? "poster-title is-long" : movieTitle.length > 18 ? "poster-title is-medium" : "poster-title";
   const watchLaterActive = isWatchLater(movie);
-  const whyBlock = whyThisMovieMarkup(movie, { variant: "hero", open: false });
   const heroKey = movieKey(movieTitle, movie.year);
+  const whyBlock = whyThisMovieMarkup(movie, { variant: "hero", open: openHeroWhyKey === heroKey });
   const colors = movieColorPair(movie);
   const shouldAnimateSwap = Boolean(lastRenderedVisualKey) && lastRenderedVisualKey !== heroKey;
   if (shouldAnimateSwap) els.hero.classList.add("is-swapping");
@@ -5697,6 +5761,7 @@ els.drawerBackdrop?.addEventListener("click", () => {
 
 document.addEventListener("click", (event) => {
   if (event.target.closest(".streaming-link")) return;
+  if (event.target.closest(".why-card")) return;
   const trigger = event.target.closest("[data-open-details]");
   if (!trigger) return;
   const movie = movieFromDomKey(trigger.dataset.openDetails);
@@ -5833,6 +5898,11 @@ els.hero.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (event.target.closest(".why-card")) {
+    heroPointerHandled = false;
+    return;
+  }
+
   const nextButton = event.target.closest("[data-next]");
   if (nextButton) {
     heroPointerHandled = true;
@@ -5881,6 +5951,16 @@ els.hero.addEventListener("pointerdown", (event) => {
 });
 
 els.hero.addEventListener("click", (event) => {
+  const whySummary = event.target.closest(".why-card summary");
+  if (whySummary) {
+    const details = whySummary.closest(".why-card");
+    window.requestAnimationFrame(() => {
+      openHeroWhyKey = details?.open && currentHeroKey ? currentHeroKey : "";
+    });
+    event.stopPropagation();
+    return;
+  }
+
   if (event.target.closest("[data-open-filters]")) {
     setDrawerOpen(true);
     return;

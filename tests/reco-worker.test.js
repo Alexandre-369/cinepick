@@ -41,6 +41,14 @@ function baseState(overrides = {}) {
         keywords: ["ficcao", "fantasia", "distopia"],
         requiredComplexity: true,
         surpriseMode: false
+      },
+      surpresa: {
+        preferredGenres: ["Documentario", "Ficcao cientifica", "Fantasia", "Misterio", "Terror", "Drama", "Comedia"],
+        avoidGenres: ["Familia"],
+        hardAvoidGenres: [],
+        conflictingVibes: ["comfort"],
+        keywords: ["estranho", "surreal", "cult", "identidade", "sonho", "metalinguagem", "sensorial", "politica", "obsessao"],
+        surpriseMode: true
       }
     },
     profileWatchedKeys: [],
@@ -74,7 +82,7 @@ function movie(overrides = {}) {
     rt: 80,
     tmdbVotes: 1200,
     country: "Estados Unidos",
-    vibes: ["complexo"],
+    vibes: ["surpresa", "complexo"],
     tags: ["identidade", "distopia"],
     providers: [],
     source: "curated",
@@ -157,6 +165,86 @@ test("computeItems filters mismatched movie in complex mood", () => {
   const resultKeys = Array.from(results, (item) => item.key);
   assert.equal(resultKeys.length, 1);
   assert.equal(resultKeys[0], "allowed-key");
+});
+
+test("surprise mood blocks mainstream blockbusters", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "surpresa" });
+  const blockbuster = movie({
+    key: "blockbuster-key",
+    title: "Super Mario Bros. The Movie",
+    genre: "Animacao",
+    genres: ["Animacao", "Familia", "Aventura"],
+    country: "Estados Unidos",
+    director: "Known Studio",
+    tmdbVotes: 20000,
+    imdb: 75,
+    rt: 80,
+    vibes: ["surpresa"],
+    tags: ["super mario", "disney", "aventura"],
+    overview: "popular franchise blockbuster"
+  });
+
+  assert.equal(worker.mainstreamBlockbusterSignal(blockbuster), true);
+  assert.equal(worker.moodMismatch(blockbuster, state), true);
+});
+
+test("surprise mood keeps festival-coded discoveries", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "surpresa" });
+  const discovery = movie({
+    key: "festival-key",
+    title: "Festival Discovery",
+    genre: "Documentario",
+    genres: ["Documentario"],
+    country: "Senegal",
+    director: "Mati Diop",
+    tmdbVotes: 900,
+    imdb: 74,
+    rt: 96,
+    vibes: ["surpresa"],
+    tags: ["festival", "sensorial"],
+    overview: "festival sensorial documentary"
+  });
+  const blockbuster = movie({
+    key: "blockbuster-key",
+    title: "Super Mario Bros. The Movie",
+    genre: "Animacao",
+    genres: ["Animacao", "Familia", "Aventura"],
+    country: "Estados Unidos",
+    tmdbVotes: 20000,
+    imdb: 75,
+    rt: 80,
+    vibes: ["surpresa"],
+    tags: ["super mario", "disney"],
+    overview: "popular franchise blockbuster"
+  });
+
+  assert.equal(worker.surpriseDiscoveryEvidence(discovery), true);
+  assert.equal(worker.moodMismatch(discovery, state), false);
+  assert.ok(worker.moodScore(discovery, state) > worker.moodScore(blockbuster, state));
+});
+
+test("surprise mood rejects mainstream titles with weak discovery evidence", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "surpresa" });
+  const mainstreamDrama = movie({
+    key: "mainstream-drama",
+    title: "Famous War Drama",
+    genre: "Drama",
+    genres: ["Drama", "Suspense", "Guerra"],
+    country: "Estados Unidos",
+    director: "Famous Director",
+    tmdbVotes: 24000,
+    imdb: 82,
+    rt: 59,
+    vibes: ["complexo"],
+    tags: ["tempo e memória"],
+    overview: "known studio war drama with broad awards awareness"
+  });
+
+  assert.equal(worker.surpriseDiscoveryEvidence(mainstreamDrama), false);
+  assert.equal(worker.moodMismatch(mainstreamDrama, state), true);
 });
 
 test("light mood prefers live-action comedy over generic family animation", () => {
