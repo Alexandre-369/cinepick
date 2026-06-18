@@ -82,7 +82,7 @@ function movie(overrides = {}) {
     rt: 80,
     tmdbVotes: 1200,
     country: "Estados Unidos",
-    vibes: ["surpresa", "complexo"],
+    vibes: ["complexo"],
     tags: ["identidade", "distopia"],
     providers: [],
     source: "curated",
@@ -157,7 +157,7 @@ test("computeItems filters mismatched movie in complex mood", () => {
     country: "Uniao Sovietica",
     director: "Andrei Tarkovsky",
     tags: ["zona", "filosofia", "metafisica"],
-    vibes: ["complexo"],
+    vibes: ["surpresa", "complexo"],
     overview: "viagem existencial e especulativa por uma zona proibida"
   });
 
