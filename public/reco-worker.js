@@ -180,6 +180,63 @@ function mainstreamBlockbusterSignal(movie) {
   return (isPopular && hasBlockbusterGenre) || hasFranchiseSignal;
 }
 
+function marvelUniverseSignal(movie) {
+  return hasAnyText(movieSearchText(movie), [
+    "marvel", "avengers", "vingadores", "iron man", "homem de ferro", "captain america", "capitao america",
+    "thor", "hulk", "black widow", "viuva negra", "doctor strange", "doutor estranho",
+    "guardians", "guardioes", "black panther", "pantera negra", "ant man", "homem aranha", "spider man"
+  ]);
+}
+
+function killBillSignal(movie) {
+  return normalize(movie.title || "").includes("kill bill");
+}
+
+function kineticActionTextSignal(movie) {
+  return hasAnyText(movieSearchText(movie), [
+    "acao", "ação", "perseguicao", "perseguição", "fuga", "assalto", "roubo", "heist",
+    "missao", "missão", "espionagem", "agente", "mercenario", "mercenário", "assassino",
+    "vinganca", "vingança", "luta", "combate", "briga", "tiroteio", "explosao", "explosão",
+    "adrenalina", "corrida", "coreografia", "katana", "samurai", "artes marciais",
+    "guerra", "batalha", "cerco", "sobrevivencia", "sobrevivência", "predador", "monstro"
+  ]);
+}
+
+function actionMoodEvidence(movie) {
+  const kineticText = kineticActionTextSignal(movie);
+  const hasPrimaryAction = hasGenre(movie, ["Acao", "Guerra", "Faroeste"]);
+  const hasAdjacentAction = hasGenre(movie, ["Crime", "Suspense", "Aventura", "Ficcao cientifica"]) && kineticText;
+  return hasPrimaryAction || hasAdjacentAction || superheroActionSignal(movie) || killBillSignal(movie);
+}
+
+function familyAdventureActionMismatch(movie) {
+  if (!hasGenre(movie, ["Familia", "Animacao"])) return false;
+  if (hasGenre(movie, ["Acao", "Guerra", "Crime", "Suspense"])) return false;
+  return !kineticActionTextSignal(movie) && !superheroActionSignal(movie);
+}
+
+function actionMoodCraftScore(movie) {
+  if (!actionMoodEvidence(movie)) return -120;
+
+  let score = 0;
+  const kineticText = kineticActionTextSignal(movie);
+  const superhero = superheroActionSignal(movie);
+  const marvel = marvelUniverseSignal(movie);
+
+  if (familyAdventureActionMismatch(movie)) score -= 180;
+  if (hasGenre(movie, ["Acao"])) score += 36;
+  if (hasGenre(movie, ["Guerra", "Faroeste"])) score += 28;
+  if (hasGenre(movie, ["Crime", "Suspense"]) && kineticText) score += 24;
+  if (kineticText) score += 34;
+  if (!superhero) score += 32;
+  if (superhero) score += 10;
+  if (marvel) score -= 34;
+  if (hasGenre(movie, ["Aventura", "Fantasia", "Familia", "Animacao"]) && !hasGenre(movie, ["Acao"]) && !kineticText) score -= 70;
+  if (Number(movie.duration || 0) > 170 && !hasGenre(movie, ["Guerra"])) score -= 18;
+
+  return score;
+}
+
 function surpriseDiscoveryEvidence(movie) {
   const text = movieSearchText(movie);
   const country = normalize(movie.country);
@@ -321,7 +378,7 @@ function moodMismatch(movie, state) {
   }
 
   if (state.activeMood === "acao") {
-    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hardAvoidMatches > 0 || familyAdventureActionMismatch(movie) || !actionMoodEvidence(movie);
   }
 
   if (state.activeMood === "surpresa") {
@@ -399,6 +456,11 @@ function moodScore(movie, state) {
     if ((movie.vibes || []).includes("complexo")) score -= 18;
   }
   if (state.activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 16;
+  if (state.activeMood === "acao") {
+    score += actionMoodCraftScore(movie);
+    if (killBillSignal(movie)) score += 74;
+    if (hasGenre(movie, ["Ficcao cientifica"]) && !superheroActionSignal(movie) && !hasGenre(movie, ["Acao"])) score -= 24;
+  }
   if (state.activeMood === "surpresa") {
     if (mainstreamBlockbusterSignal(movie)) score -= 180;
     if (!surpriseDiscoveryEvidence(movie)) score -= 90;

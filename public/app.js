@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260617b";
+const catalogSeedAssetVersion = "20260618a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -2245,6 +2245,51 @@ function mainstreamBlockbusterSignal(movie) {
   return (isPopular && hasBlockbusterGenre) || hasFranchiseSignal;
 }
 
+function kineticActionTextSignal(movie) {
+  return hasAnyText(movieSearchText(movie), [
+    "acao", "ação", "perseguicao", "perseguição", "fuga", "assalto", "roubo", "heist",
+    "missao", "missão", "espionagem", "agente", "mercenario", "mercenário", "assassino",
+    "vinganca", "vingança", "luta", "combate", "briga", "tiroteio", "explosao", "explosão",
+    "adrenalina", "corrida", "coreografia", "katana", "samurai", "artes marciais",
+    "guerra", "batalha", "cerco", "sobrevivencia", "sobrevivência", "predador", "monstro"
+  ]);
+}
+
+function actionMoodEvidence(movie) {
+  const kineticText = kineticActionTextSignal(movie);
+  const hasPrimaryAction = hasGenre(movie, ["Acao", "Guerra", "Faroeste"]);
+  const hasAdjacentAction = hasGenre(movie, ["Crime", "Suspense", "Aventura", "Ficcao cientifica"]) && kineticText;
+  return hasPrimaryAction || hasAdjacentAction || superheroActionSignal(movie) || killBillSignal(movie);
+}
+
+function familyAdventureActionMismatch(movie) {
+  if (!hasGenre(movie, ["Familia", "Animacao"])) return false;
+  if (hasGenre(movie, ["Acao", "Guerra", "Crime", "Suspense"])) return false;
+  return !kineticActionTextSignal(movie) && !superheroActionSignal(movie);
+}
+
+function actionMoodCraftScore(movie) {
+  if (!actionMoodEvidence(movie)) return -120;
+
+  let score = 0;
+  const kineticText = kineticActionTextSignal(movie);
+  const superhero = superheroActionSignal(movie);
+  const marvel = marvelUniverseSignal(movie);
+
+  if (familyAdventureActionMismatch(movie)) score -= 180;
+  if (hasGenre(movie, ["Acao"])) score += 36;
+  if (hasGenre(movie, ["Guerra", "Faroeste"])) score += 28;
+  if (hasGenre(movie, ["Crime", "Suspense"]) && kineticText) score += 24;
+  if (kineticText) score += 34;
+  if (!superhero) score += 32;
+  if (superhero) score += 10;
+  if (marvel) score -= 34;
+  if (hasGenre(movie, ["Aventura", "Fantasia", "Familia", "Animacao"]) && !hasGenre(movie, ["Acao"]) && !kineticText) score -= 70;
+  if (movieDuration(movie) > 170 && !hasGenre(movie, ["Guerra"])) score -= 18;
+
+  return score;
+}
+
 function surpriseDiscoveryEvidence(movie) {
   const text = movieSearchText(movie);
   const country = normalize(movie.country);
@@ -2491,8 +2536,7 @@ function moodScore(movie) {
     if ((movie.vibes || []).includes("complexo")) score -= 18;
   }
   if (activeMood === "comfort" && (movie.vibes || []).includes("complexo")) score -= 20;
-  if (activeMood === "acao" && superheroActionSignal(movie)) score += 62;
-  if (activeMood === "acao" && marvelUniverseSignal(movie)) score += 66;
+  if (activeMood === "acao") score += actionMoodCraftScore(movie);
   if (activeMood === "acao" && killBillSignal(movie)) score += 74;
   if (activeMood === "acao" && conceptualSciFiSignal(movie) && !superheroActionSignal(movie)) score -= 24;
   if (activeMood === "terror" && hasGenre(movie, ["Acao"]) && !hasGenre(movie, ["Terror"])) score -= 40;
@@ -2723,6 +2767,9 @@ function diversityPenalty(movie, selected) {
     const sameVibe = (movie.vibes || []).some((vibe) => (item.vibes || []).includes(vibe));
     const immediate = index === 0;
     const sameAnimationRun = activeMood === "leve" && hasGenre(movie, ["Animacao"]) && hasGenre(item, ["Animacao"]);
+    const sameActionSuperheroRun = activeMood === "acao" && superheroActionSignal(movie) && superheroActionSignal(item);
+    const sameActionMarvelRun = activeMood === "acao" && marvelUniverseSignal(movie) && marvelUniverseSignal(item);
+    const sameFamilyAdventureRun = activeMood === "acao" && familyAdventureActionMismatch(movie) && familyAdventureActionMismatch(item);
     return penalty
       + (sameGenre ? 26 / distance : 0)
       + (samePrimaryGenre ? 18 / distance : 0)
@@ -2732,6 +2779,9 @@ function diversityPenalty(movie, selected) {
       + (sameVibe ? 12 / distance : 0)
       + (sameGenre && sameCountry ? 14 / distance : 0)
       + (sameAnimationRun ? 34 / distance : 0)
+      + (sameActionSuperheroRun ? 90 / distance : 0)
+      + (sameActionMarvelRun ? 120 / distance : 0)
+      + (sameFamilyAdventureRun ? 80 / distance : 0)
       + (immediate && samePrimaryGenre ? 30 : 0)
       + (immediate && sameCountry ? 18 : 0)
       + (immediate && sameDecade ? 12 : 0);
@@ -3135,7 +3185,7 @@ function moodMismatch(movie) {
   }
 
   if (activeMood === "acao") {
-    return hardAvoidMatches > 0 || (!preferredMatches && !hasVibe);
+    return hardAvoidMatches > 0 || familyAdventureActionMismatch(movie) || !actionMoodEvidence(movie);
   }
 
   if (activeMood === "surpresa") {
@@ -3543,7 +3593,7 @@ function getRecoWorker() {
   if (recoWorker) return recoWorker;
 
   try {
-    recoWorker = new Worker("./reco-worker.js?v=20260521a");
+    recoWorker = new Worker("./reco-worker.js?v=20260618a");
   } catch {
     workerEnabled = false;
     return null;
@@ -3767,8 +3817,10 @@ function whyThisMovieDetails(movie) {
       details.push("Entrou por ter sinais de ficção/fantasia especulativa, que esse mood prioriza.");
     }
 
-    if (activeMood === "acao" && superheroActionSignal(movie)) {
-      details.push("Recebe bônus por assinatura de ação/franquia.");
+    if (activeMood === "acao" && actionMoodEvidence(movie)) {
+      details.push(superheroActionSignal(movie)
+        ? "Entra como ação de super-herói, mas sem dominar a fila sozinho."
+        : "Entra por sinais de ação física: fuga, combate, guerra, assalto ou adrenalina.");
     }
   } else {
     details.push("Roleta ativa: priorizamos variedade com menos repetição recente.");

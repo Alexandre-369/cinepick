@@ -49,6 +49,13 @@ function baseState(overrides = {}) {
         conflictingVibes: ["comfort"],
         keywords: ["estranho", "surreal", "cult", "identidade", "sonho", "metalinguagem", "sensorial", "politica", "obsessao"],
         surpriseMode: true
+      },
+      acao: {
+        preferredGenres: ["Acao", "Aventura", "Ficcao cientifica", "Fantasia", "Faroeste", "Guerra", "Crime", "Suspense"],
+        avoidGenres: ["Romance", "Musica", "Documentario", "Drama"],
+        hardAvoidGenres: ["Documentario"],
+        keywords: ["perseguicao", "aventura", "guerra", "fuga", "assalto", "energia", "missao", "explosao", "corrida", "coreografia", "adrenalina", "katana", "vinganca"],
+        longMoviePenalty: 170
       }
     },
     profileWatchedKeys: [],
@@ -245,6 +252,61 @@ test("surprise mood rejects mainstream titles with weak discovery evidence", () 
 
   assert.equal(worker.surpriseDiscoveryEvidence(mainstreamDrama), false);
   assert.equal(worker.moodMismatch(mainstreamDrama, state), true);
+});
+
+test("action mood prefers kinetic non-superhero action over MCU gravity", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "acao", sessionSeed: "action-score", shuffleSalt: "stable", rerollOffset: 0 });
+  const superhero = movie({
+    key: "mcu-key",
+    title: "Avengers Endgame",
+    genre: "Acao",
+    genres: ["Acao", "Aventura", "Ficcao cientifica"],
+    director: "Known Studio",
+    tmdbVotes: 30000,
+    imdb: 84,
+    rt: 94,
+    vibes: ["acao"],
+    tags: ["marvel", "avengers", "super-heroi"],
+    overview: "marvel avengers heroes em batalha final"
+  });
+  const kinetic = movie({
+    key: "kinetic-key",
+    title: "Mad Max Fury Road",
+    genre: "Acao",
+    genres: ["Acao", "Aventura", "Ficcao cientifica"],
+    director: "George Miller",
+    tmdbVotes: 22000,
+    imdb: 81,
+    rt: 97,
+    vibes: ["acao"],
+    tags: ["perseguicao", "fuga", "adrenalina", "corrida"],
+    overview: "perseguição, fuga, explosão e ação física no deserto"
+  });
+
+  assert.equal(worker.superheroActionSignal(superhero), true);
+  assert.equal(worker.actionMoodEvidence(kinetic), true);
+  assert.ok(worker.moodScore(kinetic, state) > worker.moodScore(superhero, state));
+});
+
+test("action mood blocks soft family adventure without action evidence", () => {
+  const worker = loadWorkerContext();
+  const state = baseState({ activeMood: "acao" });
+  const familyAdventure = movie({
+    key: "soft-family-adventure",
+    title: "The Polar Express",
+    genre: "Aventura",
+    genres: ["Aventura", "Animacao", "Familia", "Fantasia"],
+    tmdbVotes: 12000,
+    imdb: 67,
+    rt: 56,
+    vibes: ["comfort"],
+    tags: ["familia", "magia", "natal"],
+    overview: "uma aventura familiar em um trem mágico de natal"
+  });
+
+  assert.equal(worker.familyAdventureActionMismatch(familyAdventure), true);
+  assert.equal(worker.moodMismatch(familyAdventure, state), true);
 });
 
 test("light mood prefers live-action comedy over generic family animation", () => {
