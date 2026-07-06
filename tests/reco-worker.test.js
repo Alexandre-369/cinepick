@@ -62,6 +62,7 @@ function baseState(overrides = {}) {
     profileFavoriteDirectors: [],
     profileFavoriteTags: [],
     recommendationHistory: [],
+    explorationLevel: 80,
     profileLoaded: false,
     filters: {
       genre: "qualquer",
@@ -384,6 +385,53 @@ test("recommendation breakdown exposes stable scoring layers", () => {
   assert.ok(breakdown.noise >= 0);
 });
 
+test("exploration control expands the cold-start random layer", () => {
+  const worker = loadWorkerContext();
+  const candidate = movie({
+    key: "exploration-comedy",
+    title: "Exploration Comedy",
+    genre: "Comedia",
+    genres: ["Comedia", "Romance"],
+    vibes: ["leve"],
+    tags: ["humor"]
+  });
+  const safeState = baseState({ activeMood: "leve", sessionSeed: "same-session", shuffleSalt: "same-salt", rerollOffset: 0, explorationLevel: 20 });
+  const wildState = { ...safeState, explorationLevel: 100 };
+
+  assert.ok(worker.recommendationRandomWeight(wildState) > worker.recommendationRandomWeight(safeState));
+  assert.ok(worker.recommendationScoreBreakdown(candidate, wildState).noise > worker.recommendationScoreBreakdown(candidate, safeState).noise);
+});
+
+test("cold-start sessions produce a broad set of first picks", () => {
+  const worker = loadWorkerContext();
+  const pool = Array.from({ length: 48 }, (_, index) => movie({
+    key: `cold-start-${index}`,
+    title: `Cold Start ${index}`,
+    genre: "Comedia",
+    genres: ["Comedia", "Romance"],
+    vibes: ["leve"],
+    tags: ["humor"],
+    imdb: 76 + (index % 5),
+    rt: 78 + (index % 7),
+    tmdbVotes: 900 + index * 13,
+    posterUrl: "poster"
+  }));
+  const firstPicks = new Set();
+
+  for (let session = 0; session < 120; session += 1) {
+    const state = baseState({
+      activeMood: "leve",
+      sessionSeed: `session-${session}-entropy`,
+      shuffleSalt: `salt-${session * 7919}`,
+      rerollOffset: 0,
+      explorationLevel: 90
+    });
+    firstPicks.add(worker.computeItems(pool, state)[0].key);
+  }
+
+  assert.ok(firstPicks.size >= 34, `expected at least 34 unique first picks, received ${firstPicks.size}`);
+});
+
 test("availability layer prefers poster-ready recommendations", () => {
   const worker = loadWorkerContext();
   const state = baseState({ activeMood: "leve", sessionSeed: "availability", shuffleSalt: "stable", rerollOffset: 0 });
@@ -405,7 +453,7 @@ test("availability layer prefers poster-ready recommendations", () => {
     watchUrl: "https://example.test/watch"
   });
 
-  assert.ok(worker.recommendationScoreBreakdown(ready, state).total > worker.recommendationScoreBreakdown(bare, state).total);
+  assert.ok(worker.recommendationScoreBreakdown(ready, state).availability > worker.recommendationScoreBreakdown(bare, state).availability);
 });
 
 test("recent history layer pushes repeated titles down", () => {

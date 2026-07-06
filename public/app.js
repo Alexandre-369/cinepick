@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260618a";
+const catalogSeedAssetVersion = "20260706a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -132,6 +132,8 @@ const posterCacheKey = "cinepick_poster_cache_v4";
 const appStorageVersionKey = "cinepick_storage_schema";
 const appStorageVersion = 3;
 const compactSidebarKey = "cinepick_compact_sidebar_v1";
+const explorationLevelKey = "cinepick_exploration_level_v1";
+const defaultExplorationLevel = 80;
 const activePresetKey = "cinepick_active_preset_v1";
 const presetFavoritesKey = "cinepick_preset_favorites_v1";
 const presetFavoritesLimit = 3;
@@ -1539,7 +1541,8 @@ let activeMood = "comfort";
 let activeMode = "mood";
 let profileLoaded = false;
 let rerollOffset = 0;
-let shuffleSalt = Math.floor(Math.random() * 100000);
+let shuffleSalt = randomUint32();
+let explorationLevel = defaultExplorationLevel;
 let roulettePick = "";
 let useTmdb = false;
 let tmdbMovies = [];
@@ -1580,7 +1583,22 @@ let recoWorkerRequestId = 0;
 const recoWorkerPending = new Map();
 let workerCatalogSignature = "";
 let workerCatalogLite = [];
-const sessionSeed = typeof crypto !== "undefined" && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.floor(Math.random() * 2 ** 32);
+
+function createSessionSeed() {
+  const fallback = `${Date.now()}-${Math.random()}-${globalThis.performance?.now?.() || 0}`;
+  if (typeof crypto === "undefined" || !crypto.getRandomValues) return fallback;
+  const entropy = crypto.getRandomValues(new Uint32Array(4));
+  return [...entropy].map((value) => value.toString(16).padStart(8, "0")).join("");
+}
+
+function randomUint32() {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    return crypto.getRandomValues(new Uint32Array(1))[0];
+  }
+  return Math.floor(Math.random() * 2 ** 32);
+}
+
+const sessionSeed = createSessionSeed();
 
 function storageGetRaw(key, fallback = "") {
   try {
@@ -1753,6 +1771,9 @@ const els = {
   tmdbStatus: document.querySelector("#tmdb-status"),
   dataDiagnostics: document.querySelector("#data-diagnostics"),
   sessionStats: document.querySelector("#session-stats"),
+  explorationLevel: document.querySelector("#exploration-level"),
+  explorationLabel: document.querySelector("#exploration-label"),
+  randomnessBadge: document.querySelector("#randomness-badge"),
   presetGrid: document.querySelector("#preset-grid"),
   compactSidebar: document.querySelector("#compact-sidebar"),
   refreshShuffle: document.querySelector("#refresh-shuffle"),
@@ -1788,6 +1809,11 @@ const storedCompactSidebar = storageGetRaw(compactSidebarKey, "");
 const compactSidebarEnabled = storedCompactSidebar ? storedCompactSidebar === "true" : true;
 if (els.compactSidebar) els.compactSidebar.checked = compactSidebarEnabled;
 applyCompactSidebar(compactSidebarEnabled);
+const storedExplorationLevel = Number(storageGetRaw(explorationLevelKey, defaultExplorationLevel));
+explorationLevel = Number.isFinite(storedExplorationLevel)
+  ? Math.max(20, Math.min(100, storedExplorationLevel))
+  : defaultExplorationLevel;
+if (els.explorationLevel) els.explorationLevel.value = String(explorationLevel);
 const storedActivePresetId = storageGetRaw(activePresetKey, "");
 if (sessionPresetMap[storedActivePresetId]) activePresetId = storedActivePresetId;
 pruneRecommendationTimeMemory();
@@ -2611,9 +2637,20 @@ function watchStatePenalty(movie) {
   return els.hideWatched.checked && wasWatched(movie) && profileLoaded ? -100 : 0;
 }
 
+function explorationRatio() {
+  return Math.max(0.2, Math.min(1, Number(explorationLevel || defaultExplorationLevel) / 100));
+}
+
+function recommendationRandomWeight(profile = moodProfiles[activeMood] || {}) {
+  const base = profile.surpriseMode ? 146 : (activeMode === "roulette" ? 154 : 96);
+  const historySize = recommendationHistory.length;
+  const coldStartBoost = historySize < 6 ? 150 : (historySize < 20 ? 70 : 0);
+  return Math.round(base + explorationRatio() * 170 + coldStartBoost * explorationRatio());
+}
+
 function recommendationScoreBreakdown(movie) {
   const profile = moodProfiles[activeMood] || {};
-  const randomWeight = profile.surpriseMode ? 154 : (activeMode === "roulette" ? 146 : 112);
+  const randomWeight = recommendationRandomWeight(profile);
   const layers = {
     mood: moodScore(movie),
     collection: moodCollectionScore(movie),
@@ -2791,14 +2828,18 @@ function diversityPenalty(movie, selected) {
 function weightedShuffle(list, scope = "weighted") {
   if (!list.length) return [];
   const minScore = Math.min(...list.map((movie) => movie.score));
-  const exponent = activeMode === "roulette" ? 0.48 : 0.58;
+  const exploration = explorationRatio();
+  const exponent = activeMode === "roulette"
+    ? 0.3 + (1 - exploration) * 0.2
+    : 0.34 + (1 - exploration) * 0.28;
+  const jitterRange = 0.22 + exploration * 0.72;
 
   return list
     .map((movie) => {
       const normalizedScore = Math.max(1, movie.score - minScore + 10);
       const weight = Math.pow(normalizedScore, exponent);
       const random = Math.max(0.0001, seededUnit(movie, scope));
-      const jitter = (seededUnit(movie, `${scope}-jitter`) - 0.5) * 0.25;
+      const jitter = (seededUnit(movie, `${scope}-jitter`) - 0.5) * jitterRange;
       return {
         movie,
         sortKey: (-Math.log(random) / weight) + jitter
@@ -2913,6 +2954,8 @@ function diversifyMovies(list, anchors = []) {
   const selected = [...anchors];
   const remaining = [...list];
   const result = [];
+  const exploration = explorationRatio();
+  const coldStart = recommendationHistory.length < 6;
 
   while (remaining.length) {
     let bestIndex = 0;
@@ -2921,9 +2964,16 @@ function diversifyMovies(list, anchors = []) {
 
     for (let index = 0; index < windowSize; index += 1) {
       const movie = remaining[index];
-      const value = movie.score
-        - diversityPenalty(movie, selected)
-        + seededUnit(movie, `diversity-${result.length}`) * 42;
+      const openingSlot = result.length < 12;
+      const scoreWeight = openingSlot
+        ? 0.24 + (1 - exploration) * 0.42
+        : 0.72 + (1 - exploration) * 0.28;
+      const randomWeight = openingSlot
+        ? 72 + exploration * (coldStart ? 230 : 170)
+        : 42 + exploration * 54;
+      const value = movie.score * scoreWeight
+        - diversityPenalty(movie, selected) * (0.82 + exploration * 0.34)
+        + seededUnit(movie, `diversity-${result.length}`) * randomWeight;
       if (value > bestValue) {
         bestValue = value;
         bestIndex = index;
@@ -2945,7 +2995,8 @@ function recommendationList() {
 function recommendationStateSignature() {
   return [
     recommendationScopeKey(),
-    String(shuffleSalt)
+    String(shuffleSalt),
+    String(explorationLevel)
   ].join("|");
 }
 
@@ -2969,8 +3020,13 @@ function buildRecommendationQueue(rankedAll, scope = "queue") {
     antiRepeatRanked = moodFresh;
   }
 
-  const spread = activeMode === "roulette" || profile.surpriseMode ? 0.98 : 0.9;
-  const minimumPool = activeMode === "roulette" || profile.surpriseMode ? 460 : 280;
+  const exploration = explorationRatio();
+  const spread = activeMode === "roulette" || profile.surpriseMode
+    ? 0.98
+    : 0.62 + exploration * 0.36;
+  const minimumPool = activeMode === "roulette" || profile.surpriseMode
+    ? 460
+    : Math.round(180 + exploration * 220);
   const poolSize = Math.min(Math.max(minimumPool, Math.ceil(antiRepeatRanked.length * spread)), antiRepeatRanked.length);
   const frontPool = weightedShuffle(antiRepeatRanked.slice(0, poolSize), `${scope}-front-${recommendationHistory.length}`);
   const middle = weightedShuffle(antiRepeatRanked.slice(poolSize, Math.min(antiRepeatRanked.length, poolSize + 320)), `${scope}-middle-${recommendationHistory.length}`);
@@ -3593,7 +3649,7 @@ function getRecoWorker() {
   if (recoWorker) return recoWorker;
 
   try {
-    recoWorker = new Worker("./reco-worker.js?v=20260618a");
+    recoWorker = new Worker("./reco-worker.js?v=20260706a");
   } catch {
     workerEnabled = false;
     return null;
@@ -3654,6 +3710,7 @@ async function computeFilteredMoviesWorker(catalog, signature) {
       shuffleSalt,
       rerollOffset,
       sessionSeed,
+      explorationLevel,
       moodProfiles,
       moodAliasMap
     }
@@ -4942,7 +4999,7 @@ function markMovieSeenAndAdvance(title) {
   renderProfileStats();
   renderSessionStats();
   els.syncStatus.textContent = `"${movie.title}" marcado como visto. A próxima sugestão evita repetir.`;
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   const nextPoolSize = Math.max(12, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 12);
   rerollOffset += 1 + Math.floor(Math.random() * nextPoolSize);
   resetRecommendationFlow({ keepCurrent: true });
@@ -4954,7 +5011,7 @@ function setMode(mode, { preservePreset = false } = {}) {
   if (!preservePreset) clearActivePreset();
   activeMode = mode;
   rerollOffset = 0;
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   resetRecommendationFlow();
   els.modeTabs.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.mode === mode);
@@ -5045,6 +5102,25 @@ function renderProfileStats() {
   `;
 }
 
+function explorationLabelFor(level = explorationLevel) {
+  if (level >= 90) return "Caótico";
+  if (level >= 70) return "Selvagem";
+  if (level >= 45) return "Equilibrado";
+  return "Seguro";
+}
+
+function renderExplorationState() {
+  const label = explorationLabelFor();
+  if (els.explorationLabel) els.explorationLabel.textContent = `${label} · ${explorationLevel}%`;
+  if (els.explorationLevel && Number(els.explorationLevel.value) !== explorationLevel) {
+    els.explorationLevel.value = String(explorationLevel);
+  }
+  if (els.randomnessBadge) {
+    const deckPosition = Math.max(1, scopeSeenSet().size);
+    els.randomnessBadge.textContent = `${label} · carta ${deckPosition}`;
+  }
+}
+
 function renderSessionStats() {
   if (!els.sessionStats) return;
   let catalogSize = curatedMovies.length;
@@ -5062,6 +5138,7 @@ function renderSessionStats() {
     <div class="session-stat"><strong>${watchLaterCount}</strong><span>ver depois</span></div>
     <div class="session-stat"><strong>${profileWatchedCount}</strong><span>vistos perfil</span></div>
   `;
+  renderExplorationState();
   renderWatchLaterList();
 }
 
@@ -5233,7 +5310,7 @@ function relaxStrictFilters({ closeDrawer = false } = {}) {
   setSelectValue(els.decade);
   setSelectValue(els.country);
   setSelectValue(els.provider);
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   rerollOffset += 5 + Math.floor(Math.random() * 31);
   resetRecommendationFlow();
   if (els.syncStatus) {
@@ -5322,7 +5399,7 @@ function applyQuickPreset(presetId) {
     setSelectValue(els.provider, preset.filters.provider);
   }
   els.hideWatched.checked = true;
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   rerollOffset += 3 + Math.floor(Math.random() * 37);
   resetRecommendationFlow();
   els.syncStatus.textContent = `Preset aplicado: ${preset.label}.`;
@@ -5390,6 +5467,7 @@ function renderHero(movie) {
   if (!movie) {
     lastRenderedVisualKey = "";
     openHeroWhyKey = "";
+    els.hero.style.setProperty("--hero-backdrop-image", "none");
     els.hero.classList.remove("is-swapping");
     els.hero.innerHTML = `
       <div class="rec-copy">
@@ -5443,6 +5521,8 @@ function renderHero(movie) {
   const heroKey = movieKey(movieTitle, movie.year);
   const whyBlock = whyThisMovieMarkup(movie, { variant: "hero", open: openHeroWhyKey === heroKey });
   const colors = movieColorPair(movie);
+  const backdropUrl = String(movie.backdropUrl || "").replace(/["\\]/g, "\\$&");
+  els.hero.style.setProperty("--hero-backdrop-image", backdropUrl ? `url("${backdropUrl}")` : "none");
   const shouldAnimateSwap = Boolean(lastRenderedVisualKey) && lastRenderedVisualKey !== heroKey;
   if (shouldAnimateSwap) els.hero.classList.add("is-swapping");
 
@@ -5638,7 +5718,7 @@ els.moods.addEventListener("click", (event) => {
     clearActivePreset();
     activeMood = button.dataset.mood;
     rerollOffset = 0;
-    shuffleSalt = Math.floor(Math.random() * 100000);
+    shuffleSalt = randomUint32();
     resetRecommendationFlow();
     render();
   });
@@ -5661,10 +5741,23 @@ els.moods.addEventListener("pointerdown", (event) => {
   input.addEventListener("input", () => {
     clearActivePreset();
     rerollOffset = 0;
-    shuffleSalt = Math.floor(Math.random() * 100000);
+    shuffleSalt = randomUint32();
     resetRecommendationFlow();
     render();
   });
+});
+
+els.explorationLevel?.addEventListener("input", (event) => {
+  explorationLevel = Math.max(20, Math.min(100, Number(event.target.value) || defaultExplorationLevel));
+  renderExplorationState();
+});
+
+els.explorationLevel?.addEventListener("change", () => {
+  storageSetRaw(explorationLevelKey, String(explorationLevel));
+  shuffleSalt = randomUint32();
+  rerollOffset += 11 + Math.floor(Math.random() * 67);
+  resetRecommendationFlow();
+  scheduleRender(true);
 });
 
 els.syncDemo?.addEventListener("click", () => {
@@ -5686,7 +5779,7 @@ els.profileFiles?.addEventListener("change", (event) => {
 
 bindInstantPress(els.refreshShuffle, () => {
   measureUiAction("nextPick", () => {
-    shuffleSalt = Math.floor(Math.random() * 100000);
+    shuffleSalt = randomUint32();
     rerollOffset += 7 + Math.floor(Math.random() * 51);
     roulettePick = "";
     scheduleRender(true);
@@ -5708,7 +5801,7 @@ bindInstantPress(els.clearSessionSeen, () => {
   renderProfileStats();
   renderSessionStats();
   els.syncStatus.textContent = "Limpeza concluída: marcações de 'já vi' desta sessão foram removidas.";
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   resetRecommendationFlow();
   scheduleRender(true);
 });
@@ -5911,14 +6004,14 @@ function triggerNextPick() {
     els.rouletteWheel.classList.remove("is-spinning");
     void els.rouletteWheel.offsetWidth;
     els.rouletteWheel.classList.add("is-spinning");
-    shuffleSalt = Math.floor(Math.random() * 100000);
+    shuffleSalt = randomUint32();
     rerollOffset += 3 + Math.floor(Math.random() * 27);
     roulettePick = "";
     scheduleRender(true);
     return true;
   }
 
-  shuffleSalt = Math.floor(Math.random() * 100000);
+  shuffleSalt = randomUint32();
   const currentPoolSize = Math.max(14, filteredCacheList.length || recommendationQueue.length || activeCatalog().length || 14);
   rerollOffset += 2 + Math.floor(Math.random() * currentPoolSize);
   scheduleRender(true);
@@ -5936,7 +6029,7 @@ bindInstantPress(els.spin, () => {
     els.rouletteWheel.classList.remove("is-spinning");
     void els.rouletteWheel.offsetWidth;
     els.rouletteWheel.classList.add("is-spinning");
-    shuffleSalt = Math.floor(Math.random() * 100000);
+    shuffleSalt = randomUint32();
     rerollOffset += 4 + Math.floor(Math.random() * 33);
     roulettePick = "";
     scheduleRender(true);
@@ -6060,9 +6153,9 @@ async function bootstrapInitialSession() {
   let seededCatalogReady = false;
 
   updateProviderFilter();
-  render();
 
   if (isStaticFileMode) {
+    render();
     if (els.tmdbStatus) {
       els.tmdbStatus.textContent = "Você está em arquivo local. Para tudo funcionar 100%, abra em localhost ou no link da Vercel.";
     }
@@ -6076,9 +6169,13 @@ async function bootstrapInitialSession() {
         if (restoredInitialCatalog) return true;
         return restoreCatalogSeed();
       })(),
-      new Promise((resolve) => window.setTimeout(() => resolve(false), 900))
+      new Promise((resolve) => window.setTimeout(() => resolve(false), 700))
     ]).catch(() => false);
   }
+
+  updateProviderFilter();
+  resetRecommendationFlow();
+  render();
 
   await Promise.race([
     primeCuratedPostersFromSeed().catch(() => 0),
@@ -6101,7 +6198,8 @@ async function bootstrapInitialSession() {
       const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
       if (restoredSeed || restoredInitialCatalog) {
         els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
-        render();
+        resetRecommendationFlow();
+        scheduleRender(true);
       }
     }, 2200);
     return;

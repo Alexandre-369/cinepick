@@ -532,6 +532,19 @@ function watchStatePenalty(movie, state, watchedSet) {
   return state.filters?.hideWatched && state.profileLoaded && (movie.seen || watchedSet.has(movie.key)) ? -100 : 0;
 }
 
+function explorationRatio(state) {
+  const level = Number(state.explorationLevel ?? 80);
+  return Math.max(0.2, Math.min(1, level / 100));
+}
+
+function recommendationRandomWeight(state, profile = state.moodProfiles[state.activeMood] || {}) {
+  const base = profile.surpriseMode ? 146 : (state.activeMode === "roulette" ? 154 : 96);
+  const historySize = (state.recommendationHistory || []).length;
+  const coldStartBoost = historySize < 6 ? 150 : (historySize < 20 ? 70 : 0);
+  const exploration = explorationRatio(state);
+  return Math.round(base + exploration * 170 + coldStartBoost * exploration);
+}
+
 function recommendationScoreBreakdown(movie, state, sets = {}) {
   const profile = state.moodProfiles[state.activeMood] || {};
   const filters = state.filters || {};
@@ -539,7 +552,7 @@ function recommendationScoreBreakdown(movie, state, sets = {}) {
   const favoriteDirectorsSet = sets.favoriteDirectorsSet || new Set(state.profileFavoriteDirectors || []);
   const favoriteTagsSet = sets.favoriteTagsSet || new Set(state.profileFavoriteTags || []);
   const history = state.recommendationHistory || [];
-  const randomWeight = profile.surpriseMode ? 154 : (state.activeMode === "roulette" ? 146 : 112);
+  const randomWeight = recommendationRandomWeight(state, profile);
   const layers = {
     mood: moodScore(movie, state),
     collection: moodCollectionScore(movie, state),

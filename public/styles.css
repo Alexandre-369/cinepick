@@ -109,6 +109,17 @@ select {
   gap: 14px;
 }
 
+.randomness-badge {
+  border: 1px solid rgba(86, 182, 168, .34);
+  border-radius: 999px;
+  background: rgba(20, 49, 44, .54);
+  color: #bfe8df !important;
+  padding: 5px 9px;
+  font-size: .66rem !important;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
 .mode-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -658,6 +669,62 @@ button:focus-visible {
   font-weight: 800;
 }
 
+.exploration-control {
+  display: grid;
+  gap: 8px;
+  margin: 12px 14px 2px;
+  border: 1px solid rgba(86, 182, 168, .24);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(86, 182, 168, .16), transparent 34%),
+    rgba(12, 22, 20, .76);
+  padding: 12px;
+}
+
+.exploration-head,
+.exploration-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exploration-head label {
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.exploration-head strong {
+  color: var(--accent-2);
+  font-size: .75rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.exploration-control input[type="range"] {
+  width: 100%;
+  min-height: 22px;
+  accent-color: var(--accent-2);
+}
+
+.exploration-scale span,
+.exploration-control p {
+  color: #8f9f9b;
+  font-size: .66rem;
+  font-weight: 700;
+}
+
+.exploration-control p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.exploration-control-main {
+  margin: 0;
+  padding: 10px 12px 8px;
+}
+
 .drawer-actions {
   display: grid;
   gap: 8px;
@@ -1126,6 +1193,8 @@ input[type="range"] {
 }
 
 .hero-rec {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(150px, 200px) minmax(0, 1fr);
   width: 100%;
@@ -1133,6 +1202,25 @@ input[type="range"] {
   gap: 30px;
   align-items: start;
   transition: opacity .16s ease, transform .16s ease;
+}
+
+.hero-rec::before {
+  position: absolute;
+  inset: -22px;
+  z-index: -1;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(17, 17, 16, .9) 0%, rgba(17, 17, 16, .7) 46%, rgba(17, 17, 16, .94) 100%),
+    var(--hero-backdrop-image, none) center 28% / cover no-repeat;
+  opacity: .5;
+  filter: saturate(.78);
+  content: "";
+  pointer-events: none;
+}
+
+.hero-rec > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-rec.is-swapping {
@@ -2542,6 +2630,21 @@ input[type="range"] {
 
   .group-title span {
     font-size: .84rem;
+  }
+
+  .randomness-badge {
+    max-width: 48vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .exploration-control {
+    margin-inline: 10px;
+  }
+
+  .exploration-control-main {
+    margin-inline: 0;
   }
 
   .movie-info-grid {

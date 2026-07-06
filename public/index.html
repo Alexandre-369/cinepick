@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CinePick</title>
-    <link rel="stylesheet" href="./styles.css?v=20260618a">
+    <link rel="stylesheet" href="./styles.css?v=20260706a">
   </head>
   <body class="filters-sidebar-only">
     <main class="app-shell">
@@ -33,6 +33,7 @@
         <div class="control-group mode-panel" id="mood-panel">
           <div class="group-title">
             <span>Humor agora</span>
+            <span class="randomness-badge" id="randomness-badge">Selvagem · sessão única</span>
           </div>
           <div class="mood-grid" id="moods">
             <button class="mood-chip is-active" type="button" disabled>
@@ -44,6 +45,14 @@
             <button class="mood-chip" type="button" disabled>
               <span class="mood-copy"><strong>Leve</strong><span>Comédia e conforto</span></span>
             </button>
+          </div>
+          <div class="exploration-control exploration-control-main">
+            <div class="exploration-head">
+              <label for="exploration-level">Nível de descoberta</label>
+              <strong id="exploration-label">Selvagem</strong>
+            </div>
+            <input id="exploration-level" type="range" min="20" max="100" step="5" value="80">
+            <div class="exploration-scale" aria-hidden="true"><span>Seguro</span><span>Selvagem</span></div>
           </div>
         </div>
 
@@ -318,6 +327,6 @@
       </div>
     </dialog>
 
-    <script src="./app.js?v=20260618a"></script>
+    <script src="./app.js?v=20260706a"></script>
   </body>
 </html>
