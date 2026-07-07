@@ -5,7 +5,9 @@
   "scripts": {
     "build": "echo \"Static site served from public/\"",
     "catalog:audit": "node scripts/catalog-audit.mjs",
+    "catalog:audit:strict": "node scripts/catalog-audit.mjs --strict --min-total=3000",
     "catalog:expand": "node scripts/expand-catalog-seed.mjs",
+    "catalog:expand:3000": "node scripts/expand-catalog-seed.mjs --target-total=3000 --max-pages=10 --concurrency=8",
     "test": "node --test tests/reco-worker.test.js"
   }
 }

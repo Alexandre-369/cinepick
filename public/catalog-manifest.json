@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-07T00:31:24.499Z",
+  "coreCount": 534,
+  "expandedCount": 2466,
+  "totalMovies": 3000,
+  "shardSize": 400,
+  "checkpoint": false,
+  "shards": [
+    {
+      "file": "./catalog-shards/catalog-001.json",
+      "count": 400,
+      "checksum": "fe3a12b3512e5f5f"
+    },
+    {
+      "file": "./catalog-shards/catalog-002.json",
+      "count": 400,
+      "checksum": "b0291ce846e16f73"
+    },
+    {
+      "file": "./catalog-shards/catalog-003.json",
+      "count": 400,
+      "checksum": "10d190508da5f432"
+    },
+    {
+      "file": "./catalog-shards/catalog-004.json",
+      "count": 400,
+      "checksum": "10fffbce2dd6ed11"
+    },
+    {
+      "file": "./catalog-shards/catalog-005.json",
+      "count": 400,
+      "checksum": "c27d51f607f971d7"
+    },
+    {
+      "file": "./catalog-shards/catalog-006.json",
+      "count": 400,
+      "checksum": "ce8455e9ddbc95bb"
+    },
+    {
+      "file": "./catalog-shards/catalog-007.json",
+      "count": 66,
+      "checksum": "8c7b3ed37e1ef0e8"
+    }
+  ]
+}

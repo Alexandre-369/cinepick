@@ -118,7 +118,7 @@ const tmdbCatalogConfig = {
   overviewEnrichLimit: 220,
   cacheMaxAge: 1000 * 60 * 60 * 8
 };
-const catalogSeedAssetVersion = "20260706a";
+const catalogSeedAssetVersion = "20260707a";
 
 const catalogDecades = [1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
 const catalogCountries = ["BR", "US", "GB", "FR", "JP", "KR", "IN", "MX", "DE", "IT", "ES", "AR", "CL", "CO", "TW", "HK", "IR", "TR", "TH", "SN", "EG", "PT", "DK", "SE", "NO", "PL", "AU", "NZ", "ZA", "NG", "KE", "TN", "MA", "DZ", "CI", "GH", "ET", "SA", "AE", "JO", "LB", "PS", "PH", "ID", "VN", "RO", "HU", "GR", "UA", "CZ"];
@@ -1722,6 +1722,9 @@ let filteredCacheList = [];
 let catalogCacheSignature = "";
 let catalogCacheList = [];
 let catalogSeedSnapshotPromise = null;
+let catalogManifestPromise = null;
+const catalogShardPromises = new Map();
+const loadedCatalogShards = new Set();
 let startupPosterPrimePromise = null;
 let sessionSeenSet = new Set();
 const sessionScopeSeen = new Map();
@@ -3351,6 +3354,77 @@ async function loadCatalogSeedSnapshot() {
   return catalogSeedSnapshotPromise;
 }
 
+async function loadCatalogManifest() {
+  if (catalogManifestPromise) return catalogManifestPromise;
+  catalogManifestPromise = (async () => {
+    try {
+      const response = await fetch(`./catalog-manifest.json?v=${catalogSeedAssetVersion}`, { cache: "no-cache" });
+      if (!response.ok) return null;
+      const manifest = await response.json();
+      if (!Array.isArray(manifest?.shards) || !manifest.shards.length) return null;
+      return manifest;
+    } catch {
+      return null;
+    }
+  })();
+  return catalogManifestPromise;
+}
+
+async function loadCatalogShard(shard) {
+  const file = String(shard?.file || "");
+  if (!file || loadedCatalogShards.has(file)) return [];
+  if (catalogShardPromises.has(file)) return catalogShardPromises.get(file);
+
+  const promise = (async () => {
+    try {
+      const checksum = encodeURIComponent(String(shard.checksum || catalogSeedAssetVersion));
+      const separator = file.includes("?") ? "&" : "?";
+      const response = await fetch(`${file}${separator}v=${checksum}`, { cache: "force-cache" });
+      if (!response.ok) return [];
+      const payload = await response.json();
+      const movies = sanitizeMovieList(payload?.movies);
+      if (movies.length) loadedCatalogShards.add(file);
+      return movies;
+    } catch {
+      return [];
+    } finally {
+      catalogShardPromises.delete(file);
+    }
+  })();
+  catalogShardPromises.set(file, promise);
+  return promise;
+}
+
+async function hydrateCatalogShards({ limit = Infinity, refresh = true } = {}) {
+  const manifest = await loadCatalogManifest();
+  if (!manifest) return 0;
+  const pending = manifest.shards
+    .filter((shard) => shard?.file && !loadedCatalogShards.has(String(shard.file)))
+    .slice(0, limit);
+  if (!pending.length) return 0;
+
+  const additions = [];
+  for (let index = 0; index < pending.length; index += 2) {
+    const batch = await Promise.all(pending.slice(index, index + 2).map(loadCatalogShard));
+    additions.push(...batch.flat());
+  }
+  if (!additions.length) return 0;
+
+  const previousSize = tmdbMovies.length;
+  tmdbMovies = sanitizeMovieList(dedupeByTitle([...tmdbMovies, ...additions]));
+  mergeCatalogEnhancements(tmdbMovies);
+  updateProviderFilter();
+  const added = Math.max(0, tmdbMovies.length - previousSize);
+  if (els.tmdbStatus) {
+    els.tmdbStatus.textContent = `${tmdbMovies.length} filmes carregados do catálogo distribuído.`;
+  }
+  if (refresh && added) {
+    resetRecommendationFlow({ keepCurrent: true });
+    scheduleRender(true);
+  }
+  return added;
+}
+
 function restoreTmdbCatalogCache() {
   const cached = storageGetJson("cinepick_tmdb_catalog", null);
   const cachedMovies = sanitizeMovieList(cached?.movies);
@@ -3649,7 +3723,7 @@ function getRecoWorker() {
   if (recoWorker) return recoWorker;
 
   try {
-    recoWorker = new Worker("./reco-worker.js?v=20260706a");
+    recoWorker = new Worker("./reco-worker.js?v=20260707a");
   } catch {
     workerEnabled = false;
     return null;
@@ -6166,8 +6240,12 @@ async function bootstrapInitialSession() {
     seededCatalogReady = await Promise.race([
       (async () => {
         const restoredInitialCatalog = restoreTmdbCatalogCache();
-        if (restoredInitialCatalog) return true;
-        return restoreCatalogSeed();
+        const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
+        if (restoredInitialCatalog || restoredSeed) {
+          await hydrateCatalogShards({ limit: 1, refresh: false });
+          return true;
+        }
+        return false;
       })(),
       new Promise((resolve) => window.setTimeout(() => resolve(false), 700))
     ]).catch(() => false);
@@ -6191,12 +6269,20 @@ async function bootstrapInitialSession() {
     requestBackgroundRender(true);
   }, 140);
 
+  runWhenIdle(async () => {
+    const added = await hydrateCatalogShards({ refresh: false });
+    if (!added) return;
+    resetRecommendationFlow({ keepCurrent: true });
+    scheduleRender(true);
+  }, 900);
+
   if (useTmdb) {
     runWhenIdle(async () => {
       if (seededCatalogReady) return;
       const restoredInitialCatalog = restoreTmdbCatalogCache();
       const restoredSeed = restoredInitialCatalog ? false : await restoreCatalogSeed();
       if (restoredSeed || restoredInitialCatalog) {
+        await hydrateCatalogShards({ refresh: false });
         els.tmdbStatus.textContent = `${tmdbMovies.length} filmes prontos. Atualizar expande e renova capas quando você quiser.`;
         resetRecommendationFlow();
         scheduleRender(true);

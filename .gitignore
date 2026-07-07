@@ -3,3 +3,5 @@
 .env.local
 .env.*.local
 verification-*.png
+public/*.tmp
+public/catalog-shards/*.tmp

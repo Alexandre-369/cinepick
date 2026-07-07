@@ -1,0 +1,2872 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-07T00:31:24.499Z",
+  "movies": [
+    {
+      "title": "Herói de Dois Mundos",
+      "year": 2021,
+      "decade": "2020",
+      "genre": "Fantasia",
+      "duration": 130,
+      "country": "China",
+      "director": "路阳",
+      "genres": [
+        "Fantasia",
+        "Acao",
+        "Aventura",
+        "Drama"
+      ],
+      "overview": "Seis anos após o sequestro de sua filha, um homem é contratado para matar o autor de um romance de fantasia, mas o mundo do romance parece se cruzar com a realidade.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 367,
+      "imdbId": "tt9685342",
+      "tmdbId": 611698,
+      "originalLanguage": "zh",
+      "providers": [
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Acao",
+        "Aventura",
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/wA5DBbGpWOI98gjsg0g6ATVJHFU.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/tkuVd1LYyltRdiWO50kJ5lc4J9V.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:zh"
+    },
+    {
+      "title": "O Inferno de Gabriel - Parte 3",
+      "year": 2020,
+      "decade": "2020",
+      "genre": "Romance",
+      "duration": 102,
+      "country": "Estados Unidos",
+      "director": "Tosca Musk",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "overview": "A parte final da adaptação para o cinema do romance erótico Gabriel's Inferno, escrito por um autor canadense anônimo sob o pseudônimo de Sylvain Reynard.",
+      "imdb": 83,
+      "rt": 83,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1091,
+      "imdbId": "tt13535456",
+      "tmdbId": 761053,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/7Lu59Kxb7ndGI7CA942FeNOlLfB.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/cY9X3gHcu4zK9vAy3s77xyorm0d.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "quality:rated"
+    },
+    {
+      "title": "Elefante Branco",
+      "year": 2012,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 105,
+      "country": "Argentina",
+      "director": "Pablo Trapero",
+      "genres": [
+        "Drama"
+      ],
+      "overview": "O padre Julián e o padre Nicolás trabalham ajudando os menos favorecidos na favela de Villa Virgen, periferia de Buenos Aires. O local é um antro de violência e miséria. A polícia corrupta e os próprios sacerdotes da Igreja nada fazem para mudar essa realidade e os dois clérigos terão que por suas próprias vidas em risco para continuar do lado dos mais pobres.",
+      "imdb": 65,
+      "rt": 65,
+      "rtSource": "tmdb",
+      "tmdbVotes": 122,
+      "imdbId": "tt2132324",
+      "tmdbId": 110393,
+      "originalLanguage": "es",
+      "providers": [
+        "Netflix",
+        "Disney+"
+      ],
+      "vibes": [
+        "sensivel"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/7U3StFiT5wNKLQ32MqMEvEGozWF.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/jIf6hqjDOFvl444fZVeyEiCwfus.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AR"
+    },
+    {
+      "title": "Wilde Mouse",
+      "year": 2017,
+      "decade": "2010",
+      "genre": "Comedia",
+      "duration": 103,
+      "country": "Austria",
+      "director": "Josef Hader",
+      "genres": [
+        "Comedia",
+        "Drama"
+      ],
+      "overview": "Quando George, de 50 anos, inesperadamente perde seu trabalho como crítico musical de um jornal de Viena, ele decide esconder o fato de sua esposa, a jovem Johanna, que planeja ter um filho em breve. Ao mesmo tempo, ele embarca em uma jornada em busca de vingança contra seu ex-chefe, praticando pequenos atos de vandalismo que logo se transformam em algo muito maior e mais grave.",
+      "imdb": 65,
+      "rt": 65,
+      "rtSource": "tmdb",
+      "tmdbVotes": 86,
+      "imdbId": "tt5376196",
+      "tmdbId": 424634,
+      "originalLanguage": "de",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/lWI8TMdCzx9ztuvWkbAWozk07xM.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/hISb9I8xZN1zHuEPAZggix9KBnj.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AT"
+    },
+    {
+      "title": "O Rei do Tráfico",
+      "year": 2004,
+      "decade": "2000",
+      "genre": "Drama",
+      "duration": 92,
+      "country": "Colombia",
+      "director": "José Antonio Dorado",
+      "genres": [
+        "Drama"
+      ],
+      "overview": "Invocando o mesmo estilo corajoso de Traffic e o realismo de Cidade de Deus, El Rey-O Rei do Tráfico mostra corajosamente a ascenção do comércio de drogas na Colômbia através de olhos do chefão mítico e barão das drogas. El Rey é baseado em fatos reais, o filme entrelaça com maestria fatos históricos com personagens desenvolvidos rica e habilidosamente acompanha ascenção dramática e frequentemente brutal de El Rey ao poder sobre a Máfia colombiana no decorrer de diversas décadas.",
+      "imdb": 70,
+      "rt": 70,
+      "rtSource": "tmdb",
+      "tmdbVotes": 24,
+      "imdbId": "tt0263939",
+      "tmdbId": 35894,
+      "originalLanguage": "es",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "nostalgia"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/bRRFo8iI9y9E9CKeK0WbZclTar3.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/zwe7wHjj8YlcvoxDeBiezB7b3kU.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:CO"
+    },
+    {
+      "title": "Morte Negra",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 102,
+      "country": "Alemanha",
+      "director": "Christopher Smith",
+      "genres": [
+        "Drama",
+        "Historia",
+        "Terror"
+      ],
+      "overview": "O filme se passa na Idade Média numa Inglaterra devastada pela peste negra. A história seguirá a busca de um cavaleiro que atravessa as terras profanas para encontrar o necromante responsável por uma maldição. Sean Bean (O Senhor dos Anéis) é o corajoso Ulrich, cavaleiro que recebe a ajuda do monge Osmund (Eddie Redmayne, Pecados Inocentes) para chegar a um pântano onde vive a misteriosa Langiva (Carice van Houten, Operação Valquíria) que é uma feiticeira que fez pacto com o Diabo e tem o poder de ressuscitar os mortos.",
+      "imdb": 61,
+      "rt": 61,
+      "rtSource": "tmdb",
+      "tmdbVotes": 973,
+      "imdbId": "tt1181791",
+      "tmdbId": 41215,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "terror",
+        "acao",
+        "surpresa"
+      ],
+      "tags": [
+        "Historia",
+        "Terror"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/hispRPgwVRmN9ZfB4TBP1WRdhw8.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/dQhVu7ZSgvgAuYAEoD9mXvqpp1.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:DE"
+    },
+    {
+      "title": "As Crônicas de Nárnia: A Viagem do Peregrino da Alvorada",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Aventura",
+      "duration": 113,
+      "country": "Reino Unido",
+      "director": "Michael Apted",
+      "genres": [
+        "Aventura",
+        "Familia",
+        "Fantasia"
+      ],
+      "overview": "Lúcia, Edmundo e Eustáquio retornam para Nárnia, onde encontram com príncipe Caspian, agora rei, e outros amigos. Buscando os Sete Fidalgos Desaparecidos de Telmar, eles começam uma nova aventura a bordo do navio Peregrino da Alvorada e irão encarar guerreiros, dragões, anões e tritões.",
+      "imdb": 64,
+      "rt": 64,
+      "rtSource": "tmdb",
+      "tmdbVotes": 5930,
+      "imdbId": "tt0980970",
+      "tmdbId": 10140,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Familia",
+        "Fantasia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/axMY6DSfkMdgUzejBqAPagynr6w.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/oc3be3waruLd0PB9h4bomN7Le3v.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:GB"
+    },
+    {
+      "title": "O Quadro Negro",
+      "year": 2000,
+      "decade": "2000",
+      "genre": "Drama",
+      "duration": 85,
+      "country": "Ira",
+      "director": "Samira Makhmalbaf",
+      "genres": [
+        "Drama",
+        "Historia",
+        "Guerra"
+      ],
+      "overview": "Em busca de estudantes e de pessoas interessadas em aprender a ler e escrever, um grupo de professores vaga por uma região de extremo perigo na fronteira do Irã com o Iraque.",
+      "imdb": 67,
+      "rt": 67,
+      "rtSource": "tmdb",
+      "tmdbVotes": 41,
+      "imdbId": "tt0246266",
+      "tmdbId": 28988,
+      "originalLanguage": "fa",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Historia",
+        "Guerra"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ApLKw8jjGTp7M4FbivX3mHXJ6da.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4jauQUVs9zwpOJgTSlAgmfbVeRf.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:IR"
+    },
+    {
+      "title": "Mister Pip",
+      "year": 2012,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 116,
+      "country": "Nova Zelandia",
+      "director": "Andrew Adamson",
+      "genres": [
+        "Drama",
+        "Guerra"
+      ],
+      "overview": "O Sr. Watts é o único homem branco deixado na ilha após o bloqueio. Ele abre a escola e apresenta às crianças o romance \"Grandes Esperanças\" de Charles Dickens. Matilda, a narradora adolescente do filme, encontra conforto na história de Pip, o órfão vitoriano, quando seu próprio mundo está caindo aos pedaços. Os Redskins, um exército enviado para destruir os rebeldes locais estão se aproximando. Matilda escreve \"Pip\" na areia. Esse simples ato leva a terríveis consequências quando os Redskins suspeitam que Pip seja um líder rebelde e exigem que ele seja trazido diante deles.",
+      "imdb": 62,
+      "rt": 62,
+      "rtSource": "tmdb",
+      "tmdbVotes": 64,
+      "imdbId": "tt1485749",
+      "tmdbId": 121830,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "intenso",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Guerra"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/mwv9JZNeR6HEeThhsjXF4G2owWq.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/e3DP7i7r0iE0OLgTceHbnZLGA3s.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:NZ"
+    },
+    {
+      "title": "Django",
+      "year": 1966,
+      "decade": "1960",
+      "genre": "Acao",
+      "duration": 92,
+      "country": "Italia",
+      "director": "Sergio Corbucci",
+      "genres": [
+        "Acao",
+        "Faroeste"
+      ],
+      "overview": "Django é um homem que arrasta consigo um caixão, onde dentro está escondida uma poderosa metralhadora. Na fronteira do México, ele está disposto a vingar a morte da sua esposa, e parte para uma luta sangrenta contra duas gangues rivais que agem na região, isso depois de fazer um acordo com o bandido local Hugo Rodriguez. Só que desconfiado das intenções de Rodriguez, ele resolve se juntar a Maria, uma mulher que havia salvo, e os dois serão perseguidos pelo mexicano.",
+      "imdb": 72,
+      "rt": 72,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1002,
+      "imdbId": "tt0060315",
+      "tmdbId": 10772,
+      "originalLanguage": "it",
+      "providers": [
+        "Looke",
+        "Oldflix",
+        "Telecine"
+      ],
+      "vibes": [
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Faroeste"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/zgfTtw3x0w9NiZXqqwlbVrGJhqX.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/2tFsObjPy5Q0Ea4pb0ICPqVI2ht.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1960"
+    },
+    {
+      "title": "Clube dos Cafajestes",
+      "year": 1978,
+      "decade": "1970",
+      "genre": "Comedia",
+      "duration": 109,
+      "country": "Estados Unidos",
+      "director": "John Landis",
+      "genres": [
+        "Comedia"
+      ],
+      "overview": "1962. Larry Kroger (Tom Hulce) e Kent Dorfman (Stephen Furst) são calouros na faculdade e sonham em entrar para uma fraternidade. Após não conseguirem entrar para a Omega eles resolvem tentar a Delta, que tem a fama de ser a pior fraternidade do campus. Lá eles conhecem Eric (Tim Matheson), Boone (Peter Reigert) e sua namorada Katy (Karen Allen), Hoover (James Widdoes) e Bluto (John Belushi). Larry e Kent logo são aceitos na fraternidade e passam a viver uma vida regada a viagens, piadas e festas de pijama. Só que Dean Wormer (John Vernon) está decidido a expulsar a Delta do campus da faculdade, contando com a ajuda dos integrantes da Omega.",
+      "imdb": 70,
+      "rt": 70,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1676,
+      "imdbId": "tt0077975",
+      "tmdbId": 8469,
+      "originalLanguage": "en",
+      "providers": [
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "leve",
+        "nostalgia"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/37RHvunfP3uZBujIt8kw1yntejZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/2fmLLKSEzdfk41Iz76ewoKhyWgb.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1970"
+    },
+    {
+      "title": "Tarzan",
+      "year": 1999,
+      "decade": "1990",
+      "genre": "Animacao",
+      "duration": 88,
+      "country": "Estados Unidos",
+      "director": "Chris Buck",
+      "genres": [
+        "Animacao",
+        "Familia",
+        "Aventura"
+      ],
+      "overview": "Um bebê perde os pais na selva. Órfão e sozinho, ele é encontrado por uma macaca que o cria como se fosse seu próprio filho. Tarzan cresce pensando ser um gorila, agindo e vivendo como tal. Quando uma equipe de pesquisadores chega à floresta, o rapaz percebe que é igual a eles. Tarzan encontra a bela Jane correndo perigo e a salva, apaixonando-se por ela. Ele se vê dividido entre o desejo de estar com gente da sua espécie e a lealdade com a família de gorilas que o criou.",
+      "imdb": 74,
+      "rt": 74,
+      "rtSource": "tmdb",
+      "tmdbVotes": 7372,
+      "imdbId": "tt0120855",
+      "tmdbId": 37135,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Familia",
+        "Aventura"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ce4mU4yyubjP1uXcz48fMndCZni.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/a0E1mbejev56Ii51hCnYUDj4tZS.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1990"
+    },
+    {
+      "title": "Náufrago",
+      "year": 2000,
+      "decade": "2000",
+      "genre": "Aventura",
+      "duration": 143,
+      "country": "Estados Unidos",
+      "director": "Robert Zemeckis",
+      "genres": [
+        "Aventura",
+        "Drama"
+      ],
+      "overview": "Durante uma viagem de trabalho para a Malásia, Chuck Noland sofre um acidente de avião e acaba preso em uma ilha deserta como o único sobrevivente. Chuck faz de tudo para sobreviver, sem abrir mão da esperança de um dia voltar para casa.",
+      "imdb": 77,
+      "rt": 77,
+      "rtSource": "tmdb",
+      "tmdbVotes": 12328,
+      "imdbId": "tt0162222",
+      "tmdbId": 8358,
+      "originalLanguage": "en",
+      "providers": [
+        "Paramount+",
+        "Apple TV",
+        "Prime Video",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/eaJRnsUIxOeMgpY81iIgGr372vp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/oCFVYPXI4IfhtF3GapU2jkDicDI.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:2000"
+    },
+    {
+      "title": "O Menu",
+      "year": 2022,
+      "decade": "2020",
+      "genre": "Comedia",
+      "duration": 107,
+      "country": "Estados Unidos",
+      "director": "Mark Mylod",
+      "genres": [
+        "Comedia",
+        "Terror"
+      ],
+      "overview": "Um casal viaja para uma ilha costeira para comer em um restaurante exclusivo onde o chef preparou um cardápio farto, com algumas surpresas chocantes.",
+      "imdb": 72,
+      "rt": 72,
+      "rtSource": "tmdb",
+      "tmdbVotes": 6322,
+      "imdbId": "tt9764362",
+      "tmdbId": 593643,
+      "originalLanguage": "en",
+      "providers": [
+        "Prime Video",
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "intenso",
+        "terror",
+        "surpresa"
+      ],
+      "tags": [
+        "Terror"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/rxNelQvAjOmNGUUHRujmsHiPEIh.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4vSBj7BYsyuKCx96EJzGyp20WfY.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:2020"
+    },
+    {
+      "title": "Kong: A Ilha da Caveira",
+      "year": 2017,
+      "decade": "2010",
+      "genre": "Acao",
+      "duration": 118,
+      "country": "Estados Unidos",
+      "director": "Jordan Vogt-Roberts",
+      "genres": [
+        "Acao",
+        "Aventura",
+        "Fantasia"
+      ],
+      "overview": "Um ex-militar viaja com um grupo de desbravadores até a mítica Ilha da Caveira, onde seu irmão desapareceu enquanto procurava o Titan, soro que teria o poder de curar todas as doenças. Além de resgatar o irmão, o homem irá enfrentar as criaturas que habitam o local. A equipe de exploradores se aventura nas profundezas da ilha desconhecida no Pacífico, que é tão bonita quanto traiçoeira, sem saber que estão atravessando para o domínio do mítico Kong.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 11189,
+      "imdbId": "tt3731562",
+      "tmdbId": 293167,
+      "originalLanguage": "en",
+      "providers": [
+        "Max",
+        "Telecine",
+        "Prime Video",
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "acao"
+      ],
+      "tags": [
+        "Aventura",
+        "Fantasia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/y7ZdnfEA8AEyCFdojYBxeevtZtc.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/nVodCGKYLpqNC8YwQAbivKlWCgZ.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Fantasia"
+    },
+    {
+      "title": "Alien³",
+      "year": 1992,
+      "decade": "1990",
+      "genre": "Ficcao cientifica",
+      "duration": 144,
+      "country": "Estados Unidos",
+      "director": "David Fincher",
+      "genres": [
+        "Ficcao cientifica",
+        "Acao",
+        "Terror"
+      ],
+      "overview": "A tenente Ripley é encarregada de ir a um planeta que é usado como colônia penal de segurança máxima. Este é o novo palco de assassinatos do Alien, que está matando tudo o que se move, menos a própria tenente Ripley, que aparentemente não é atacada pelo monstro.",
+      "imdb": 64,
+      "rt": 64,
+      "rtSource": "tmdb",
+      "tmdbVotes": 6415,
+      "imdbId": "tt0103644",
+      "tmdbId": 8077,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "intenso",
+        "complexo",
+        "terror",
+        "acao",
+        "surpresa",
+        "nostalgia"
+      ],
+      "tags": [
+        "Acao",
+        "Terror"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/9TM6DMFUJju7GgvxAufZlNLDlki.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/lU0zVj8KcQVkPczdGGraYGiRC72.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Terror"
+    },
+    {
+      "title": "Appaloosa - Uma Cidade sem Lei",
+      "year": 2008,
+      "decade": "2000",
+      "genre": "Drama",
+      "duration": 115,
+      "country": "Estados Unidos",
+      "director": "Ed Harris",
+      "genres": [
+        "Drama",
+        "Faroeste",
+        "Crime"
+      ],
+      "overview": "Virgil Cole e Everett Hitch são pistoleiros contratados para que cuidem da cidade de Appaloosa, no velho oeste americano. O local é controlado por Randall Bragg, um rancheiro que ordenou a morte do último xerife e que não respeita qualquer lei. Entretanto a tarefa de Virgil e Everett é prejudicada pela chegada de Allison French, uma jovem viúva.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1093,
+      "imdbId": "tt0800308",
+      "tmdbId": 12690,
+      "originalLanguage": "en",
+      "providers": [
+        "Max",
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Faroeste",
+        "Crime"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/31EyHyUEijrxExHHGlKfSH6clDN.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/dIy6yJ22rKoqxGXpCOHjZPfoCba.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Faroeste"
+    },
+    {
+      "title": "Sicario: Terra de Ninguém",
+      "year": 2015,
+      "decade": "2010",
+      "genre": "Acao",
+      "duration": 121,
+      "country": "Estados Unidos",
+      "director": "Denis Villeneuve",
+      "genres": [
+        "Acao",
+        "Crime",
+        "Suspense"
+      ],
+      "overview": "Na crescente fronteira sem lei entre os Estados Unidos e o México, uma agente do FBI é exposta ao mundo brutal do tráfico internacional de drogas por membros de uma força-tarefa do governo que a escalam em seu plano para derrotar o chefe de um cartel mexicano.",
+      "imdb": 74,
+      "rt": 74,
+      "rtSource": "tmdb",
+      "tmdbVotes": 9622,
+      "imdbId": "tt3397884",
+      "tmdbId": 273481,
+      "originalLanguage": "en",
+      "providers": [
+        "Prime Video",
+        "Claro tv+",
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Crime",
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/3ywTErS7uJIJRjwXSJ0zLapBygK.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/fKPgObonYgPgCdu88yjV7Hpn7Dp.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Crime"
+    },
+    {
+      "title": "Catfish",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Documentario",
+      "duration": 87,
+      "country": "Estados Unidos",
+      "director": "Henry Joost",
+      "genres": [
+        "Documentario"
+      ],
+      "overview": "Documentário que conta a história de Nev, um fotógrafo de Nova York de 24 anos que acaba conhecendo a artista Megan pelo Facebook e iniciando um romance online. Ao ouvirem revelações surpreendentes sobre a moça, Nev e seus amigos embarcam em uma viagem em busca da verdade.",
+      "imdb": 68,
+      "rt": 68,
+      "rtSource": "tmdb",
+      "tmdbVotes": 556,
+      "imdbId": "tt1584016",
+      "tmdbId": 42296,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "complexo",
+        "comfort",
+        "surpresa"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/mXNxee2ix6Ke0bSIqFST0UhbVLR.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/369Fi0BqGvyut1B4CqmJAzxo5xo.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Documentario"
+    },
+    {
+      "title": "Onde Está Segunda?",
+      "year": 2017,
+      "decade": "2010",
+      "genre": "Ficcao cientifica",
+      "duration": 123,
+      "country": "Estados Unidos",
+      "director": "Tommy Wirkola",
+      "genres": [
+        "Ficcao cientifica",
+        "Suspense",
+        "Misterio",
+        "Acao"
+      ],
+      "overview": "Em um futuro onde só filhos únicos são permitidos, seis irmãs gêmeas tentam se esconder do governo enquanto procuram uma sétima desaparecida.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 6465,
+      "imdbId": "tt1536537",
+      "tmdbId": 406990,
+      "originalLanguage": "en",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "intenso",
+        "complexo",
+        "acao",
+        "surpresa"
+      ],
+      "tags": [
+        "Suspense",
+        "Misterio",
+        "Acao"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/pIDqKzz7Y0Unm9Sv4HW48EAW1CA.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/j7ij93mtHXAF8D3PjRSEaKPHpIE.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Misterio"
+    },
+    {
+      "title": "The Doors",
+      "year": 1991,
+      "decade": "1990",
+      "genre": "Musica",
+      "duration": 140,
+      "country": "Estados Unidos",
+      "director": "Oliver Stone",
+      "genres": [
+        "Musica",
+        "Drama"
+      ],
+      "overview": "Jim Morrison, a voz e a alma da banda The Doors, um homem que marcou várias gerações e que ainda hoje nos faz interrogar se algum dia alguém o conheceu realmente. Oliver Stone, realizador pródigo em filmar polêmicas americanas, realizou em 1991 um filme sobre a ascensão da banda, terminando o filme com a morte de Jim Morrison, cuja frase do epílogo deixa a certeza das causas em aberto (dizem que Jim morreu de uma parada cardíaca). É, em seus certos exageros, a biografia de Jim Morrison e da banda The Doors, uma das mais influentes dos anos 1960. Mostra sua passagem pelo conturbado mundo do rock'n'roll, onde as drogas e o sexo reinavam.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1614,
+      "imdbId": "tt0101761",
+      "tmdbId": 10537,
+      "originalLanguage": "en",
+      "providers": [
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "nostalgia"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/x1LM3dzGuG6xOz0aT2e71o11vhu.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/kGlEhkmFaGUvhBvLvhhq9i9OOXX.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Musica"
+    },
+    {
+      "title": "Schumacher",
+      "year": 2021,
+      "decade": "2020",
+      "genre": "Documentario",
+      "duration": 112,
+      "country": "Alemanha",
+      "director": "Michael Wech",
+      "genres": [
+        "Documentario"
+      ],
+      "overview": "Por meio de entrevistas exclusivas e imagens de arquivo, este documentário traça um perfil íntimo de Michael Schumacher, sete vezes campeão da Fórmula 1.",
+      "imdb": 73,
+      "rt": 73,
+      "rtSource": "tmdb",
+      "tmdbVotes": 462,
+      "imdbId": "tt10322274",
+      "tmdbId": 855823,
+      "originalLanguage": "de",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "complexo",
+        "surpresa"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ArpeW9q7rEwWyzZ3SZbBRsuvFPZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/lqEjBR3osI3Ezup9onTXYz7RyNZ.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:de"
+    },
+    {
+      "title": "Assim é a Vida",
+      "year": 2017,
+      "decade": "2010",
+      "genre": "Comedia",
+      "duration": 117,
+      "country": "Franca",
+      "director": "Olivier Nakache",
+      "genres": [
+        "Comedia"
+      ],
+      "overview": "Max (Jean-Pierre Bacri), um organizador de eventos por trinta anos, está prestes a realizar um grande casamento, mas acredita que tudo irá correr como o planejado. A equipe da festa, que será em um imponente castelo do século XVII, já foi selecionada por ele: garçons, cozinheiros, fotógrafo e músicos. Mas o que ele não imaginava era que, em uma noite repleta de emoções, algumas coisas sairiam do controle.",
+      "imdb": 70,
+      "rt": 70,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1616,
+      "imdbId": "tt5699154",
+      "tmdbId": 432068,
+      "originalLanguage": "fr",
+      "providers": [
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/dJZpwgtQpy86s6TnUd6rGTDNUbU.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/10ECHyeW7vZMjCLSRLak9K5fVdB.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:fr"
+    },
+    {
+      "title": "Meu Nome é Ninguém",
+      "year": 1973,
+      "decade": "1970",
+      "genre": "Comedia",
+      "duration": 112,
+      "country": "Italia",
+      "director": "Tonino Valerii",
+      "genres": [
+        "Comedia",
+        "Faroeste"
+      ],
+      "overview": "Jack Beauregard, que já foi o maior pistoleiro do Velho Oeste, só quer se mudar para a Europa e se aposentar em paz, mas um jovem pistoleiro, conhecido apenas como \"Ninguém\", o idolatra e quer vê-lo sair em uma chama de glória. Ele organiza para que Jack enfrente a gangue de 150 homens, conhecida como The Wild Bunch, e, assim, ganhe seu lugar na história.",
+      "imdb": 73,
+      "rt": 73,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1061,
+      "imdbId": "tt0070215",
+      "tmdbId": 9474,
+      "originalLanguage": "it",
+      "providers": [
+        "Looke",
+        "Oldflix"
+      ],
+      "vibes": [
+        "leve",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Faroeste"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/2pHIriNJDRIXwEqE2oSC3PY5H6C.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4II0fdNtTMR0elrMgQSn9wfYuuk.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:it"
+    },
+    {
+      "title": "Kill Boksoon",
+      "year": 2023,
+      "decade": "2020",
+      "genre": "Acao",
+      "duration": 137,
+      "country": "Coreia do Sul",
+      "director": "변성현",
+      "genres": [
+        "Acao",
+        "Drama",
+        "Suspense",
+        "Crime"
+      ],
+      "overview": "No trabalho, assassina renomada. Em casa, mãe solo de uma adolescente. Para ela, o desafio não é matar. Duro mesmo é a maternidade...",
+      "imdb": 69,
+      "rt": 69,
+      "rtSource": "tmdb",
+      "tmdbVotes": 546,
+      "imdbId": "tt16900880",
+      "tmdbId": 849869,
+      "originalLanguage": "ko",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Drama",
+        "Suspense",
+        "Crime"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/2eRQ55y4OWXZjmdwfBmyMEPTdyy.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/mGwzJbtX6zU0SdtxeHn1sNNK8JW.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:ko"
+    },
+    {
+      "title": "Lulli",
+      "year": 2021,
+      "decade": "2020",
+      "genre": "Comedia",
+      "duration": 90,
+      "country": "Brasil",
+      "director": "César Rodrigues",
+      "genres": [
+        "Comedia",
+        "Romance",
+        "Fantasia"
+      ],
+      "overview": "Depois de um misterioso incidente, a estudante de medicina Lulli ganha a habilidade de ler os pensamentos de todos ao seu redor. Esse dom pode ser útil para a moça, mas também pode ser uma maldição.",
+      "imdb": 58,
+      "rt": 58,
+      "rtSource": "tmdb",
+      "tmdbVotes": 219,
+      "imdbId": "tt16282866",
+      "tmdbId": 700127,
+      "originalLanguage": "pt",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "intenso",
+        "comfort",
+        "surpresa"
+      ],
+      "tags": [
+        "Romance",
+        "Fantasia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ztJHKv6KSSgCTWAI2STrX2BeuJZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/yUJHUuzrUXlmGcJoVXTwJhRcxVC.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:pt"
+    },
+    {
+      "title": "Juventude",
+      "year": 1951,
+      "decade": "1950",
+      "genre": "Drama",
+      "duration": 96,
+      "country": "Suecia",
+      "director": "Ingmar Bergman",
+      "genres": [
+        "Drama",
+        "Romance"
+      ],
+      "overview": "Uma mulher solitária recorda seu primeiro amor treze anos antes durante umas breves férias de verão.\r Enquanto espera pelo ensaio noturno do balé Lago do Cisne, a solitária bailarina de vinte e oito anos, Marie, recebe um diário pelo correio. Ela viaja de balsa para uma ilha próxima a Estocolmo, onde se lembra de seu primeiro amor, Henrik. Treze anos atrás, enquanto viajava para passar suas férias de verão com sua tia Elisabeth e seu tio Erland, Marie encontra Henrik na balsa e, mais cedo, eles se apaixonam um pelo outro. Eles passam férias de verão juntos quando uma tragédia os separa e Marie constrói uma parede afetando sua vida sentimental.",
+      "imdb": 74,
+      "rt": 74,
+      "rtSource": "tmdb",
+      "tmdbVotes": 175,
+      "imdbId": "tt0044060",
+      "tmdbId": 47473,
+      "originalLanguage": "sv",
+      "providers": [
+        "Belas Artes à La Carte"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "nostalgia"
+      ],
+      "tags": [
+        "Romance"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/qnzNihL70Ym6EZ0rEKCdJqXob0o.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/UfbtXEm4FopWpqBZVLOCOMjsnr.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:sv"
+    },
+    {
+      "title": "Amor Até As Cinzas",
+      "year": 2018,
+      "decade": "2010",
+      "genre": "Crime",
+      "duration": 136,
+      "country": "China",
+      "director": "贾樟柯",
+      "genres": [
+        "Crime",
+        "Romance",
+        "Drama"
+      ],
+      "overview": "Datong, China, 2001. Uma bela e jovem dançarina chamada Qiao (Zhao Tao) está apaixonada por Bin (Fan Liao), um mafioso local. Durante uma briga entre gangues rivais, ela dispara uma arma para proteger seu namorado. Mas isso lhe dá cinco anos de prisão. Após sua liberação, ela vai procurar Bin para tentar começar tudo de novo.",
+      "imdb": 69,
+      "rt": 69,
+      "rtSource": "tmdb",
+      "tmdbVotes": 359,
+      "imdbId": "tt7298400",
+      "tmdbId": 441393,
+      "originalLanguage": "zh",
+      "providers": [
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "intenso",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Romance",
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/rZn2zT6dDkIhQ7mejkaMpfoEal0.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/eLqkx8A6NoYfVf9EKHEOJf5ljxk.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:zh"
+    },
+    {
+      "title": "Fechar os Olhos",
+      "year": 2023,
+      "decade": "2020",
+      "genre": "Drama",
+      "duration": 169,
+      "country": "Argentina",
+      "director": "Víctor Erice",
+      "genres": [
+        "Drama",
+        "Misterio"
+      ],
+      "overview": "Julio Arenas, um famoso ator espanhol, desaparece durante as filmagens de um filme, deixando para trás um mistério não resolvido. Vários anos após o desaparecimento, o mistério ressurge graças a um programa de televisão que analisa a vida do ator. O programa lança nova luz sobre as últimas cenas em que Julio participou, filmadas por seu amigo íntimo, o diretor Miguel Garay.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 121,
+      "imdbId": "tt21284358",
+      "tmdbId": 997294,
+      "originalLanguage": "es",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "surpresa"
+      ],
+      "tags": [
+        "Misterio"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/1lx8cw1c1j2RTlQHgjR4phQBmVB.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4hOcyjkcOiCdxW5grPLFYkXgbjm.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AR"
+    },
+    {
+      "title": "Uma Vida Eterna",
+      "year": 2015,
+      "decade": "2010",
+      "genre": "Comedia",
+      "duration": 123,
+      "country": "Austria",
+      "director": "Wolfgang Murnberger",
+      "genres": [
+        "Comedia",
+        "Crime",
+        "Suspense"
+      ],
+      "overview": "Brenner retorna a Graz, a cidade onde cresceu.  Quando confrontado com seus velhos amigos, sua ex-namorada e o grande pecado que cometeu quando era jovem, o resultado são assassinatos e um fatídico tiro na cabeça.  Depois que Brenner sai do coma, ele começa a procurar a pessoa que tentou matá-lo, porém todos afirmam que ele mesmo é o responsável.  No começo, Brenner estava no fim de sua corda, mas ele poderia enfrentar um novo começo no final.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 84,
+      "imdbId": "tt3642618",
+      "tmdbId": 277967,
+      "originalLanguage": "de",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "intenso"
+      ],
+      "tags": [
+        "Crime",
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/lSQ9fgPwhZfcFKxChHjHrbEiDLm.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/aCm3ZE47TWMzrFq50BSNZvNaU57.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AT"
+    },
+    {
+      "title": "Portal dos Guerreiros",
+      "year": 2016,
+      "decade": "2010",
+      "genre": "Acao",
+      "duration": 107,
+      "country": "China",
+      "director": "Matthias Hoene",
+      "genres": [
+        "Acao",
+        "Aventura",
+        "Comedia",
+        "Familia",
+        "Fantasia"
+      ],
+      "overview": "Jack é um jovem viciado em um jogo de videogame que tem grandes guerreiros e uma princesa em apuros. Um dia ele é levado magicamente para a China, onde deverá incorporar na vida real o seu personagem lutador de Kung Fu no jogo e salvar a bela Su Lin.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 382,
+      "imdbId": "tt4652532",
+      "tmdbId": 413658,
+      "originalLanguage": "en",
+      "providers": [
+        "Prime Video",
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Aventura",
+        "Comedia",
+        "Familia",
+        "Fantasia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/jZ91T2dRJmfAQheJRW09Ukb3uWX.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/rpsuxOvGgVBKmQELkPPNigjW9qO.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:CN"
+    },
+    {
+      "title": "Hector e a Procura da Felicidade",
+      "year": 2014,
+      "decade": "2010",
+      "genre": "Aventura",
+      "duration": 120,
+      "country": "Alemanha",
+      "director": "Peter Chelsom",
+      "genres": [
+        "Aventura",
+        "Drama",
+        "Comedia"
+      ],
+      "overview": "O psiquiatra Hector está cansado de sua vida e dos problemas de seus pacientes. Ele, na verdade, se sente frustrado por não conseguir ajudar seus pacientes a encontrarem a felicidade. Com o incentivo da esposa Clara, ele faz uma viagem sozinho ao redor do mundo, em busca de novas experiências. Durante a viagem, ele questiona as pessoas sobre o que as faz feliz e se dá conta que precisa questionar-se a si mesmo.",
+      "imdb": 67,
+      "rt": 67,
+      "rtSource": "tmdb",
+      "tmdbVotes": 964,
+      "imdbId": "tt1626146",
+      "tmdbId": 254375,
+      "originalLanguage": "en",
+      "providers": [
+        "Prime Video"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "acao"
+      ],
+      "tags": [
+        "Drama",
+        "Comedia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/7txoUYvjP9UK5pVetfoOHDRjnyQ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/vujKrqkydYxLuFvdGjA5bDicupV.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:DE"
+    },
+    {
+      "title": "Alexandria, Private.",
+      "year": 2005,
+      "decade": "2000",
+      "genre": "Crime",
+      "duration": 95,
+      "country": "Egito",
+      "director": "Sandra Nashaat",
+      "genres": [
+        "Crime",
+        "Suspense",
+        "Misterio"
+      ],
+      "overview": "Uma esposa acusada de matar o marido empresário pede ao jovem advogado que a defendeu que a ajude a encontrar o verdadeiro assassino.",
+      "imdb": 72,
+      "rt": 72,
+      "rtSource": "tmdb",
+      "tmdbVotes": 34,
+      "imdbId": "tt0422708",
+      "tmdbId": 300420,
+      "originalLanguage": "ar",
+      "providers": [],
+      "vibes": [
+        "intenso",
+        "surpresa"
+      ],
+      "tags": [
+        "Suspense",
+        "Misterio"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/wK4022PbFe31NqSOe6uwCDDKvXd.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/yQX4E5VWf5MJzWgkDkdmfH9TlcY.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:EG"
+    },
+    {
+      "title": "As Linhas Tortas de Deus",
+      "year": 2022,
+      "decade": "2020",
+      "genre": "Drama",
+      "duration": 155,
+      "country": "Espanha",
+      "director": "Oriol Paulo",
+      "genres": [
+        "Drama",
+        "Misterio",
+        "Suspense"
+      ],
+      "overview": "Alice Gould, uma investigadora particular, finge estar mentalmente doente para entrar em um hospital psiquiátrico e reunir provas para o caso em que está trabalhando: a morte de um paciente em circunstâncias pouco claras.",
+      "imdb": 73,
+      "rt": 73,
+      "rtSource": "tmdb",
+      "tmdbVotes": 845,
+      "imdbId": "tt13229894",
+      "tmdbId": 890980,
+      "originalLanguage": "es",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "surpresa"
+      ],
+      "tags": [
+        "Misterio",
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/i7xCXKYkuFxx6UglVbSFaBmrwcO.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/dtXcuwF1uUi9m0VVfEGEa7GpDzX.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:ES"
+    },
+    {
+      "title": "Heróis de Ressaca",
+      "year": 2013,
+      "decade": "2010",
+      "genre": "Comedia",
+      "duration": 109,
+      "country": "Reino Unido",
+      "director": "Edgar Wright",
+      "genres": [
+        "Comedia",
+        "Acao",
+        "Ficcao cientifica"
+      ],
+      "overview": "Após falharem no pub crawl, uma competição de bebidas em vários bares diferentes em apenas uma noite, cinco amigos retornam para a cidade natal vinte anos após o fracasso. O objetivo do grupo é dar-se mais uma chance. O único porém é: a juventude se foi e a vida adulta cobra o seu preço.",
+      "imdb": 68,
+      "rt": 68,
+      "rtSource": "tmdb",
+      "tmdbVotes": 5928,
+      "imdbId": "tt1213663",
+      "tmdbId": 107985,
+      "originalLanguage": "en",
+      "providers": [
+        "Claro tv+",
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "leve",
+        "complexo",
+        "acao"
+      ],
+      "tags": [
+        "Acao",
+        "Ficcao cientifica"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/kSyw1d7qFmitI7aQnva67YWh8s4.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/stAPkorBeBkvEZ6DQs30Ke4cPyr.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:GB"
+    },
+    {
+      "title": "O Casal Duplicado",
+      "year": 2022,
+      "decade": "2020",
+      "genre": "Drama",
+      "duration": 107,
+      "country": "Ira",
+      "director": "Mani Haghighi",
+      "genres": [
+        "Drama",
+        "Suspense"
+      ],
+      "overview": "Farzaneh vê seu marido entrar na casa de uma mulher desconhecida, mas ele alega que não estava na cidade e decide olhar a casa com seus próprios olhos. Ao entrar no local, ele conhece uma mulher que é idêntica à sua esposa.",
+      "imdb": 67,
+      "rt": 67,
+      "rtSource": "tmdb",
+      "tmdbVotes": 40,
+      "imdbId": "tt13920920",
+      "tmdbId": 1008043,
+      "originalLanguage": "fa",
+      "providers": [
+        "Looke",
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso"
+      ],
+      "tags": [
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ynVZ44b9w8GDsOV5Knsrn8pmxRE.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/crR4gCBnZ3uznllG5h8eWyOXmge.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:IR"
+    },
+    {
+      "title": "A Glória de um Campeão",
+      "year": 2008,
+      "decade": "2000",
+      "genre": "Drama",
+      "duration": 125,
+      "country": "Romenia",
+      "director": "Renzo Martinelli",
+      "genres": [
+        "Drama"
+      ],
+      "overview": "Primo Carnera cresceu na pobreza e se tornou uma lenda viva ao conquistar o título mundial de boxe contra Jack Sharkey em 1933.",
+      "imdb": 59,
+      "rt": 59,
+      "rtSource": "tmdb",
+      "tmdbVotes": 36,
+      "imdbId": "tt0928124",
+      "tmdbId": 34155,
+      "originalLanguage": "en",
+      "providers": [
+        "Looke",
+        "Apple TV",
+        "Prime Video",
+        "Google Play"
+      ],
+      "vibes": [
+        "sensivel"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/qWf22QbG1nn6BIfMcfLzhSHecL2.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/6oYrtykYRUtmw79rTtXkZBAm6xv.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:RO"
+    },
+    {
+      "title": "O Desafio das Águias",
+      "year": 1968,
+      "decade": "1960",
+      "genre": "Aventura",
+      "duration": 158,
+      "country": "Estados Unidos",
+      "director": "Brian G. Hutton",
+      "genres": [
+        "Aventura",
+        "Guerra"
+      ],
+      "overview": "Durante a Segunda Guerra Mundial, um general dos Estados Unidos é capturado e feito prisioneiro no quartel-general da SS, nos Alpes da Baviera. Um grupo de soldados aliados tem a difícil missão de resgatá-lo. A operação torna-se ainda mais complicada quando descobrem que há um traidor entre eles.",
+      "imdb": 75,
+      "rt": 75,
+      "rtSource": "tmdb",
+      "tmdbVotes": 997,
+      "imdbId": "tt0065207",
+      "tmdbId": 11046,
+      "originalLanguage": "en",
+      "providers": [
+        "Max",
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "intenso",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Guerra"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/g1I8PA6jhgYE7vt4TSi0J5Yf0HT.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/vzavBt9c6v4zBaGiwQDO21aNQG9.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1960"
+    },
+    {
+      "title": "O Homem de Palha",
+      "year": 1973,
+      "decade": "1970",
+      "genre": "Terror",
+      "duration": 88,
+      "country": "Reino Unido",
+      "director": "Robin Hardy",
+      "genres": [
+        "Terror"
+      ],
+      "overview": "O Sgt. Howie investiga o desaparecimento de uma criança na ilha escocesa de Summerisle. Um cristão conservador, ele fica incomodado com os rituais pagãos e o comportamento sexual dos moradores, principalmente de Willow, filha do magistrado. Sua investigação mergulha nos costumes peculiares da ilha.",
+      "imdb": 73,
+      "rt": 73,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1651,
+      "imdbId": "tt0070917",
+      "tmdbId": 16307,
+      "originalLanguage": "en",
+      "providers": [
+        "Oldflix"
+      ],
+      "vibes": [
+        "intenso",
+        "terror",
+        "acao",
+        "surpresa",
+        "nostalgia"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/2eDub2VaMdy8mntxwGTE63g388q.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/fK5OHX7OIl57UqAbPiM4F3hc9wr.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1970"
+    },
+    {
+      "title": "Veludo Azul",
+      "year": 1986,
+      "decade": "1980",
+      "genre": "Misterio",
+      "duration": 120,
+      "country": "Estados Unidos",
+      "director": "David Lynch",
+      "genres": [
+        "Misterio",
+        "Suspense",
+        "Crime"
+      ],
+      "overview": "Jeffrey Beaumont (Kyle MacLachlan), um rapaz simplório que acaba de voltar à cidade, envolve-se em uma perigosa investigação sobre os negócios de um traficante de drogas (Dennis Hopper) que mantém uma sádica relação com a bela cantora de cabaré Dorothy Vallens (Isabella Rossellini).",
+      "imdb": 76,
+      "rt": 76,
+      "rtSource": "tmdb",
+      "tmdbVotes": 3849,
+      "imdbId": "tt0090756",
+      "tmdbId": 793,
+      "originalLanguage": "en",
+      "providers": [
+        "Looke",
+        "MUBI",
+        "Apple TV"
+      ],
+      "vibes": [
+        "intenso",
+        "acao",
+        "surpresa",
+        "nostalgia"
+      ],
+      "tags": [
+        "Suspense",
+        "Crime"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/1Nlq42CnLmkXzj7TN58c3VjlwLn.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/s1CBwblInR0ZBIv59CSko2QdLD3.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:1980"
+    },
+    {
+      "title": "Transformers",
+      "year": 2007,
+      "decade": "2000",
+      "genre": "Aventura",
+      "duration": 144,
+      "country": "Estados Unidos",
+      "director": "Michael Bay",
+      "genres": [
+        "Aventura",
+        "Ficcao cientifica",
+        "Acao"
+      ],
+      "overview": "O destino da humanidade está em jogo quando duas raças de robôs, os Autobots e os vilões Decepticons, chegam à Terra. Os robôs possuem a capacidade de se transformarem em diferentes objetos mecânicos enquanto buscam a chave do poder supremo com a ajuda do jovem Sam.",
+      "imdb": 68,
+      "rt": 68,
+      "rtSource": "tmdb",
+      "tmdbVotes": 12302,
+      "imdbId": "tt0418279",
+      "tmdbId": 1858,
+      "originalLanguage": "en",
+      "providers": [
+        "Paramount+",
+        "Globoplay",
+        "Apple TV",
+        "Prime Video"
+      ],
+      "vibes": [
+        "leve",
+        "complexo",
+        "acao"
+      ],
+      "tags": [
+        "Ficcao cientifica",
+        "Acao"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/lkZ9gqCEjzX85lKR6Jjd1uGAXNp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/iCDMBi6WLjUBnt24dNwHqqF81UL.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "decade:2000"
+    },
+    {
+      "title": "Os Simpsons: O Filme",
+      "year": 2007,
+      "decade": "2000",
+      "genre": "Animacao",
+      "duration": 87,
+      "country": "Estados Unidos",
+      "director": "David Silverman",
+      "genres": [
+        "Animacao",
+        "Comedia",
+        "Familia"
+      ],
+      "overview": "Homer deve salvar o mundo de uma catástrofe que ele mesmo criou. Tudo começa com Homer, seu novo porco de estimação, e um silo cheio de excrementos, uma combinação que desencadeia um desastre como Springfield nunca experimentou.",
+      "imdb": 70,
+      "rt": 70,
+      "rtSource": "tmdb",
+      "tmdbVotes": 8584,
+      "imdbId": "tt0462538",
+      "tmdbId": 35,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Comedia",
+        "Familia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/vTutCMTUTRw8PQAxn21X8hCxVnp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/8ln5VUVk7gnNGIb2VNgw8nICDVt.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Animacao"
+    },
+    {
+      "title": "Meu Namorado é um Zumbi",
+      "year": 2013,
+      "decade": "2010",
+      "genre": "Terror",
+      "duration": 98,
+      "country": "Estados Unidos",
+      "director": "Jonathan Levine",
+      "genres": [
+        "Terror",
+        "Comedia",
+        "Romance"
+      ],
+      "overview": "Em um mundo pós-apocalíptico, um zumbi romântico se apaixona por uma humana, e o envolvimento deles cria uma reação em cadeia. Ele quer provar que os zumbis podem mudar, mas o cenário indica uma batalha entre os vivos e os mortos-vivos.",
+      "imdb": 65,
+      "rt": 65,
+      "rtSource": "tmdb",
+      "tmdbVotes": 6410,
+      "imdbId": "tt1588173",
+      "tmdbId": 82654,
+      "originalLanguage": "en",
+      "providers": [
+        "Netflix",
+        "Globoplay",
+        "Prime Video",
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "intenso",
+        "comfort",
+        "terror",
+        "acao",
+        "surpresa"
+      ],
+      "tags": [
+        "Comedia",
+        "Romance"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/t8rZKsQB3AP9wCWsHFXRCMBQjO5.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/iNl1i8OJAaCf3ElkOPI9ud6CuXB.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Terror"
+    },
+    {
+      "title": "MIB - Homens de Preto III",
+      "year": 2012,
+      "decade": "2010",
+      "genre": "Acao",
+      "duration": 106,
+      "country": "Estados Unidos",
+      "director": "Barry Sonnenfeld",
+      "genres": [
+        "Acao",
+        "Comedia",
+        "Ficcao cientifica"
+      ],
+      "overview": "J já viu coisas inexplicáveis em seus quinze anos com os Homens de Preto, porém, nada, nem mesmo alienígenas o deixam mais perplexo que seu parceiro irônico e reticente. Mas quando a vida de K e o destino do planeta estão em jogo, o agente J terá de viajar no tempo, no passado, para acertar as coisas. J descobre que o universo tem segredos que K nunca contou a ele – segredos que acabarão se revelando quando ele se unir ao jovem agente K para salvar seu parceiro, a agência e o futuro da humanidade.",
+      "imdb": 65,
+      "rt": 65,
+      "rtSource": "tmdb",
+      "tmdbVotes": 11036,
+      "imdbId": "tt1409024",
+      "tmdbId": 41154,
+      "originalLanguage": "en",
+      "providers": [
+        "Prime Video",
+        "Max",
+        "Claro tv+",
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "complexo",
+        "acao"
+      ],
+      "tags": [
+        "Comedia",
+        "Ficcao cientifica"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/4tHxYSppbpdZMjEsL3a71Y47vNx.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/5AhpUb8CAP0jZ4Wrn7AsRUYjZxB.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Comedia"
+    },
+    {
+      "title": "Home - Nosso Planeta, Nossa Casa",
+      "year": 2009,
+      "decade": "2000",
+      "genre": "Documentario",
+      "duration": 95,
+      "country": "Franca",
+      "director": "Yann Arthus-Bertrand",
+      "genres": [
+        "Documentario",
+        "Drama",
+        "Familia"
+      ],
+      "overview": "HOME - NOSSO PLANETA, NOSSA CASA é uma experiência original que registra uma viagem única pelo planeta Terra. Filmado inteiramente do ponto de vista de cima, pelo consagrado fotógrafo Yann Arthus-Bertrand, HOME visa sensibilizar, educar e conscientizar as platéias de todo o mundo sobre a fragilidade de nosso lar, ao demonstrar que tudo que é vivo e belo sobre nosso planeta está interligado. HOME estréia 5 de junho, dia mundial do meio ambiente, em mais de 50 países, com uma missão: alertar que, apesar dos males que causamos nos últimos 50 anos à Terra, ainda há chance de salvarmos nossa casa.",
+      "imdb": 78,
+      "rt": 78,
+      "rtSource": "tmdb",
+      "tmdbVotes": 554,
+      "imdbId": "tt1014762",
+      "tmdbId": 62320,
+      "originalLanguage": "fr",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "complexo",
+        "comfort",
+        "surpresa"
+      ],
+      "tags": [
+        "Drama",
+        "Familia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/a1A22kIWqQwNswKaAvAk12xMml1.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/1WKtWXw6yfi5yGknLSvmJLhLa0R.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Documentario"
+    },
+    {
+      "title": "Ace Ventura: Um Detetive Diferente",
+      "year": 1994,
+      "decade": "1990",
+      "genre": "Comedia",
+      "duration": 86,
+      "country": "Estados Unidos",
+      "director": "Tom Shadyac",
+      "genres": [
+        "Comedia",
+        "Crime",
+        "Misterio"
+      ],
+      "overview": "Ace Ventura é um detetive especializado em desvendar crimes envolvendo animais. Vive cercado de bichos, mas não tem muito trabalho. O desaparecimento de um golfinho, mascote da equipe de futebol americano Miami Dolphins, aparentemente sequestrado, torna-se seu primeiro grande caso. Atrapalhado como é, Ace conduz a investigação de uma maneira bem peculiar.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 6426,
+      "imdbId": "tt0109040",
+      "tmdbId": 3049,
+      "originalLanguage": "en",
+      "providers": [
+        "Netflix",
+        "Apple TV",
+        "Prime Video",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve",
+        "intenso",
+        "acao",
+        "surpresa",
+        "nostalgia"
+      ],
+      "tags": [
+        "Crime",
+        "Misterio"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/xcxU6P1Yts1cugEKZg67IBtoh5J.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/nbvREKIjX16mwNZtFqAoQTTHPnQ.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Misterio"
+    },
+    {
+      "title": "Cinderela",
+      "year": 2015,
+      "decade": "2010",
+      "genre": "Romance",
+      "duration": 105,
+      "country": "Estados Unidos",
+      "director": "Kenneth Branagh",
+      "genres": [
+        "Romance",
+        "Fantasia",
+        "Familia",
+        "Drama"
+      ],
+      "overview": "Após a trágica e inesperada morte do seu pai, Ella (Lily James) fica à mercê da sua terrível madrasta, Lady Tremaine (Cate Blanchett), e suas filhas Anastasia e Drisella. A jovem ganha o apelido de Cinderela e é obrigada a trabalhar como empregada na sua própria casa, mas continua otimista com a vida. Passeando na floresta, ela se encanta por um corajoso estranho (Richard Madden), sem desconfiar que ele é o príncipe do castelo. Cinderela recebe um convite para o grande baile e acredita que pode voltar a encontrar sua alma gêmea, mas seus planos vão por água abaixo quando a madrasta má rasga seu vestido. Agora, será preciso uma fada madrinha (Helena Bonham Carter) para mudar o seu destino.",
+      "imdb": 68,
+      "rt": 68,
+      "rtSource": "tmdb",
+      "tmdbVotes": 7431,
+      "imdbId": "tt1661199",
+      "tmdbId": 150689,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "surpresa"
+      ],
+      "tags": [
+        "Fantasia",
+        "Familia",
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/x8MnNc8zaKMPo5W4TuWN0xVIbNy.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/q7vmCCmyiHnuKGMzHZlr0fD44b9.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Romance"
+    },
+    {
+      "title": "Top Gang! Ases Muito Loucos",
+      "year": 1991,
+      "decade": "1990",
+      "genre": "Acao",
+      "duration": 84,
+      "country": "Estados Unidos",
+      "director": "Jim Abrahams",
+      "genres": [
+        "Acao",
+        "Comedia",
+        "Guerra"
+      ],
+      "overview": "Piloto talentoso e instável precisa superar os fantasmas de seu pai e salvar uma missão sabotada por fabricantes de armas gananciosos em meio a uma série de confusões e um enorme mal-entendido.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 2462,
+      "imdbId": "tt0102059",
+      "tmdbId": 9595,
+      "originalLanguage": "en",
+      "providers": [
+        "Disney+"
+      ],
+      "vibes": [
+        "leve",
+        "intenso",
+        "terror",
+        "acao",
+        "nostalgia"
+      ],
+      "tags": [
+        "Comedia",
+        "Guerra"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/iCG8H1mcDS56akEwGuLc6sQfFXl.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4RriqSJFCQkYpRhxFnQGh3sxZYY.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "genre:Guerra"
+    },
+    {
+      "title": "Uma Mulher Contra Hitler",
+      "year": 2005,
+      "decade": "2000",
+      "genre": "Drama",
+      "duration": 117,
+      "country": "Alemanha",
+      "director": "Marc Rothemund",
+      "genres": [
+        "Drama",
+        "Historia"
+      ],
+      "overview": "Em 1943, Hitler marcha pela Europa em sua devastadora ofensiva. Em Munique, um grupo de jovens universitários apela para a resistência como forma de conter a máquina de guerra nazista. Assim, nasce o Rosa Branca. A única mulher que participa do grupo é Sophie Scholl (Julia Jentsch). Enquanto distribuíam panfletos Sophie e seu irmão, Hans (Fabian Hinrichs), são presos. Os dias que se seguem são de intensos interrogatórios conduzidos pelos oficiais da Gestapo, nos quais ela tenta proteger a qualquer custo os membros da organização.",
+      "imdb": 71,
+      "rt": 71,
+      "rtSource": "tmdb",
+      "tmdbVotes": 459,
+      "imdbId": "tt0426578",
+      "tmdbId": 2117,
+      "originalLanguage": "de",
+      "providers": [
+        "Prime Video",
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Historia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/aqVBqGWiSeByq8UN117NeAKvBFm.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/4co3a3mx5BgoHCmJUPAI03MDOWy.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:de"
+    },
+    {
+      "title": "Os Miseráveis",
+      "year": 2019,
+      "decade": "2010",
+      "genre": "Crime",
+      "duration": 102,
+      "country": "Franca",
+      "director": "Ladj Ly",
+      "genres": [
+        "Crime",
+        "Drama",
+        "Suspense"
+      ],
+      "overview": "Stéphane é um jovem que acaba de se mudar para Montfermeil e se junta ao esquadrão anti-crime da comuna. Colocado no mesmo time de Chris e Gwada, dois homens de métodos pouco convencionais, ele logo se vê envolvido na tensão entre as diferentes gangues do local.",
+      "imdb": 76,
+      "rt": 76,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1608,
+      "imdbId": "tt10199590",
+      "tmdbId": 586863,
+      "originalLanguage": "fr",
+      "providers": [
+        "Prime Video",
+        "Claro tv+",
+        "Apple TV",
+        "Google Play"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso"
+      ],
+      "tags": [
+        "Drama",
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/ywO4oyCfohDvrbU7motFRd2WdqL.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/6K74rGGGjKGrblGTa7S9yRcUtnF.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:fr"
+    },
+    {
+      "title": "Sultão",
+      "year": 2016,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 170,
+      "country": "India",
+      "director": "Ali Abbas Zafar",
+      "genres": [
+        "Drama",
+        "Acao",
+        "Romance"
+      ],
+      "overview": "Sultan é a história de Sultan Ali Khan - um campeão de luta local com o mundo a seus pés e seu sonho em representar a Índia na Olimpíada. E a história de Aarfa - uma lutadora habitante da mesma pequena cidade que Sultan com seus próprios sonhos. Quando os dois se encontram, o romance floresce e seus sonhos e aspirações tornam-se interligados e alinhados. No entanto, o caminho para a glória é muito rochoso e se deve cair várias vezes antes de chegar a vitória. Sultan luta para derrotar todas as probabilidades que vão contra ele. Mas quando ele não tem nada a perder e tudo a ganhar nesta luta por sua vida... Só lhe resta acredita que ele tem o que é preciso.",
+      "imdb": 69,
+      "rt": 69,
+      "rtSource": "tmdb",
+      "tmdbVotes": 263,
+      "imdbId": "tt4832640",
+      "tmdbId": 376812,
+      "originalLanguage": "hi",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Acao",
+        "Romance"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/oarT8LL2XE0aPU9kXqrD249Z4rM.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/74bUfGDD0kJ53M334vQcbJRzsI8.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:hi"
+    },
+    {
+      "title": "Um Clássico Filme de Terror",
+      "year": 2021,
+      "decade": "2020",
+      "genre": "Terror",
+      "duration": 95,
+      "country": "Italia",
+      "director": "Roberto De Feo",
+      "genres": [
+        "Terror",
+        "Misterio"
+      ],
+      "overview": "Um grupo que viaja pela Itália fica preso na floresta, e parece que não vai ser tão fácil escapar... com vida.",
+      "imdb": 58,
+      "rt": 58,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1053,
+      "imdbId": "tt12877640",
+      "tmdbId": 768334,
+      "originalLanguage": "it",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "intenso",
+        "terror",
+        "surpresa"
+      ],
+      "tags": [
+        "Misterio"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/d4gomiaeEAVkgofuyCHtzKkuXVS.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/d6GeMnbat5uNv1feeLtt4lFEGqj.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:it"
+    },
+    {
+      "title": "My Hero Academia: O Filme – Ascensão dos Heróis",
+      "year": 2019,
+      "decade": "2010",
+      "genre": "Animacao",
+      "duration": 103,
+      "country": "Japao",
+      "director": "長崎健司",
+      "genres": [
+        "Animacao",
+        "Acao",
+        "Fantasia",
+        "Aventura"
+      ],
+      "overview": "A classe 1-A visita a Ilha Nabu, onde eles finalmente conseguem fazer algum trabalho real de herói. O lugar é tão pacífico que parece que estão de férias, até que eles são atacados por um vilão com uma peculiaridade insondável! Com All Might aposentado e a vida dos cidadãos em risco, não há tempo para perguntas. Deku e seus amigos são a próxima geração de heróis, e eles são a única esperança da ilha.",
+      "imdb": 81,
+      "rt": 81,
+      "rtSource": "tmdb",
+      "tmdbVotes": 1289,
+      "imdbId": "tt11107074",
+      "tmdbId": 592350,
+      "originalLanguage": "ja",
+      "providers": [
+        "Netflix",
+        "Crunchyroll",
+        "Apple TV"
+      ],
+      "vibes": [
+        "leve",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Acao",
+        "Fantasia",
+        "Aventura"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/Ar8jquseIADaFtMH6dQpskLwDYf.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/9guoVF7zayiiUq5ulKQpt375VIy.jpg",
+      "colors": [
+        "#3f7d9b",
+        "#d85f56"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:ja"
+    },
+    {
+      "title": "Novo Mundo",
+      "year": 2013,
+      "decade": "2010",
+      "genre": "Suspense",
+      "duration": 134,
+      "country": "Coreia do Sul",
+      "director": "박훈정",
+      "genres": [
+        "Suspense",
+        "Crime",
+        "Drama"
+      ],
+      "overview": "Após a morte do chefe da Gold Moon, o maior sindicato do crime da Coreia do Sul, uma batalha de sucessão se desenrola entre Jung Chung, o número 2 da organização, e Lee Joong-gu, o número 3. Para monitorar e controlar essa transição, a polícia cria a Operação Novo Mundo, convocando Lee Ja-sung, um policial que está infiltrado no sindicato há muitos anos. Mas a quem Lee Ja-sung deve sua lealdade, à polícia ou à organização criminosa?",
+      "imdb": 74,
+      "rt": 74,
+      "rtSource": "tmdb",
+      "tmdbVotes": 546,
+      "imdbId": "tt2625030",
+      "tmdbId": 165213,
+      "originalLanguage": "ko",
+      "providers": [
+        "Prime Video"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Crime",
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/4tA6UMYSDHonp5sZSh61W5jr1qY.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/6UnVwCA6F29erZK29PKqRyHqFA.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:ko"
+    },
+    {
+      "title": "Assalto Brutal",
+      "year": 2024,
+      "decade": "2020",
+      "genre": "Crime",
+      "duration": 114,
+      "country": "Polonia",
+      "director": "Michał Gazda",
+      "genres": [
+        "Crime"
+      ],
+      "overview": "Um policial que perdeu o posto tem a chance de voltar à ativa se conseguir resolver um assalto a banco ajudando uma promotora.",
+      "imdb": 65,
+      "rt": 65,
+      "rtSource": "tmdb",
+      "tmdbVotes": 135,
+      "imdbId": "tt32245158",
+      "tmdbId": 1282138,
+      "originalLanguage": "pl",
+      "providers": [
+        "Netflix"
+      ],
+      "vibes": [
+        "intenso"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/gEpydgURgNqyYMLH6u7CG4y9N6v.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/ycOPrw6Pr4i7GBvryrrgTNYiD5u.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:pl"
+    },
+    {
+      "title": "O Lobo Atrás da Porta",
+      "year": 2013,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 100,
+      "country": "Brasil",
+      "director": "Fernando Coimbra",
+      "genres": [
+        "Drama",
+        "Suspense",
+        "Crime"
+      ],
+      "overview": "O desaparecimento de uma criança faz com que seus pais, Bernardo e Sylvia, vão até uma delegacia. O caso fica a cargo do delegado, que resolve interrogá-los separadamente. Logo descobre que Bernardo mantinha uma amante, Rosa, que é levada à delegacia para averiguações. A partir de depoimentos do trio, o delegado descobre uma rede de mentiras, amor, vingança e ciúmes envolvendo o trio.",
+      "imdb": 72,
+      "rt": 72,
+      "rtSource": "tmdb",
+      "tmdbVotes": 215,
+      "imdbId": "tt2861532",
+      "tmdbId": 214135,
+      "originalLanguage": "pt",
+      "providers": [
+        "Apple TV",
+        "Prime Video",
+        "Google Play"
+      ],
+      "vibes": [
+        "sensivel",
+        "intenso"
+      ],
+      "tags": [
+        "Suspense",
+        "Crime"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/3FuCmHut4sZurDnVi1HvrBCUFzZ.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/y5rCBAlOv99DulyqtVqAOwE3ARO.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:pt"
+    },
+    {
+      "title": "Todas as Coisas São Belas",
+      "year": 1995,
+      "decade": "1990",
+      "genre": "Drama",
+      "duration": 125,
+      "country": "Suecia",
+      "director": "Bo Widerberg",
+      "genres": [
+        "Drama",
+        "Romance",
+        "Historia"
+      ],
+      "overview": "Aos 15 anos, um rapaz se envolve com sua professora, de 37 anos, casada com um vendedor de roupas íntimas, que nunca foi um marido fiel. Isto justifica sua traição. Lisbet, filha de um vizinho do rapaz, é apaixonada por ele, mas sente-se frustrada por não ser notada.",
+      "imdb": 64,
+      "rt": 64,
+      "rtSource": "tmdb",
+      "tmdbVotes": 174,
+      "imdbId": "tt0113720",
+      "tmdbId": 27098,
+      "originalLanguage": "sv",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "nostalgia"
+      ],
+      "tags": [
+        "Romance",
+        "Historia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/wAu5zx4cxi0OUfthCvN94IIIEH4.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/wTipCPwvGfm3IJXBRojmuj97GIN.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:sv"
+    },
+    {
+      "title": "Alone",
+      "year": 2008,
+      "decade": "2000",
+      "genre": "Romance",
+      "duration": 113,
+      "country": "Turquia",
+      "director": "Çağan Irmak",
+      "genres": [
+        "Romance",
+        "Drama"
+      ],
+      "overview": "Alper é um chef renomado na casa dos 30 anos com seu próprio restaurante de luxo.  Ele vive uma vida isolada e passa as noites com casos de uma noite.  Um dia, sua vida muda completamente quando seu caminho se cruza com o de Ada e se apaixona por sua visão casual e modesta da vida.  À medida que eles começam a se envolver romanticamente, Alper também deve superar seu sentimento crônico de desolação.",
+      "imdb": 62,
+      "rt": 62,
+      "rtSource": "tmdb",
+      "tmdbVotes": 122,
+      "imdbId": "tt1322930",
+      "tmdbId": 27952,
+      "originalLanguage": "tr",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/dwYnQhhze9aDIQrUVMSmIoZQJp.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/o5oQ0y2jBoXYjFGeQcjKwo8UkN9.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:tr"
+    },
+    {
+      "title": "Balas em Fúria",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Acao",
+      "duration": 132,
+      "country": "China",
+      "director": "Jiang Wen",
+      "genres": [
+        "Acao",
+        "Comedia"
+      ],
+      "overview": "Situado na China durante a guerra de 1920, o notório chefe dos bandidos Zhang desce sobre uma remota cidade da província se passando por seu novo prefeito, uma identidade que ele havia sequestrado de Old Tang, ele próprio um impostor de pequeno porte. Determinado a ganhar dinheiro rápido, Zhang logo encontra seu par na tirânica nobreza local, Huang, enquanto uma batalha mortal de inteligência e brutalidade se inicia.",
+      "imdb": 78,
+      "rt": 78,
+      "rtSource": "tmdb",
+      "tmdbVotes": 356,
+      "imdbId": "tt1533117",
+      "tmdbId": 51533,
+      "originalLanguage": "zh",
+      "providers": [
+        "Looke",
+        "Apple TV",
+        "Prime Video",
+        "Google Play"
+      ],
+      "vibes": [
+        "leve",
+        "intenso",
+        "acao"
+      ],
+      "tags": [
+        "Comedia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/bVD0C5lXavc5NKAcbOJ9UGgQVTd.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/k1ziDzX0u8HgrAYshMb082nvtrF.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "language:zh"
+    },
+    {
+      "title": "O Afinador",
+      "year": 2026,
+      "decade": "2020",
+      "genre": "Crime",
+      "duration": 108,
+      "country": "Canada",
+      "director": "Daniel Roher",
+      "genres": [
+        "Crime",
+        "Drama",
+        "Suspense"
+      ],
+      "overview": "Niki é um afinador de pianos talentoso treinado por Harry. Sua audição excepcional chama a atenção de criminosos. Essa habilidade rara não só o ajuda a trabalhar com instrumentos de alto padrão, mas também a abrir cofres com precisão. Ao longo do caminho, Niki conhece Ruthie, uma estudante de composição, e os dois criam uma conexão inesperada. Porém, sua vida dupla como arrombador começa a ameaçar o relacionamento, enquanto ele se envolve em situações cada vez mais perigosas.",
+      "imdb": 72,
+      "rt": 72,
+      "rtSource": "tmdb",
+      "tmdbVotes": 145,
+      "imdbId": "tt33296751",
+      "tmdbId": 1340206,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "intenso"
+      ],
+      "tags": [
+        "Drama",
+        "Suspense"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/bq21NGxKqV6DgHfm5j48mscM7Ai.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/sT5Inhc0aaReSZoufWgfJTQUbKp.jpg",
+      "colors": [
+        "#59656d",
+        "#b0a48d"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "quality:popular"
+    },
+    {
+      "title": "O Ratinho Pérez",
+      "year": 2006,
+      "decade": "2000",
+      "genre": "Familia",
+      "duration": 94,
+      "country": "Argentina",
+      "director": "Juan Pablo Buscarini",
+      "genres": [
+        "Familia",
+        "Animacao"
+      ],
+      "overview": "Lucia perde o primeiro dente de leite e seus pais dizem que o ratinho Pérez virá buscá-lo em troca de uma moeda. Mas o rato é sequestrado no caminho e, desobedecendo seus pais, Lúcia e seu primo Ramiro partem numa aventura para salvá-lo.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 121,
+      "imdbId": "tt0458076",
+      "tmdbId": 36617,
+      "originalLanguage": "es",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Animacao"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/jpc8Zdn5Ju0tkQdkqbL4T4tKw61.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/khy2Qq5UjLfERvfR1DnvXdrkOqu.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AR"
+    },
+    {
+      "title": "Stefan Zweig - Adeus, Europa",
+      "year": 2016,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 106,
+      "country": "Austria",
+      "director": "Maria Schrader",
+      "genres": [
+        "Drama",
+        "Historia"
+      ],
+      "overview": "Em 1936, fugindo do nazismo na Europa, o ilustre escritor austríaco de origem judaica Stefan Zweig desembarca no Novo Mundo, percorrendo Rio de Janeiro, Bahia, Buenos Aires, Nova York e Petrópolis. Apaixonado pelo Brasil, inicia a escrita de um novo livro, tendo a nova terra como tema, e é na cidade imperial que decide se instalar em 1941. Porém, atormentado pelo crescimento da intolerância, da barbárie e do autoritarismo na Europa, e sentindo-se impotente em não poder ajudar seus conterrâneos a escapar do horror nazista, Zweig sucumbe aos fantasmas do exílio.",
+      "imdb": 66,
+      "rt": 66,
+      "rtSource": "tmdb",
+      "tmdbVotes": 78,
+      "imdbId": "tt3397160",
+      "tmdbId": 391663,
+      "originalLanguage": "de",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "terror"
+      ],
+      "tags": [
+        "Historia"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/bfUKdF8SAmcWoOiq5kmPeqjHXwA.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/2oWglYwExFn9o8lp50t8biuIGdO.jpg",
+      "colors": [
+        "#c77d34",
+        "#47745b"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:AT"
+    },
+    {
+      "title": "Um Quarto em Roma",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Drama",
+      "duration": 109,
+      "country": "Espanha",
+      "director": "Julio Medem",
+      "genres": [
+        "Drama",
+        "Romance"
+      ],
+      "overview": "Um quarto de hotel no centro de Roma serve de palco para que duas jovens recém-conhecidas tenham uma aventura física que toca suas almas.",
+      "imdb": 64,
+      "rt": 64,
+      "rtSource": "tmdb",
+      "tmdbVotes": 835,
+      "imdbId": "tt1263750",
+      "tmdbId": 48650,
+      "originalLanguage": "es",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "comfort",
+        "acao"
+      ],
+      "tags": [
+        "Romance"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/4kF4qRXFd7MqX2bAJX3e3zQSxhV.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/abQxLSkGxpHyUxRjRXACt8NbiGf.jpg",
+      "colors": [
+        "#2d3e39",
+        "#d2c08a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:ES"
+    },
+    {
+      "title": "Viagem Alucinante",
+      "year": 2010,
+      "decade": "2010",
+      "genre": "Fantasia",
+      "duration": 161,
+      "country": "Franca",
+      "director": "Gaspar Noé",
+      "genres": [
+        "Fantasia",
+        "Drama"
+      ],
+      "overview": "Oscar e Linda vivem atualmente em Tóquio. Ele sobrevive através de pequenos negócios como traficante e ela como uma stripper em uma boate. Durante um ataque policial, Oscar é atingido por uma bala. Enquanto está morrendo, seu espírito, fiel à promessa que Oscar fez à irmã de nunca desistir, se recusa a deixar o mundo dos vivos. Sua mente, então, viaja pela cidade e suas visões começam a ficar cada vez mais caóticas e apavorantes. Passado, presente e futuro se misturam em um redemoinho alucinante.",
+      "imdb": 73,
+      "rt": 73,
+      "rtSource": "tmdb",
+      "tmdbVotes": 2007,
+      "imdbId": "tt1191111",
+      "tmdbId": 34647,
+      "originalLanguage": "en",
+      "providers": [
+        "Reserva Imovision"
+      ],
+      "vibes": [
+        "sensivel"
+      ],
+      "tags": [
+        "Drama"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/yEAou7Av8JIf9qjpl1zcE7dKfjq.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/2Mlw0JRNZHXLYxbeJ0LmiCCTiok.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:FR"
+    },
+    {
+      "title": "Na Mira do Chefe",
+      "year": 2008,
+      "decade": "2000",
+      "genre": "Comedia",
+      "duration": 107,
+      "country": "Reino Unido",
+      "director": "Martin McDonagh",
+      "genres": [
+        "Comedia",
+        "Drama",
+        "Crime"
+      ],
+      "overview": "Após uma missão muito difícil, os assassinos de aluguel Ray e Ken recebem a ordem de se esconder na cidade medieval de Bruges, na Bélgica. Isso porque durante o trabalho, uma pessoa inocente perdeu a vida. Ray não gosta nada do lugar, mas Ken acha a sua beleza e tranquilidade encantadoras. As experiências dos dois se tornam cada vez mais surreais quando eles encontram turistas, moradores, um anão americano e um romance para Ray.",
+      "imdb": 75,
+      "rt": 75,
+      "rtSource": "tmdb",
+      "tmdbVotes": 5815,
+      "imdbId": "tt0780536",
+      "tmdbId": 8321,
+      "originalLanguage": "en",
+      "providers": [],
+      "vibes": [
+        "leve",
+        "sensivel",
+        "intenso",
+        "comfort"
+      ],
+      "tags": [
+        "Drama",
+        "Crime"
+      ],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/sbiE2zV3RipiEaWX6mUEYMEvK01.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/dtGxDOcFssdUUTYBr6M6INXTI1e.jpg",
+      "colors": [
+        "#7d3f33",
+        "#d6b36a"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:GB"
+    },
+    {
+      "title": "O Invencível",
+      "year": 1956,
+      "decade": "1950",
+      "genre": "Drama",
+      "duration": 110,
+      "country": "India",
+      "director": "Satyajit Ray",
+      "genres": [
+        "Drama"
+      ],
+      "overview": "Segundo filme da trilogia sobre a vida de Apu que aqui consegue uma bolsa de estudos e sai de casa, mas a mãe não suporta sua ausência. Leão de Ouro no Festival de Cinema de Veneza.",
+      "imdb": 79,
+      "rt": 79,
+      "rtSource": "tmdb",
+      "tmdbVotes": 292,
+      "imdbId": "tt0048956",
+      "tmdbId": 897,
+      "originalLanguage": "bn",
+      "providers": [],
+      "vibes": [
+        "sensivel",
+        "nostalgia"
+      ],
+      "tags": [],
+      "seen": false,
+      "favoriteSignal": false,
+      "posterUrl": "https://image.tmdb.org/t/p/w500/jhdl95qStKZRAVIYt0qKjPMSw0H.jpg",
+      "backdropUrl": "https://image.tmdb.org/t/p/w780/qDEZmaaAGhEso6kvB5kk1CROPwG.jpg",
+      "colors": [
+        "#613c5d",
+        "#b48a61"
+      ],
+      "source": "tmdb-expanded",
+      "ingestionGroup": "country:IN"
+    }
+  ]
+}
